@@ -1,0 +1,81 @@
+{
+  "vendor_name": "Lola Fabrics & Chic Wear",
+  "vendor_phone": "+2348035550192",
+  "currency_default": "NGN",
+  "products": [
+    {
+      "id": "p1",
+      "name": "Luxury Silk Boubou Gown with Beaded Neckline",
+      "price": {
+        "amount": 28500,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Rich emerald green pure silk boubou with hand-stitched crystal beadwork around neckline. Free size fits UK 10-18.",
+      "category": "Dresses",
+      "best_timestamp_sec": 4.2,
+      "confidence": 0.95
+    },
+    {
+      "id": "p2",
+      "name": "2-Piece Ankara Co-ord Trouser Set (Floral Sunset)",
+      "price": {
+        "amount": 16000,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Premium 100% cotton Ankara print in warm orange and violet tones. High-waisted wide-leg trousers with matching button-front shirt.",
+      "category": "Co-ords",
+      "best_timestamp_sec": 12.8,
+      "confidence": 0.92
+    },
+    {
+      "id": "p3",
+      "name": "Crocodile Pattern Mini Kelly Handbag with Gold Chain",
+      "price": {
+        "amount": 18500,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Structured faux crocodile leather mini top-handle bag. Includes detachable crossbody gold link strap and twist lock.",
+      "category": "Bags",
+      "best_timestamp_sec": 21.0,
+      "confidence": 0.88
+    },
+    {
+      "id": "p4",
+      "name": "Hand-Woven Aso-Oke Headtie & Sash Set",
+      "price": {
+        "amount": 35000,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Traditional metallic silver and royal blue woven Aso-Oke gele with matching shoulder ipelle for special ceremonies.",
+      "category": "Traditional",
+      "best_timestamp_sec": 31.4,
+      "confidence": 0.89
+    },
+    {
+      "id": "p5",
+      "name": "Crystal Strap Block Heel Mules (Champagne)",
+      "price": {
+        "amount": 22000,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "2.5-inch comfortable block heel mules with double rhinestone transparent band. Sizes 37 to 42 available.",
+      "category": "Footwear",
+      "best_timestamp_sec": 42.1,
+      "confidence": 0.91
+    },
+    {
+      "id": "p6",
+      "name": "Limited Edition Embroidered Velvet Kimono",
+      "price": null,
+      "description": "Plush burgundy velvet kimono coat with gold thread floral embroidery along hem and sleeves. Custom pre-order only.",
+      "category": "Outerwear",
+      "best_timestamp_sec": 53.7,
+      "confidence": 0.74
+    }
+  ]
+}

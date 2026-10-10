@@ -1,0 +1,81 @@
+{
+  "vendor_name": "Kano Heritage Leather & Craft",
+  "vendor_phone": "+2348098765432",
+  "currency_default": "NGN",
+  "products": [
+    {
+      "id": "p1",
+      "name": "Full-Grain Cowhide Weekender Duffle Bag (Cognac)",
+      "price": {
+        "amount": 55000,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Hand-stitched genuine Northern Nigerian cowhide leather traveling duffle with reinforced brass hardware, YKK metal zippers, and shoe compartment.",
+      "category": "Bags",
+      "best_timestamp_sec": 6.8,
+      "confidence": 0.95
+    },
+    {
+      "id": "p2",
+      "name": "Minimalist Slim Bifold Leather Wallet",
+      "price": {
+        "amount": 9500,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Vegetable-tanned leather bifold wallet with 6 card slots, 2 hidden receipt compartments, and full cash pocket. RFID blocking lining.",
+      "category": "Wallets",
+      "best_timestamp_sec": 15.3,
+      "confidence": 0.92
+    },
+    {
+      "id": "p3",
+      "name": "Executive Leather Messenger Laptop Bag (Dark Espresso)",
+      "price": {
+        "amount": 42000,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Fits 15.6-inch laptop with padded sleeve. Dual buckle front flap, adjustable shoulder strap with comfort pad, and rear luggage trolley strap.",
+      "category": "Bags",
+      "best_timestamp_sec": 24.1,
+      "confidence": 0.88
+    },
+    {
+      "id": "p4",
+      "name": "Braided Rawhide Dress Belt with Brass Buckle",
+      "price": {
+        "amount": 11000,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Solid leather intricately woven rawhide belt in mahogany finish. Solid brass single-prong buckle. 35mm width.",
+      "category": "Belts",
+      "best_timestamp_sec": 33.7,
+      "confidence": 0.85
+    },
+    {
+      "id": "p5",
+      "name": "Handmade Leather Passport Cover & Boarding Pass Sleeve",
+      "price": {
+        "amount": 7500,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Compact travel organizer holding passport, 4 cards, and flight tickets. Hand-burnished wax edges in tan leather.",
+      "category": "Travel",
+      "best_timestamp_sec": 41.5,
+      "confidence": 0.90
+    },
+    {
+      "id": "p6",
+      "name": "Hand-Tooled Leather Briefcase (Display Sample)",
+      "price": null,
+      "description": "Vintage carved geometric motifs on stiff harness leather with twin combination locks. Display piece - tag not visible on shelf.",
+      "category": "Bags",
+      "best_timestamp_sec": 50.2,
+      "confidence": 0.76
+    }
+  ]
+}

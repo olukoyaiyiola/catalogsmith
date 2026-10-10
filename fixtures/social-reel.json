@@ -1,0 +1,81 @@
+{
+  "vendor_name": "KevTech Gadgets & Audio",
+  "vendor_phone": "+2347089123456",
+  "currency_default": "NGN",
+  "products": [
+    {
+      "id": "p1",
+      "name": "Wireless ANC Noise-Cancelling Earbuds Pro",
+      "price": {
+        "amount": 18500,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Active Noise Cancellation up to 35dB, 36hr battery life with charging case, Bluetooth 5.3, and touch controls. Matte black.",
+      "category": "Audio",
+      "best_timestamp_sec": 5.1,
+      "confidence": 0.96
+    },
+    {
+      "id": "p2",
+      "name": "65W GaN Ultra-Compact Fast Charger (3-Port)",
+      "price": {
+        "amount": 14000,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Gallium Nitride dual USB-C + USB-A ports. Powers MacBook Pro, iPad, iPhone, and Android devices simultaneously.",
+      "category": "Accessories",
+      "best_timestamp_sec": 13.4,
+      "confidence": 0.94
+    },
+    {
+      "id": "p3",
+      "name": "20,000mAh 22.5W Power Bank with Built-in Cables",
+      "price": {
+        "amount": 22500,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Integrated Lightning and Type-C braided cables, digital LED battery percentage display, airline approved.",
+      "category": "Power",
+      "best_timestamp_sec": 22.7,
+      "confidence": 0.91
+    },
+    {
+      "id": "p4",
+      "name": "Magnetic Wireless Car Mount & 15W Qi Charger",
+      "price": {
+        "amount": 11500,
+        "currency": "NGN",
+        "source": "on_screen"
+      },
+      "description": "Auto-clamping air vent mount with 360-degree ball joint and fast wireless charging for MagSafe and Qi phones.",
+      "category": "Car Gear",
+      "best_timestamp_sec": 31.0,
+      "confidence": 0.89
+    },
+    {
+      "id": "p5",
+      "name": "RGB Mechanical Wireless Gaming Keyboard (60% Layout)",
+      "price": {
+        "amount": 34000,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Hot-swappable red linear switches, per-key RGB backlighting, tri-mode connection (Bluetooth, 2.4G wireless, Type-C).",
+      "category": "Gaming",
+      "best_timestamp_sec": 43.8,
+      "confidence": 0.92
+    },
+    {
+      "id": "p6",
+      "name": "Smart Fitness Band with AMOLED Screen & Heart Rate",
+      "price": null,
+      "description": "Continuous SPO2 blood oxygen tracking, 120 sports modes, 5ATM water resistance. Price on inquiry based on strap bundle.",
+      "category": "Wearables",
+      "best_timestamp_sec": 54.2,
+      "confidence": 0.78
+    }
+  ]
+}

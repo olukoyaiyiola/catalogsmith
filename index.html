@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>CatalogSmith - Video-to-Storefront Tool (Phone-First, Git-Free)</title>
+  <meta name="description" content="Turn vendor product videos into live mobile-first WhatsApp storefronts. Phone-first, git-free, free tier only.">
+  <link rel="stylesheet" href="css/studio.css">
+  <script src="js/jszip.min.js"></script>
+  <script src="js/fixtures.js"></script>
+  <script src="js/pdf-catalog.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation & Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-wrapper">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">
+            CatalogSmith
+            <span class="badge-tag">Phone-First</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Step Navigation Stepper -->
+      <nav class="stepper-nav" aria-label="Workflow Steps">
+        <button class="step-tab active" data-step="1" id="tab-step-1">
+          <span class="step-number">1</span>
+          <span>Input & Video</span>
+        </button>
+        <button class="step-tab" data-step="2" id="tab-step-2">
+          <span class="step-number">2</span>
+          <span id="tab-review-label">Review & Capture (0)</span>
+        </button>
+        <button class="step-tab" data-step="3" id="tab-step-3">
+          <span class="step-number">3</span>
+          <span>Store Settings</span>
+        </button>
+        <button class="step-tab" data-step="4" id="tab-step-4">
+          <span class="step-number">4</span>
+          <span>Preview & Export</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <main class="main-wrapper">
+
+    <!-- STEP 1: Video File & Product Extraction -->
+    <section class="step-pane active" id="pane-step-1">
+      <div class="studio-card">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">
+              <span>Step 1: Upload Video & Extract Products</span>
+            </h2>
+            <p class="card-desc">Select your vendor video to auto-extract products with Gemini AI in seconds. No code or server required.</p>
+          </div>
+        </div>
+
+        <!-- 1. Primary Action: Clean Video Dropzone -->
+        <div class="dropzone-box" id="video-dropzone" style="cursor: pointer;">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <div>
+            <strong style="color: var(--text-main); font-size: 1.0625rem;">Tap or drag to select vendor video</strong>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px;" id="video-file-info">
+              Supports .mp4, .mov, .webm (WhatsApp chats, walkthroughs, or shelf footage)
+            </p>
+          </div>
+          <input type="file" id="video-input" accept="video/*" style="display: none;">
+        </div>
+
+        <!-- Quick Sample Helper Strip (Clean & Compact) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Demos:</span>
+            <button class="sample-chip" data-sample="whatsapp">📱 WhatsApp Chat</button>
+            <button class="sample-chip" data-sample="walkthrough">🎙️ Walkthrough</button>
+            <button class="sample-chip" data-sample="shelf">🛍️ Shelf Display</button>
+          </div>
+          <button class="btn-icon-subtle" id="btn-generate-demo-video" title="Generate animated test video stream in browser">
+            ✨ Generate Test Video
+          </button>
+        </div>
+
+        <!-- 2. Extraction Action Card -->
+        <div class="automation-card" id="auto-extract-card" style="margin-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <strong style="color: #fff; font-size: 1.0625rem; display: flex; align-items: center; gap: 8px;">
+                <span>⚡ 1-Click Automated Extraction</span>
+                <span class="badge-tag" style="background-color: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Beta Active</span>
+              </strong>
+              <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 3px;">
+                Gemini AI visually scans your video, identifies individual products & prices, and captures high-res photos automatically.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
+            <button class="btn-primary" id="btn-auto-extract-gemini" style="flex: 2; min-width: 240px; padding: 13px;">
+              <span>🚀 Auto-Extract Catalog with Gemini</span>
+            </button>
+            <button class="btn-secondary" id="btn-smart-local-scan" style="flex: 1; min-width: 190px;" title="Scans video automatically in-browser without requiring an API key">
+              <span>⚡ Smart Local Scan</span>
+            </button>
+          </div>
+
+          <!-- Progress pipeline bar -->
+          <div id="auto-progress-container" style="display: none; margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--text-main); font-weight: 600;">
+              <span id="auto-progress-status">Analyzing video...</span>
+              <span id="auto-progress-percent">0%</span>
+            </div>
+            <div class="progress-pipeline">
+              <div class="progress-pipeline-fill" id="auto-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Progressive Disclosure: Advanced Settings & Manual Tools -->
+        <details class="ia-drawer" id="advanced-tools-drawer">
+          <summary class="ia-drawer-summary">
+            <span>⚙️ Advanced Settings & Manual JSON Tools</span>
+            <span style="font-size: 0.75rem; color: var(--color-accent);">Configure / Import &darr;</span>
+          </summary>
+          <div class="ia-drawer-content">
+            <!-- API Key & Model Override -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" for="gemini-api-key">Custom Gemini API Key & Model (Optional)</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--color-accent); text-decoration: none;">Get Free Key &rarr;</a>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <input type="password" id="gemini-api-key" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Paste Gemini API key (e.g. AIzaSy...)">
+                <button class="btn-icon-subtle" id="btn-toggle-key-vis" title="Toggle Key Visibility">👁️</button>
+                <select id="gemini-model-select" class="form-select" style="flex: 1; min-width: 150px;">
+                  <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Recommended)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                </select>
+              </div>
+              <div style="margin-top: 6px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" id="check-remember-key">
+                  <span>Remember on this device (optional local storage)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Manual JSON Paste -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" for="json-input">Manual JSON Import (Google AI Studio)</label>
+                <button class="btn-icon-subtle" id="btn-clear-json" title="Clear text">Clear</button>
+              </div>
+              <textarea id="json-input" class="form-textarea" style="height: 120px; font-family: var(--font-mono); font-size: 0.8125rem;" placeholder='Paste AI Studio JSON output here...'></textarea>
+              <div style="margin-top: 8px; display: flex; gap: 8px;">
+                <button class="btn-secondary" id="btn-upload-json-file">📂 Upload JSON File</button>
+                <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
+                <button class="btn-secondary" id="btn-parse-json" style="flex: 1;">Load JSON Products &rarr;</button>
+              </div>
+            </div>
+
+            <!-- Developer Reference Actions -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--border-color);">
+              <button class="btn-icon-subtle" id="btn-open-prompts">📖 View AI Studio Prompts & Schema</button>
+              <button class="btn-icon-subtle" id="btn-open-fallback">🎞️ Fallback Frame Extractor</button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+
+    <!-- STEP 2: Review Table & Interactive Frame Grabber -->
+    <section class="step-pane" id="pane-step-2">
+      <div class="grid-studio-review">
+
+        <!-- Sticky Left Panel: Video Player & Frame Capture -->
+        <div class="video-grabber-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-weight: 700; font-size: 0.9375rem; color: var(--text-main);">Live Video Frame Grabber</span>
+            <span class="time-display" id="video-time-display">0.0s / 0.0s</span>
+          </div>
+
+          <div class="video-container" id="video-viewport">
+            <video id="studioVideo" playsinline preload="auto"></video>
+            <div class="video-placeholder" id="video-placeholder-overlay">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              <span>No video loaded yet.<br>Select a video in Step 1 or generate a test video.</span>
+            </div>
+          </div>
+          <!-- Hidden canvas for capturing high-res JPEG frames -->
+          <canvas id="captureCanvas" style="display: none;"></canvas>
+
+          <!-- Timeline Scrubber -->
+          <div class="video-controls">
+            <div class="timeline-row">
+              <input type="range" id="video-scrubber" class="timeline-slider" min="0" max="100" step="0.1" value="0">
+            </div>
+
+            <!-- Nudge Controls -->
+            <div class="nudge-button-row">
+              <button class="btn-nudge" data-nudge="-5.0" title="Back 5s">-5s</button>
+              <button class="btn-nudge" data-nudge="-1.0" title="Back 1s">-1s</button>
+              <button class="btn-nudge" id="btn-toggle-play" style="min-width: 68px; font-weight: 700; color: var(--color-primary);">Play</button>
+              <button class="btn-nudge" data-nudge="1.0" title="Forward 1s">+1s</button>
+              <button class="btn-nudge" data-nudge="5.0" title="Forward 5s">+5s</button>
+            </div>
+
+            <!-- Frame Capture Actions -->
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn-capture-hero" id="btn-capture-frame">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span id="btn-capture-label">Capture Frame for Selected Product</span>
+              </button>
+
+              <button class="btn-auto-all" id="btn-auto-capture-all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span>Auto-Capture All Frames from Timestamps</span>
+              </button>
+            </div>
+
+            <!-- Selected Product Notice -->
+            <div style="margin-top: 8px; padding: 10px; background-color: var(--bg-card-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.8125rem;">
+              <div style="color: var(--text-muted);">Currently Targeting:</div>
+              <div id="target-product-name" style="font-weight: 700; color: var(--color-primary); margin-top: 2px;">No product selected</div>
+              <div id="target-product-timestamp" style="color: var(--text-dim); font-size: 0.75rem;">Timestamp: 0.0s</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Product Review & Edit List -->
+        <div>
+          <div class="product-review-header">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">Review & Refine Products</h2>
+              <p style="font-size: 0.8125rem; color: var(--text-muted);">
+                Vendors' real prices matter. Verify amounts, tweak descriptions, and capture the sharpest frame for each item.
+              </p>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-pills">
+              <button class="filter-btn active" data-filter="all" id="filter-all">All (<span id="count-all">0</span>)</button>
+              <button class="filter-btn" data-filter="flagged" id="filter-flagged">⚠️ Needs Review (<span id="count-flagged">0</span>)</button>
+              <button class="filter-btn" data-filter="noprice" id="filter-noprice">❓ Missing Price (<span id="count-noprice">0</span>)</button>
+            </div>
+          </div>
+
+          <!-- List of Product Review Cards -->
+          <div id="review-products-container">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Bottom Actions -->
+          <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-secondary" id="btn-add-product">
+              <span>+ Add New Product</span>
+            </button>
+            <div style="flex: 1;"></div>
+            <button class="btn-primary" id="btn-goto-step-3">
+              <span>Proceed to Store Settings &rarr;</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- STEP 3: Store Configuration -->
+    <section class="step-pane" id="pane-step-3">
+      <div class="studio-card" style="max-width: 800px; margin: 0 auto;">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Step 3: Storefront Details</h2>
+            <p class="card-desc">Set your store branding and WhatsApp ordering recipient.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="form-group">
+            <label class="form-label" for="setting-vendor-name">Store / Vendor Name</label>
+            <input type="text" id="setting-vendor-name" class="form-input" placeholder="e.g. Lola Fabrics & Chic Wear">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="setting-vendor-phone">Vendor WhatsApp Number (International format)</label>
+            <input type="tel" id="setting-vendor-phone" class="form-input" placeholder="e.g. +2348035550192 or 2348035550192">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">
+              Include country code without special characters (e.g. +234 for Nigeria, +1 for US, +44 for UK, +254 for Kenya).
+            </span>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label" for="setting-currency">Primary Currency</label>
+              <select id="setting-currency" class="form-select">
+                <option value="NGN">NGN (₦ - Nigerian Naira)</option>
+                <option value="USD">USD ($ - US Dollar)</option>
+                <option value="GBP">GBP (£ - British Pound)</option>
+                <option value="EUR">EUR (€ - Euro)</option>
+                <option value="KES">KES (KSh - Kenyan Shilling)</option>
+                <option value="GHS">GHS (GH₵ - Ghanaian Cedi)</option>
+                <option value="ZAR">ZAR (R - South African Rand)</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label" for="setting-tagline">Store Tagline / Bio</label>
+              <input type="text" id="setting-tagline" class="form-input" placeholder="e.g. Luxury custom dresses & fabrics delivered nationwide">
+            </div>
+          </div>
+
+          <!-- Theme Presets & Layout Customization -->
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label" for="setting-theme">Storefront Theme Preset</label>
+              <select id="setting-theme" class="form-select">
+                <option value="emerald" selected>🌿 Emerald & Mint (Clean WhatsApp)</option>
+                <option value="luxury-gold">👑 Luxury Obsidian & Champagne Gold</option>
+                <option value="sunset">🌅 Sunset Terracotta & Warm Sand</option>
+                <option value="tech-blue">⚡ Cyber Slate & Electric Blue</option>
+                <option value="blush">🌸 Blush Rose & Velvet Noir</option>
+                <option value="minimal">🖋️ Editorial Minimalist & Monochrome</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="setting-layout">Mobile Grid Density</label>
+              <select id="setting-layout" class="form-select">
+                <option value="standard" selected>Standard (1 Card / Row on Phone)</option>
+                <option value="compact">Compact (2 Cards / Row on Phone)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="setting-btn-text">WhatsApp Button Text</label>
+              <input type="text" id="setting-btn-text" class="form-input" value="Order on WhatsApp" placeholder="e.g. Order on WhatsApp">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="setting-message-template">Custom WhatsApp Order Message Template</label>
+            <textarea id="setting-message-template" class="form-textarea" style="min-height: 80px;" placeholder="Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?"></textarea>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">
+              Variables available: <code>{vendor_name}</code>, <code>{product_name}</code>, <code>{product_price}</code>.
+            </span>
+          </div>
+
+          <!-- Real-Time Template Preview -->
+          <div style="padding: 14px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Generated Message Preview:</div>
+            <div id="preview-message-text" style="font-size: 0.875rem; color: var(--color-wa); margin-top: 6px; font-style: italic;">
+              "Hello Lola Fabrics & Chic Wear! I would like to order *Luxury Silk Boubou Gown* (₦28,500) from your catalog. Is it available for delivery?"
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+            <button class="btn-secondary" id="btn-back-step-2">&larr; Back to Review</button>
+            <button class="btn-primary" id="btn-goto-step-4">Preview Live Storefront &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- STEP 4: Live Preview & Git-Free Export -->
+    <section class="step-pane" id="pane-step-4">
+      <div class="grid-2col" style="align-items: start;">
+
+        <!-- Left: Export & Deployment Options -->
+        <div>
+          <div class="studio-card">
+            <div class="card-header-row">
+              <div>
+                <h2 class="card-title">Export & Deploy (Git-Free)</h2>
+                <p class="card-desc">Download your ready-to-host storefront and publish in under 60 seconds.</p>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <!-- Export 1: ZIP Bundle -->
+              <div style="padding: 18px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-highlight);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <strong style="font-size: 1.0625rem; color: #fff;">1. Complete Static Site ZIP</strong>
+                  <span class="badge-tag" style="background-color: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Recommended</span>
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 12px;">
+                  Generates <code>storefront.zip</code> containing <code>index.html</code>, <code>storefront.css</code>, <code>products.json</code>, captured JPEG images (<code>images/p1.jpg</code>...), and direct-upload instructions.
+                </p>
+                <button class="btn-primary" id="btn-export-zip" style="width: 100%;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>Download Storefront ZIP (.zip)</span>
+                </button>
+              </div>
+
+              <!-- Export 2: Single-File HTML -->
+              <div style="padding: 18px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <strong style="font-size: 1.0625rem; color: #fff;">2. Standalone Single-File HTML</strong>
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 12px;">
+                  Everything packed into a single <code>vendor-store.html</code> with inlined images and styles. No folders, zero unzipping.
+                </p>
+                <button class="btn-secondary" id="btn-export-single-html" style="width: 100%;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                  <span>Download Single-File HTML (.html)</span>
+                </button>
+              </div>
+
+              <!-- Export 3: PDF Lookbook & WhatsApp Share -->
+              <div style="padding: 18px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <strong style="font-size: 1.0625rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>📄 3. PDF Catalog Lookbook & Share</span>
+                    <span class="badge-tag" style="background-color: rgba(37, 211, 102, 0.15); color: #25d366; border-color: rgba(37, 211, 102, 0.3);">Print & WhatsApp</span>
+                  </strong>
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 12px;">
+                  Generate an A4 product lookbook PDF with your brand styling and clickable WhatsApp order links. Perfect for sending to WhatsApp chats, status, or printing.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <button class="btn-primary" id="btn-download-pdf" style="width: 100%; background: linear-gradient(135deg, #059669, #10b981);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="12" y2="18"></line>
+                      <line x1="15" y1="15" x2="12" y2="18"></line>
+                    </svg>
+                    <span>Download PDF Catalog (.pdf)</span>
+                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" id="btn-open-lookbook" style="flex: 1;" title="Open clean A4 lookbook ready to print or save as PDF">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                      </svg>
+                      <span>Print / Save Lookbook</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-share-catalog" style="flex: 1;" title="Share catalog directly via WhatsApp or mobile share sheet">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                      </svg>
+                      <span>Share Catalog</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Export 4: Save Project Data -->
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" id="btn-save-project-json" style="flex: 1;">
+                  💾 Save Project State (.json)
+                </button>
+                <button class="btn-secondary" id="btn-copy-store-json" style="flex: 1;">
+                  📋 Copy products.json
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 60-Second Free Hosting Card -->
+          <div class="studio-card">
+            <h3 style="font-size: 1.0625rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span>🚀 60-Second Free Hosting (Vercel, Netlify, Cloudflare)</span>
+            </h3>
+
+            <div style="font-size: 0.875rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; gap: 10px;">
+                <span style="display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background-color: var(--bg-input); color: var(--color-primary); font-weight: 700; align-items: center; justify-content: center; flex-shrink: 0;">1</span>
+                <div>
+                  <strong style="color: var(--text-main);">Vercel (Instant Deploy):</strong><br>
+                  Push this project folder to GitHub and import it on <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" style="color: var(--color-accent);">vercel.com</a>, or run <code>npx vercel</code> in your terminal. Zero configuration needed!
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <span style="display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background-color: var(--bg-input); color: var(--color-primary); font-weight: 700; align-items: center; justify-content: center; flex-shrink: 0;">2</span>
+                <div>
+                  <strong style="color: var(--text-main);">Netlify Drop (Zero Login / Drag & Drop):</strong><br>
+                  Go to <a href="https://app.netlify.com/drop" target="_blank" rel="noopener noreferrer" style="color: var(--color-accent);">app.netlify.com/drop</a> in your browser, drag the downloaded <code>storefront.zip</code> directly into the drop zone, and get an instant live HTTPS website!
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <span style="display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background-color: var(--bg-input); color: var(--color-primary); font-weight: 700; align-items: center; justify-content: center; flex-shrink: 0;">3</span>
+                <div>
+                  <strong style="color: var(--text-main);">Cloudflare Pages (Direct Upload):</strong><br>
+                  Log into <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" style="color: var(--color-accent);">Cloudflare Dashboard</a> &rarr; <em>Workers & Pages</em> &rarr; <em>Create application</em> &rarr; <em>Pages</em> &rarr; <em>Upload assets</em>. Upload the unzipped folder.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Real-Time Mobile Device Simulator -->
+        <div class="preview-container-box">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 375px; max-width: 100%; margin-bottom: 12px;">
+            <div style="font-size: 0.875rem; font-weight: 700;">Live Mobile View (375px)</div>
+            <button class="btn-icon-subtle" id="btn-refresh-preview" title="Refresh Preview">
+              🔄 Reload Preview
+            </button>
+          </div>
+
+          <div class="mobile-phone-frame">
+            <div class="phone-notch"></div>
+            <iframe id="preview-frame" class="preview-iframe" title="Storefront Live Preview"></iframe>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- MODAL: Gemini AI Studio Prompts & JSON Schema -->
+  <div class="modal-overlay" id="prompts-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff;">Gemini AI Studio Extraction Guide & Prompts</h3>
+        <button class="btn-icon-subtle" id="btn-close-prompts">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 16px;">
+          Use these copyable prompts in Google AI Studio on your phone or computer. Attach your vendor video file and Gemini reads both visuals and narration.
+        </p>
+
+        <!-- Prompt Section -->
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <strong style="font-size: 0.9375rem; color: var(--text-main);">1. Whole-Video Extraction Prompt</strong>
+            <button class="btn-secondary" id="btn-copy-video-prompt">📋 Copy Prompt</button>
+          </div>
+          <div class="code-display-box" id="code-video-prompt">You are analyzing a vendor's product video. It may be a WhatsApp chat screen recording, a person holding up or describing items one by one, or footage of a shelf or display. Use both the visuals and the audio. List every distinct product the vendor is offering, once each, even if it appears several times. For each product give: name, price (amount, currency, and source: on_screen, price_tag, spoken, or none), a short description (material, size, color, variants if mentioned), the timestamp in seconds of the clearest view of the item, and a confidence score from 0 to 1. For chat recordings, use only product-related message content and ignore timestamps, sender names and unrelated chatter. For shelf footage, list each visibly distinct item separately and use null for unknown price or quantity. Never invent a price: if none is shown or said, return null. Return only valid JSON matching the schema.</div>
+        </div>
+
+        <!-- Schema Section -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <strong style="font-size: 0.9375rem; color: var(--text-main);">2. Structured Output JSON Schema</strong>
+            <button class="btn-secondary" id="btn-copy-schema">📋 Copy Schema</button>
+          </div>
+          <div class="code-display-box" id="code-schema">{
+  "type": "object",
+  "properties": {
+    "vendor_name": { "type": ["string", "null"] },
+    "vendor_phone": { "type": ["string", "null"] },
+    "currency_default": { "type": ["string", "null"] },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "price": {
+            "type": ["object", "null"],
+            "properties": {
+              "amount": { "type": ["number", "null"] },
+              "currency": { "type": ["string", "null"] },
+              "source": { "type": "string", "enum": ["on_screen", "price_tag", "spoken", "none"] }
+            },
+            "required": ["amount", "currency", "source"]
+          },
+          "description": { "type": "string" },
+          "category": { "type": ["string", "null"] },
+          "best_timestamp_sec": { "type": "number" },
+          "confidence": { "type": "number" }
+        },
+        "required": ["id", "name", "price", "description", "best_timestamp_sec", "confidence"]
+      }
+    }
+  },
+  "required": ["products"]
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: Fallback Frame Extractor -->
+  <div class="modal-overlay" id="fallback-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff;">Fallback: Frame-by-Frame Extractor</h3>
+        <button class="btn-icon-subtle" id="btn-close-fallback">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 16px;">
+          Use this fallback tool if whole-video extraction missed items (e.g., in fast-scrolling WhatsApp recordings). It samples video frames in-browser at fixed intervals.
+        </p>
+
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+          <label style="font-size: 0.8125rem; font-weight: 600;">Interval (sec):</label>
+          <select id="fallback-interval-select" class="form-select" style="width: 120px;">
+            <option value="1.0">1.0 second</option>
+            <option value="1.5" selected>1.5 seconds</option>
+            <option value="2.0">2.0 seconds</option>
+            <option value="3.0">3.0 seconds</option>
+          </select>
+          <button class="btn-primary" id="btn-run-frame-sampling">
+            Extract Frame Strip
+          </button>
+          <button class="btn-secondary" id="btn-copy-per-frame-prompt">
+            📋 Copy Per-Frame Prompt
+          </button>
+        </div>
+
+        <div id="fallback-status" style="font-size: 0.8125rem; color: var(--color-primary); margin-bottom: 12px;"></div>
+
+        <!-- Filmstrip display -->
+        <div class="filmstrip-row" id="fallback-filmstrip">
+          <div style="color: var(--text-dim); font-size: 0.8125rem; padding: 20px;">
+            Load a video and click "Extract Frame Strip" to sample frames here.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Photo Editor & Filters -->
+  <div class="modal-overlay" id="photo-editor-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>✂️ Product Photo Studio & Filter Editor</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-editor">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 12px;">
+          Tune brightness, contrast, crop aspect ratios, or add professional studio lighting.
+        </p>
+
+        <!-- Canvas Container -->
+        <div class="photo-editor-canvas-wrap">
+          <canvas id="editorCanvas"></canvas>
+        </div>
+
+        <!-- Crop Presets -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Crop Aspect Ratio</div>
+          <div class="editor-crop-pills">
+            <button class="crop-pill active" data-ratio="orig">Original</button>
+            <button class="crop-pill" data-ratio="1-1">1:1 Square</button>
+            <button class="crop-pill" data-ratio="4-3">4:3 Standard</button>
+            <button class="crop-pill" data-ratio="3-4">3:4 Portrait</button>
+          </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="editor-slider-grid">
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+              <span class="form-label">Brightness</span>
+              <span id="val-bright" style="font-family: var(--font-mono); color: var(--color-primary);">0%</span>
+            </div>
+            <input type="range" id="slider-bright" min="-50" max="50" value="0" class="timeline-slider">
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+              <span class="form-label">Contrast</span>
+              <span id="val-contrast" style="font-family: var(--font-mono); color: var(--color-primary);">0%</span>
+            </div>
+            <input type="range" id="slider-contrast" min="-50" max="50" value="0" class="timeline-slider">
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+              <span class="form-label">Saturation</span>
+              <span id="val-sat" style="font-family: var(--font-mono); color: var(--color-primary);">0%</span>
+            </div>
+            <input type="range" id="slider-sat" min="-50" max="50" value="0" class="timeline-slider">
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+              <span class="form-label">Warmth</span>
+              <span id="val-warmth" style="font-family: var(--font-mono); color: var(--color-primary);">0%</span>
+            </div>
+            <input type="range" id="slider-warmth" min="-30" max="30" value="0" class="timeline-slider">
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; cursor: pointer; color: var(--text-main);">
+            <input type="checkbox" id="check-studio-backdrop">
+            <span>✨ Add Soft Studio Spotlight Backdrop</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" id="btn-reset-filters">Reset</button>
+            <button class="btn-primary" id="btn-save-edited-photo">Save & Apply Photo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: AI Product Image Generator -->
+  <div class="modal-overlay" id="ai-generator-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>🤖 AI Studio Product Photo Generator</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-ai-generator">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="padding: 12px 14px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 16px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Target Product</div>
+          <div id="ai-target-product-title" style="font-weight: 700; color: #fff; font-size: 1rem; margin-top: 2px;">Product Title</div>
+          <div id="ai-target-product-desc" style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Description...</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="ai-prompt-input">AI Generation Prompt</label>
+          <textarea id="ai-prompt-input" class="form-textarea" style="min-height: 70px;" placeholder="Commercial studio catalog photo..."></textarea>
+        </div>
+
+        <!-- Style presets -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Visual Aesthetic</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="crop-pill active" data-aistyle="minimal">Studio Minimalist</button>
+            <button class="crop-pill" data-aistyle="luxury">👑 Luxury Editorial</button>
+            <button class="crop-pill" data-aistyle="clean">Clean White E-Commerce</button>
+            <button class="crop-pill" data-aistyle="lifestyle">Lifestyle Context</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-generate-ai-photo" style="width: 100%; padding: 12px; margin-bottom: 16px;">
+          <span>✨ Generate Studio Variations</span>
+        </button>
+
+        <!-- Variations Grid -->
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Select Desired Photo:</div>
+        <div class="ai-variations-grid" id="ai-variations-container">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+          <button class="btn-secondary" id="btn-cancel-ai-photo">Cancel</button>
+          <button class="btn-primary" id="btn-apply-ai-photo" disabled>Set as Product Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Studio Main Logic Script -->
+  <script src="js/studio.js"></script>
+</body>
+</html>

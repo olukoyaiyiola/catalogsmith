@@ -1,0 +1,81 @@
+{
+  "vendor_name": "Zara Gems & Glamour Hub",
+  "vendor_phone": "+2348124991180",
+  "currency_default": "NGN",
+  "products": [
+    {
+      "id": "p1",
+      "name": "18K Gold PVD Waterproof Herringbone Chain",
+      "price": {
+        "amount": 14500,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Non-tarnish surgical stainless steel layered necklace with 18k PVD real gold plating. 5mm width, 18 inches with 2-inch extender.",
+      "category": "Jewelry",
+      "best_timestamp_sec": 8.4,
+      "confidence": 0.96
+    },
+    {
+      "id": "p2",
+      "name": "Iced Out Baguette Initial Pendant & Rope Chain",
+      "price": {
+        "amount": 21000,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Customizable initial letter pendant handset with AAA cubic zirconia baguette stones. Paired with a 3mm diamond cut rope chain.",
+      "category": "Jewelry",
+      "best_timestamp_sec": 19.2,
+      "confidence": 0.93
+    },
+    {
+      "id": "p3",
+      "name": "Vietnamese Raw Bone Straight 13x4 Lace Front Wig (24 Inches)",
+      "price": {
+        "amount": 135000,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "100% human raw donor hair in natural 1B black. Silky bone straight texture, HD lace pre-plucked with baby hair, 250% density.",
+      "category": "Hair & Wigs",
+      "best_timestamp_sec": 34.6,
+      "confidence": 0.94
+    },
+    {
+      "id": "p4",
+      "name": "Luxury Matte Rose Gold Smart Quartz Watch",
+      "price": {
+        "amount": 26000,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Scratch-resistant sapphire mineral glass with rose gold mesh band. Water resistant up to 30m with chronograph date dial.",
+      "category": "Watches",
+      "best_timestamp_sec": 48.0,
+      "confidence": 0.89
+    },
+    {
+      "id": "p5",
+      "name": "Handmade Organic Cocoa Butter Body Soufflé (300g)",
+      "price": {
+        "amount": 6500,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Whipped unrefined Ghana shea and cocoa butter infused with sweet almond oil and vanilla bean essential oils.",
+      "category": "Skincare",
+      "best_timestamp_sec": 61.5,
+      "confidence": 0.91
+    },
+    {
+      "id": "p6",
+      "name": "Custom Engraved Stainless Steel Cuff Bracelet",
+      "price": null,
+      "description": "Minimalist open bangle cuff available in silver, yellow gold, and rose gold. Price varies based on custom engraving characters.",
+      "category": "Accessories",
+      "best_timestamp_sec": 73.8,
+      "confidence": 0.72
+    }
+  ]
+}

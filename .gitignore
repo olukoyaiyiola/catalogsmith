@@ -1,0 +1,19 @@
+# Operating System & Editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Environment and secrets
+.env*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Temporary / Build artifacts
+*.zip
+*.tar.gz
+*.log
+.vercel/

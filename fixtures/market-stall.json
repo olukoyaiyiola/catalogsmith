@@ -1,0 +1,81 @@
+{
+  "vendor_name": "Mama Chidi Organic Pantry & Spices",
+  "vendor_phone": "+2348021112233",
+  "currency_default": "NGN",
+  "products": [
+    {
+      "id": "p1",
+      "name": "Pure Raw Wildflower Forest Honey (1 Litre Jar)",
+      "price": {
+        "amount": 7500,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "100% unpasteurized raw honey harvested from natural forest apiaries in Kogi State. Unfiltered with pure honeycomb bits.",
+      "category": "Pantry",
+      "best_timestamp_sec": 7.3,
+      "confidence": 0.95
+    },
+    {
+      "id": "p2",
+      "name": "Oron Smoked Crayfish (Air-Tight Sealed 1kg Tub)",
+      "price": {
+        "amount": 12000,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Sun-dried and gently hardwood-smoked jumbo crayfish from Akwa Ibom. Sand-free and clean, ground on order or whole.",
+      "category": "Seafood",
+      "best_timestamp_sec": 16.5,
+      "confidence": 0.93
+    },
+    {
+      "id": "p3",
+      "name": "Stone-Ground Hand-Peeled Egusi Seeds (2kg Bag)",
+      "price": {
+        "amount": 9800,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Premium hand-sorted melon seeds with high oil content. Ideal for traditional thick soup with rich yellow aroma.",
+      "category": "Grains & Seeds",
+      "best_timestamp_sec": 26.2,
+      "confidence": 0.90
+    },
+    {
+      "id": "p4",
+      "name": "Cold-Pressed Virgin Coconut Oil (500ml Glass Bottle)",
+      "price": {
+        "amount": 5500,
+        "currency": "NGN",
+        "source": "price_tag"
+      },
+      "description": "Extra virgin edible and cosmetic coconut oil. Cold pressed from fresh coconuts without chemicals or heat processing.",
+      "category": "Oils",
+      "best_timestamp_sec": 35.8,
+      "confidence": 0.94
+    },
+    {
+      "id": "p5",
+      "name": "Roasted Tiger Nut & Date Flour Powder (1.5kg)",
+      "price": {
+        "amount": 6200,
+        "currency": "NGN",
+        "source": "spoken"
+      },
+      "description": "Natural sweetener and grain-free baking flour. Made from roasted tiger nuts, dried dates, and organic ginger.",
+      "category": "Healthy Living",
+      "best_timestamp_sec": 44.9,
+      "confidence": 0.88
+    },
+    {
+      "id": "p6",
+      "name": "Seasonal Sun-Dried Yellow Habenero Peppers (Big Basket)",
+      "price": null,
+      "description": "Locally harvested aromatic yellow chili peppers. Market price fluctuates weekly depending on harvest supply.",
+      "category": "Spices",
+      "best_timestamp_sec": 56.1,
+      "confidence": 0.75
+    }
+  ]
+}

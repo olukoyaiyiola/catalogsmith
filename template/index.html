@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title id="page-title">Storefront - CatalogSmith</title>
+  <meta name="description" id="page-meta-desc" content="Browse verified vendor catalog and order directly on WhatsApp. Fast, simple, and direct.">
+  <link rel="stylesheet" href="storefront.css">
+</head>
+<body class="theme-emerald">
+
+  <!-- Sticky Top Header -->
+  <header class="store-header" role="banner">
+    <div class="header-container">
+      <div class="vendor-brand">
+        <div class="vendor-avatar" id="vendor-avatar" aria-hidden="true">S</div>
+        <div class="vendor-info">
+          <h1 class="store-name" id="vendor-name-title">
+            <span id="store-name-text">Loading Store...</span>
+            <span class="verified-badge" title="Direct Vendor Verified">
+              <svg class="icon" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </h1>
+          <p class="store-tagline" id="store-tagline-text">Fast orders directly on WhatsApp</p>
+        </div>
+      </div>
+
+      <a id="header-contact-link" href="#" target="_blank" rel="noopener noreferrer" class="header-contact-btn" aria-label="Chat with vendor on WhatsApp">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+        </svg>
+        <span>Message Store</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Live Theme & Style Customizer Bar -->
+  <section class="live-theme-bar" aria-label="Storefront Styling">
+    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+      <div class="live-theme-selector">
+        <span>🎨 Style:</span>
+        <select id="live-theme-select" class="live-theme-select" aria-label="Select storefront theme">
+          <option value="emerald">🌿 Emerald (WhatsApp)</option>
+          <option value="luxury-gold">👑 Royal Obsidian Gold</option>
+          <option value="sunset">🌅 Sunset Terracotta</option>
+          <option value="tech-blue">⚡ Cyber Blue</option>
+          <option value="blush">🌸 Blush Rose</option>
+          <option value="minimal">🖋️ Minimalist</option>
+        </select>
+      </div>
+      <div class="live-theme-selector">
+        <span>📐 Grid:</span>
+        <select id="live-layout-select" class="live-theme-select" aria-label="Select layout grid">
+          <option value="standard">Standard (1 Col)</option>
+          <option value="compact">Compact (2 Col)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
+      <button id="btn-live-pdf" class="live-action-btn" title="Print or Save Catalog as PDF">
+        📄 PDF Catalog
+      </button>
+      <button id="btn-live-share" class="live-action-btn" title="Share catalog with customers">
+        📲 Share
+      </button>
+    </div>
+  </section>
+
+  <!-- Category Filter Pills Bar -->
+  <nav class="category-filter-bar" id="category-filter-bar" aria-label="Product Categories">
+    <!-- Populated dynamically -->
+  </nav>
+
+  <!-- Store Stats & Info -->
+  <section class="store-intro" aria-label="Catalog Overview">
+    <div class="catalog-stats-bar">
+      <span id="catalog-count-label">Catalog: <strong class="stats-count" id="product-count">0 items</strong></span>
+      <span id="catalog-currency-label">Direct WhatsApp Checkout</span>
+    </div>
+  </section>
+
+  <!-- Product Grid -->
+  <main class="main-content" id="main-content">
+    <div class="product-grid" id="product-grid" role="list">
+      <!-- Cards rendered dynamically via JavaScript -->
+    </div>
+
+    <!-- Empty state if no products -->
+    <div class="empty-catalog" id="empty-state" style="display: none;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 12px; color: #94a3b8;">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      <h3>No products found</h3>
+      <p>This storefront is currently empty or updating.</p>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom WhatsApp Floating Button -->
+  <a id="sticky-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="sticky-wa-fab" aria-label="Chat with vendor on WhatsApp">
+    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+    </svg>
+    <span>Chat with Vendor</span>
+  </a>
+
+  <!-- Minimal Footer -->
+  <footer class="store-footer">
+    <p>Powered by CatalogSmith &bull; Mobile-First Video Storefront</p>
+  </footer>
+
+  <!-- Store Data Slot -->
+  <script id="catalogsmith-data">
+    /* INLINE_DATA_PLACEHOLDER */
+  </script>
+
+  <script>
+    (function() {
+      function getCurrencySymbol(code) {
+        if (!code) return '₦';
+        const map = {
+          'NGN': '₦',
+          'USD': '$',
+          'EUR': '€',
+          'GBP': '£',
+          'KES': 'KSh ',
+          'GHS': 'GH₵ ',
+          'ZAR': 'R ',
+          'CAD': '$',
+          'AUD': '$'
+        };
+        return map[code.toUpperCase()] || (code + ' ');
+      }
+
+      function formatPrice(amount, currency) {
+        if (amount === null || amount === undefined || isNaN(amount)) {
+          return null;
+        }
+        const sym = getCurrencySymbol(currency);
+        return sym + Number(amount).toLocaleString();
+      }
+
+      function cleanPhone(phone) {
+        if (!phone) return '';
+        return String(phone).replace(/[^0-9]/g, '');
+      }
+
+      function buildWhatsAppUrl(phone, text) {
+        const clean = cleanPhone(phone);
+        const encoded = encodeURIComponent(text);
+        if (!clean) {
+          return `https://wa.me/?text=${encoded}`;
+        }
+        return `https://wa.me/${clean}?text=${encoded}`;
+      }
+
+      function renderStore(data) {
+        if (!data) return;
+
+        // Apply theme and layout class
+        const themeClass = data.theme ? 'theme-' + data.theme : 'theme-emerald';
+        const layoutClass = data.layout === 'compact' ? ' layout-compact' : '';
+        document.body.className = `${themeClass}${layoutClass}`;
+
+        const vendorName = data.vendor_name || 'Vendor Catalog';
+        const vendorPhone = data.vendor_phone || '';
+        const defaultCurrency = data.currency_default || 'NGN';
+        const tagline = data.tagline || 'Fast orders directly on WhatsApp';
+        const products = Array.isArray(data.products) ? data.products : [];
+
+        // Update Page Titles and Header
+        document.title = `${vendorName} - Storefront`;
+        const titleMeta = document.getElementById('page-meta-desc');
+        if (titleMeta) titleMeta.content = `Browse products from ${vendorName} and order directly on WhatsApp.`;
+
+        const nameEl = document.getElementById('store-name-text');
+        if (nameEl) nameEl.textContent = vendorName;
+
+        const taglineEl = document.getElementById('store-tagline-text');
+        if (taglineEl) taglineEl.textContent = tagline;
+
+        const avatarEl = document.getElementById('vendor-avatar');
+        if (avatarEl) avatarEl.textContent = vendorName.trim().charAt(0).toUpperCase() || 'S';
+
+        const countEl = document.getElementById('product-count');
+        if (countEl) countEl.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
+
+        // Top contact links
+        const generalHello = `Hello ${vendorName}! I am viewing your catalog and would like to make an inquiry.`;
+        const generalWaUrl = buildWhatsAppUrl(vendorPhone, generalHello);
+
+        const headerLink = document.getElementById('header-contact-link');
+        if (headerLink) headerLink.href = generalWaUrl;
+
+        const stickyBtn = document.getElementById('sticky-wa-btn');
+        if (stickyBtn) stickyBtn.href = generalWaUrl;
+
+        // Wire up Live Theme & Layout Customizers
+        const themeSelect = document.getElementById('live-theme-select');
+        const layoutSelect = document.getElementById('live-layout-select');
+        if (themeSelect) {
+          themeSelect.value = data.theme || 'emerald';
+          themeSelect.onchange = function() {
+            data.theme = themeSelect.value;
+            const lay = layoutSelect ? layoutSelect.value : (data.layout || 'standard');
+            document.body.className = `theme-${data.theme}${lay === 'compact' ? ' layout-compact' : ''}`;
+          };
+        }
+        if (layoutSelect) {
+          layoutSelect.value = data.layout || 'standard';
+          layoutSelect.onchange = function() {
+            data.layout = layoutSelect.value;
+            const th = themeSelect ? themeSelect.value : (data.theme || 'emerald');
+            document.body.className = `theme-${th}${data.layout === 'compact' ? ' layout-compact' : ''}`;
+          };
+        }
+
+        // PDF Catalog & Share Buttons
+        const pdfBtn = document.getElementById('btn-live-pdf');
+        if (pdfBtn) {
+          pdfBtn.onclick = function() {
+            window.print();
+          };
+        }
+
+        const shareBtn = document.getElementById('btn-live-share');
+        if (shareBtn) {
+          shareBtn.onclick = async function() {
+            const shareTitle = `${vendorName} - Product Catalog`;
+            const shareText = `🛍️ *${vendorName} - Product Catalog*\n${tagline}\n\nBrowse ${products.length} verified products and order directly on WhatsApp!\nPhone: ${vendorPhone || 'Direct Chat'}`;
+            const shareUrl = window.location.href;
+
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: shareTitle,
+                  text: shareText,
+                  url: shareUrl
+                });
+                return;
+              } catch (err) {}
+            }
+
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+            window.open(waUrl, '_blank');
+          };
+        }
+
+        // Category Filter Pills
+        const catBar = document.getElementById('category-filter-bar');
+        let selectedCategory = 'all';
+
+        if (catBar) {
+          const categories = ['all'];
+          products.forEach(p => {
+            if (p.category && !categories.includes(p.category)) {
+              categories.push(p.category);
+            }
+          });
+
+          if (categories.length > 2) {
+            catBar.style.display = 'flex';
+            catBar.innerHTML = '';
+            categories.forEach(cat => {
+              const pill = document.createElement('button');
+              pill.className = `cat-pill ${cat === selectedCategory ? 'active' : ''}`;
+              pill.textContent = cat === 'all' ? 'All Products' : cat;
+              pill.onclick = function() {
+                selectedCategory = cat;
+                catBar.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                pill.classList.add('active');
+                renderProductsGrid();
+              };
+              catBar.appendChild(pill);
+            });
+          } else {
+            catBar.style.display = 'none';
+          }
+        }
+
+        // Render Products
+        const grid = document.getElementById('product-grid');
+        const emptyState = document.getElementById('empty-state');
+
+        function renderProductsGrid() {
+          const displayed = selectedCategory === 'all' 
+            ? products 
+            : products.filter(p => p.category === selectedCategory);
+
+          if (!displayed.length) {
+            if (grid) grid.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+          }
+
+          if (emptyState) emptyState.style.display = 'none';
+          if (!grid) return;
+
+          grid.innerHTML = '';
+
+          displayed.forEach(function(product) {
+          const card = document.createElement('article');
+          card.className = 'product-card';
+          card.setAttribute('role', 'listitem');
+
+          const hasPrice = product.price && product.price.amount !== null && !isNaN(product.price.amount);
+          const currency = (product.price && product.price.currency) || defaultCurrency;
+          const formattedPrice = hasPrice ? formatPrice(product.price.amount, currency) : null;
+
+          // Build tailored WhatsApp message
+          let orderMessage = '';
+          if (hasPrice) {
+            orderMessage = (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?')
+              .replace(/{vendor_name}/g, vendorName)
+              .replace(/{product_name}/g, product.name)
+              .replace(/{product_price}/g, formattedPrice);
+          } else {
+            orderMessage = `Hello ${vendorName}! What is the price and availability for *${product.name}*? I saw it on your catalog.`;
+          }
+
+          const orderUrl = buildWhatsAppUrl(vendorPhone, orderMessage);
+
+          const imageSrc = product.image || (product.id ? `images/${product.id}.jpg` : '');
+
+          const imageHtml = imageSrc ? `
+            <img src="${imageSrc}" 
+                 alt="${escapeHtml(product.name)}" 
+                 class="product-image" 
+                 loading="lazy" 
+                 decoding="async"
+                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-fallback\\'><span>Photo coming soon</span></div>';" />
+          ` : `
+            <div class="image-fallback">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Product Image</span>
+            </div>
+          `;
+
+          const categoryBadge = product.category ? `<span class="product-category-tag">${escapeHtml(product.category)}</span>` : '';
+
+          const priceHtml = hasPrice ? `
+            <span class="product-price">${formattedPrice}</span>
+          ` : `
+            <span class="price-ask">Ask for price</span>
+          `;
+
+          const buttonClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
+          const buttonLabel = hasPrice ? (data.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
+
+          card.innerHTML = `
+            <div class="product-image-wrap">
+              ${categoryBadge}
+              ${imageHtml}
+            </div>
+            <div class="product-body">
+              <h2 class="product-title">${escapeHtml(product.name)}</h2>
+              <p class="product-desc">${escapeHtml(product.description || '')}</p>
+              <div class="product-price-row">
+                ${priceHtml}
+              </div>
+              <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${buttonClass}" aria-label="${buttonLabel} for ${escapeHtml(product.name)}">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+                </svg>
+                <span>${buttonLabel}</span>
+              </a>
+            </div>
+          `;
+
+          grid.appendChild(card);
+        });
+      }
+
+      // Initial grid render
+      renderProductsGrid();
+    }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      if (window.CATALOGSMITH_DATA) {
+        renderStore(window.CATALOGSMITH_DATA);
+      } else {
+        fetch('products.json')
+          .then(res => res.json())
+          .then(data => {
+            window.CATALOGSMITH_DATA = data;
+            renderStore(data);
+          })
+          .catch(() => {
+            if (window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES.whatsapp) {
+              renderStore(window.CATALOGSMITH_FIXTURES.whatsapp.data);
+            }
+          });
+      }
+    })();
+  </script>
+</body>
+</html>
