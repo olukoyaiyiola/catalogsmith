@@ -7,10 +7,12 @@
 (function () {
   'use strict';
 
-  // Wait for DOM
-  document.addEventListener('DOMContentLoaded', () => {
+  // Wait for DOM or initialize immediately if already parsed
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
     initApp();
-  });
+  }
 
   function initApp() {
     const landingView = document.getElementById('landing-view');
@@ -320,25 +322,31 @@
       ]
     };
 
+    let exampleInitRetries = 0;
+    const MAX_EXAMPLE_RETRIES = 20;
+
     function populateExampleStorefront() {
       const exampleFrame = document.getElementById('example-phone-iframe');
       const heroFrame = document.getElementById('hero-phone-iframe');
 
       if (!window.CatalogSmithStudio || typeof window.CatalogSmithStudio.generateStorefrontHTML !== 'function') {
-        setTimeout(populateExampleStorefront, 150);
-        return;
+        if (exampleInitRetries < MAX_EXAMPLE_RETRIES) {
+          exampleInitRetries++;
+          setTimeout(populateExampleStorefront, 100);
+          return;
+        }
       }
 
       try {
-        // ALWAYS generate from the dedicated fixture to keep landing page example isolated and populated
-        const exampleHtml = window.CatalogSmithStudio.generateStorefrontHTML(true, DEDICATED_EXAMPLE_DATA);
-        if (exampleFrame) {
-          exampleFrame.srcdoc = exampleHtml;
-          exampleFrame.setAttribute('srcdoc', exampleHtml);
-        }
-        if (heroFrame) {
-          heroFrame.srcdoc = exampleHtml;
-          heroFrame.setAttribute('srcdoc', exampleHtml);
+        if (window.CatalogSmithStudio && typeof window.CatalogSmithStudio.generateStorefrontHTML === 'function') {
+          // ALWAYS generate from dedicated fixture to keep landing page example isolated and populated
+          const exampleHtml = window.CatalogSmithStudio.generateStorefrontHTML(true, DEDICATED_EXAMPLE_DATA);
+          if (exampleFrame) {
+            exampleFrame.srcdoc = exampleHtml;
+          }
+          if (heroFrame) {
+            heroFrame.srcdoc = exampleHtml;
+          }
         }
       } catch (err) {
         console.warn('Failed to populate example storefront:', err);
@@ -485,27 +493,35 @@
     });
 
     // -------------------------------------------------------------
-    // UNIVERSAL IMAGE SEARCH ENGINE MODAL
+    // -------------------------------------------------------------
+    // UNIVERSAL IMAGE SEARCH ENGINE (Real Web Provider Search)
     // -------------------------------------------------------------
     let activeImageSearchCallback = null;
-    let selectedSearchImage = null;
+    let selectedSearchImageObj = null;
 
     function openUniversalImageSearch(queryText = '', categoryTag = '', onSelect = null) {
       activeImageSearchCallback = onSelect;
-      selectedSearchImage = null;
+      selectedSearchImageObj = null;
 
       const queryInput = document.getElementById('img-search-query');
-      const resultsContainer = document.getElementById('img-search-results');
-      const statusDiv = document.getElementById('img-search-status');
       const previewBar = document.getElementById('img-search-preview-bar');
 
+      // Adaptive default query based on product name or category
+      let cleanQuery = (queryText || '').replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').trim();
+      if (!cleanQuery && categoryTag) {
+        cleanQuery = categoryTag + ' product photo';
+      }
+      if (!cleanQuery) {
+        cleanQuery = 'fashion product photo';
+      }
+
       if (queryInput) {
-        queryInput.value = (queryText || '').replace(/\(.*\)/g, '').trim();
+        queryInput.value = cleanQuery;
       }
       if (previewBar) previewBar.style.display = 'none';
 
-      // Perform initial search
-      runImageSearch(queryInput ? queryInput.value : '', categoryTag);
+      // Perform initial real web search
+      runImageSearch(cleanQuery, categoryTag);
 
       if (imgSearchModal) imgSearchModal.classList.add('open');
     }
@@ -517,64 +533,182 @@
     async function runImageSearch(term = '', tag = '') {
       const resultsContainer = document.getElementById('img-search-results');
       const statusDiv = document.getElementById('img-search-status');
+      const previewBar = document.getElementById('img-search-preview-bar');
       if (!resultsContainer) return;
 
-      resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-dim);">Searching product photos...</div>';
+      if (previewBar) previewBar.style.display = 'none';
+      selectedSearchImageObj = null;
+
+      const cleanQuery = (term || tag || 'products').trim().slice(0, 100);
+
+      // State: Searching…
+      resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--text-dim);"><div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>Searching live web image providers for "<strong>' + escapeHtml(cleanQuery) + '</strong>"...</div>';
       if (statusDiv) {
         statusDiv.style.display = 'block';
-        statusDiv.textContent = 'Searching library & creative commons...';
+        statusDiv.innerHTML = '<span>Searching web for "<strong>' + escapeHtml(cleanQuery) + '</strong>"...</span>';
       }
 
-      const q = (term || '').toLowerCase().trim();
+      let webResults = [];
+      let providerName = '';
 
-      // 1. Filter local curated assets
-      let matches = CURATED_PRODUCT_IMAGES.filter(item => {
-        if (!q && !tag) return true;
-        const matchTag = tag ? item.tag === tag || item.category.toLowerCase().includes(tag.toLowerCase()) : false;
-        const matchTitle = q ? item.title.toLowerCase().includes(q) : false;
-        const matchCategory = q ? item.category.toLowerCase().includes(q) : false;
-        return matchTitle || matchCategory || matchTag;
-      });
-
-      // If no exact match, return general fallback products
-      if (matches.length === 0) {
-        matches = CURATED_PRODUCT_IMAGES.slice(0, 8);
+      // 1. Try serverless backend endpoint /api/search-images
+      try {
+        const apiUrl = `/api/search-images?q=${encodeURIComponent(cleanQuery)}&limit=12`;
+        const resp = await fetch(apiUrl, { method: 'GET' });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && Array.isArray(data.results) && data.results.length > 0) {
+            webResults = data.results;
+            providerName = data.provider === 'bing' ? 'Bing Images' : (data.provider === 'unsplash' ? 'Unsplash' : 'Wikimedia Commons');
+          }
+        }
+      } catch (err) {
+        console.warn('API endpoint search unreachable, trying direct web fallback:', err);
       }
 
-      renderSearchResults(matches);
+      // 2. Direct client-side Wikimedia Commons fallback if API endpoint was empty or offline
+      if (webResults.length === 0) {
+        try {
+          const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*`;
+          const wikiResp = await fetch(wikiUrl);
+          if (wikiResp.ok) {
+            const wikiData = await wikiResp.json();
+            if (wikiData.query && wikiData.query.pages) {
+              const pages = Object.values(wikiData.query.pages);
+              webResults = pages
+                .filter(p => p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url)
+                .map(p => {
+                  const info = p.imageinfo[0];
+                  const meta = info.extmetadata || {};
+                  const title = (p.title || cleanQuery).replace(/^File:/i, '').replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+                  const license = (meta.LicenseShortName && meta.LicenseShortName.value) || 'Creative Commons';
+                  const author = (meta.Artist && meta.Artist.value) ? meta.Artist.value.replace(/<[^>]*>?/gm, '') : 'Wikimedia Commons';
+                  return {
+                    id: String(p.pageid),
+                    title: title.slice(0, 70),
+                    imageUrl: info.url,
+                    thumbnailUrl: info.thumburl || info.url,
+                    sourceUrl: info.descriptionurl || info.url,
+                    publisher: 'Wikimedia Commons',
+                    dimensions: `${info.width || 0} × ${info.height || 0}`,
+                    attribution: `${author} (${license})`
+                  };
+                });
+              if (webResults.length > 0) {
+                providerName = 'Wikimedia Commons Web';
+              }
+            }
+          }
+        } catch (wikiErr) {
+          console.warn('Direct web image search fallback error:', wikiErr);
+        }
+      }
+
+      // 3. Fallback: If web search genuinely returns 0 results, show helpful message and local verified matches
+      if (webResults.length === 0) {
+        const qLower = cleanQuery.toLowerCase();
+        let fallbackCurated = CURATED_PRODUCT_IMAGES.filter(item => {
+          return item.title.toLowerCase().includes(qLower) || item.category.toLowerCase().includes(qLower) || (tag && item.tag === tag);
+        });
+        if (fallbackCurated.length === 0) {
+          fallbackCurated = CURATED_PRODUCT_IMAGES.slice(0, 6);
+        }
+
+        if (statusDiv) {
+          statusDiv.innerHTML = `<span style="color: #b45309;">⚠️ No direct web images found for "${escapeHtml(cleanQuery)}". Choose from verified catalogue suggestions below, or try another search term:</span>`;
+        }
+
+        renderSearchResults(fallbackCurated.map(c => ({
+          id: c.id,
+          title: c.title,
+          imageUrl: c.url,
+          thumbnailUrl: c.url,
+          sourceUrl: 'https://catalogsmith.local',
+          publisher: 'CatalogSmith Verified Asset',
+          dimensions: '800 × 600',
+          attribution: 'Verified Catalog Asset'
+        })), 'Verified Catalogue Suggestions');
+        return;
+      }
+
+      renderSearchResults(webResults, providerName || 'Web Provider');
     }
 
-    function renderSearchResults(items) {
+    function renderSearchResults(items, providerLabel = 'Web Results') {
       const resultsContainer = document.getElementById('img-search-results');
       const statusDiv = document.getElementById('img-search-status');
       const previewBar = document.getElementById('img-search-preview-bar');
       const previewImg = document.getElementById('img-search-selected-preview');
       const previewTitle = document.getElementById('img-search-selected-title');
+      const previewMeta = document.getElementById('img-search-selected-meta');
+      const previewSource = document.getElementById('img-search-selected-source');
       if (!resultsContainer) return;
 
       resultsContainer.innerHTML = '';
       if (statusDiv) {
-        statusDiv.textContent = `Showing ${items.length} verified product photo suggestions:`;
+        statusDiv.innerHTML = `<span>Showing <strong>${items.length}</strong> photo results via <em>${escapeHtml(providerLabel)}</em>:</span>`;
       }
 
-      items.forEach((item, idx) => {
+      items.forEach((item) => {
         const card = document.createElement('div');
         card.className = 'img-search-item';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', `Select ${item.title}`);
+
+        const thumbSrc = item.thumbnailUrl || item.imageUrl;
+
         card.innerHTML = `
-          <img src="${item.url}" alt="${item.title}" loading="lazy">
-          <div class="img-search-item-badge">✓ Selected</div>
-          <div class="img-search-item-label">${item.title}</div>
+          <img src="${thumbSrc}" class="img-search-item-thumb" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';">
+          <div class="img-search-item-info">
+            <div class="img-search-item-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+            <div class="img-search-item-source" style="display:flex; justify-content:space-between; align-items:center; gap:4px; margin-top:4px;">
+              <span>🌐 ${escapeHtml(item.publisher || 'Web')}</span>
+              <span style="font-size:0.6875rem; color:var(--text-dim);">${item.dimensions || ''}</span>
+            </div>
+            ${item.sourceUrl ? `<a href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer" class="img-search-source-link" onclick="event.stopPropagation();" style="display:inline-block; font-size:0.6875rem; color:var(--color-primary); text-decoration:none; margin-top:4px;">View source page ↗</a>` : ''}
+          </div>
         `;
 
-        card.addEventListener('click', () => {
+        const selectThisCard = () => {
           document.querySelectorAll('.img-search-item').forEach(c => c.classList.remove('selected'));
           card.classList.add('selected');
-          selectedSearchImage = item.url;
+          selectedSearchImageObj = item;
+
+          if (statusDiv) {
+            statusDiv.innerHTML = `<span>Image selected: <strong>${escapeHtml(item.title)}</strong>. Click "Use This Photo" below to confirm.</span>`;
+          }
 
           if (previewBar) {
             previewBar.style.display = 'flex';
-            if (previewImg) previewImg.src = item.url;
+            if (previewImg) {
+              previewImg.src = item.imageUrl || item.thumbnailUrl;
+              previewImg.onerror = () => {
+                previewImg.src = item.thumbnailUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';
+              };
+            }
             if (previewTitle) previewTitle.textContent = item.title;
+            if (previewMeta) {
+              previewMeta.textContent = `${item.dimensions ? item.dimensions + ' • ' : ''}${item.publisher || 'Web Image'}`;
+            }
+            if (previewSource) {
+              let sourceHtml = '';
+              if (item.sourceUrl) {
+                sourceHtml += `<a href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:none;">Open source ↗</a> `;
+              }
+              if (item.attribution) {
+                sourceHtml += `• ${escapeHtml(item.attribution)}`;
+              }
+              previewSource.innerHTML = sourceHtml;
+            }
+          }
+        };
+
+        card.addEventListener('click', selectThisCard);
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectThisCard();
           }
         });
 
@@ -594,27 +728,39 @@
       });
     }
 
-    // Search tags
+    // Search quick tags
     document.querySelectorAll('.img-search-tag').forEach(tagBtn => {
       tagBtn.addEventListener('click', () => {
         document.querySelectorAll('.img-search-tag').forEach(b => b.classList.remove('active'));
         tagBtn.classList.add('active');
-        runImageSearch(tagBtn.textContent.trim(), tagBtn.dataset.tag);
+        const tagQuery = tagBtn.textContent.replace(/^[^\w]+/, '').trim() + ' product photo';
+        if (inputImgSearchQuery) inputImgSearchQuery.value = tagQuery;
+        runImageSearch(tagQuery, tagBtn.dataset.tag);
       });
     });
 
-    // Apply search image button
+    // Apply selected image action
     const btnApplySelectedImg = document.getElementById('btn-apply-selected-img');
     if (btnApplySelectedImg) {
       btnApplySelectedImg.addEventListener('click', () => {
-        if (!selectedSearchImage) {
-          alert('Please select an image first.');
+        if (!selectedSearchImageObj) {
+          if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+            window.CatalogSmithStudio.showToast('Please select a photo from the results first.', 'warning');
+          } else {
+            alert('Please select a photo from the results first.');
+          }
           return;
         }
+
+        const chosenUrl = selectedSearchImageObj.imageUrl || selectedSearchImageObj.thumbnailUrl;
         if (typeof activeImageSearchCallback === 'function') {
-          activeImageSearchCallback(selectedSearchImage);
+          activeImageSearchCallback(chosenUrl, selectedSearchImageObj);
         }
+
         if (imgSearchModal) imgSearchModal.classList.remove('open');
+        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+          window.CatalogSmithStudio.showToast('Photo updated from web search!');
+        }
       });
     }
 
@@ -860,11 +1006,11 @@
           <div class="starter-thumb-wrap">
             <img src="${item.image || CURATED_PRODUCT_IMAGES[0].url}" class="starter-thumb-img" id="starter-img-${index}" alt="${item.name}">
             <div class="starter-thumb-btns">
-              <button type="button" class="starter-action-btn" id="btn-upload-starter-${index}" title="Choose from device">
-                📷 Photo
+              <button type="button" class="starter-action-btn" id="btn-upload-starter-${index}" title="Choose a photo from your device">
+                📷 Choose photo
               </button>
-              <button type="button" class="starter-action-btn" id="btn-search-starter-${index}" title="Search online photo">
-                🔍 Search
+              <button type="button" class="starter-action-btn" id="btn-search-starter-${index}" title="Search photos on the web">
+                🔍 Search photos
               </button>
               <input type="file" id="file-starter-${index}" accept="image/*" style="display: none;">
             </div>
@@ -923,7 +1069,12 @@
               const reader = new FileReader();
               reader.onload = ev => {
                 item.image = ev.target.result;
+                item.imageSource = 'Device Upload';
+                item.imageAttribution = 'Uploaded by vendor';
                 if (imgEl) imgEl.src = item.image;
+                if (window.CatalogSmithStudio && window.CatalogSmithStudio.updateLivePreview) {
+                  window.CatalogSmithStudio.updateLivePreview();
+                }
               };
               reader.readAsDataURL(file);
             }
@@ -932,9 +1083,17 @@
 
         if (btnSearch) {
           btnSearch.addEventListener('click', () => {
-            openUniversalImageSearch(item.name, item.category, (chosen) => {
+            openUniversalImageSearch(item.name || item.category, item.category, (chosen, meta) => {
               item.image = chosen;
+              if (meta) {
+                item.imageSource = meta.sourceUrl || '';
+                item.imagePublisher = meta.publisher || '';
+                item.imageAttribution = meta.attribution || '';
+              }
               if (imgEl) imgEl.src = chosen;
+              if (window.CatalogSmithStudio && window.CatalogSmithStudio.updateLivePreview) {
+                window.CatalogSmithStudio.updateLivePreview();
+              }
             });
           });
         }
@@ -1049,7 +1208,10 @@
             category: p.category || wizardState.category,
             best_timestamp_sec: 0,
             confidence: 0.95,
-            image: p.image || null
+            image: p.image || null,
+            imageSource: p.imageSource || '',
+            imagePublisher: p.imagePublisher || '',
+            imageAttribution: p.imageAttribution || ''
           }));
 
         state.products = finalProducts;
@@ -1098,12 +1260,14 @@
     }
 
     const btnSearchManualImg = document.getElementById('btn-search-manual-img');
+    let manualItemMeta = null;
     if (btnSearchManualImg) {
       btnSearchManualImg.addEventListener('click', () => {
-        const titleVal = document.getElementById('manual-title-input') ? document.getElementById('manual-title-input').value : '';
-        const catVal = document.getElementById('manual-category-input') ? document.getElementById('manual-category-input').value : '';
-        openUniversalImageSearch(titleVal, catVal, (chosen) => {
+        const titleVal = document.getElementById('manual-title-input') ? document.getElementById('manual-title-input').value.trim() : '';
+        const catVal = document.getElementById('manual-category-input') ? document.getElementById('manual-category-input').value.trim() : '';
+        openUniversalImageSearch(titleVal || catVal || 'product photo', catVal, (chosen, meta) => {
           manualItemPhoto = chosen;
+          manualItemMeta = meta;
           if (manualPhotoBox) {
             manualPhotoBox.innerHTML = `<img src="${chosen}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);">`;
           }
@@ -1200,19 +1364,19 @@
     const btnOpenSearchFromPictures = document.getElementById('btn-open-search-from-pictures');
     if (btnOpenSearchFromPictures) {
       btnOpenSearchFromPictures.addEventListener('click', () => {
-        openUniversalImageSearch('', '', (chosenImg) => {
-          const matched = CURATED_PRODUCT_IMAGES.find(x => x.url === chosenImg);
-          const name = matched ? matched.title : 'New Product Item';
-          const cat = matched ? matched.category : 'General';
+        openUniversalImageSearch('fashion product photo', 'General', (chosenImg, meta) => {
+          const name = (meta && meta.title) ? meta.title : 'New Product Item';
           stagedIntakeProducts.push({
             id: 'p' + (Date.now() % 100000),
             name: name,
             price: { amount: null, currency: 'NGN', source: 'none' },
-            description: 'Selected via image search.',
-            category: cat,
+            description: 'Selected via web image search.',
+            category: 'General',
             best_timestamp_sec: 0,
             confidence: 0.95,
-            image: chosenImg
+            image: chosenImg,
+            imageSource: meta ? meta.sourceUrl : '',
+            imageAttribution: meta ? meta.attribution : ''
           });
           updateStagedProductsUI();
         });
@@ -1246,7 +1410,9 @@
           category: category,
           best_timestamp_sec: 0,
           confidence: 0.95,
-          image: manualItemPhoto
+          image: manualItemPhoto,
+          imageSource: manualItemMeta ? manualItemMeta.sourceUrl : '',
+          imageAttribution: manualItemMeta ? manualItemMeta.attribution : ''
         });
 
         // Reset inputs
@@ -1254,6 +1420,7 @@
         if (manualPriceInput) manualPriceInput.value = '';
         if (manualDescInput) manualDescInput.value = '';
         manualItemPhoto = null;
+        manualItemMeta = null;
         if (manualPhotoBox) manualPhotoBox.innerHTML = `<span>📷 Tap to add photo</span>`;
 
         updateStagedProductsUI();

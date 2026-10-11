@@ -511,36 +511,117 @@
     });
   }
 
+  // Helper to validate video files by MIME or extension
+  function isVideoFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.startsWith('video/')) return true;
+    const name = (file.name || '').toLowerCase();
+    return /\.(mp4|mov|webm|m4v|mkv|avi|ogv|3gp)$/i.test(name);
+  }
+
   // Video Handling & Player
   function setupVideoHandlers() {
-    if (els.btnSelectVideo && els.videoInput) {
-      els.btnSelectVideo.addEventListener('click', () => els.videoInput.click());
-    }
+    // Prevent default window-level drag/drop so dropping outside doesn't navigate away from CatalogSmith
+    window.addEventListener('dragover', e => {
+      e.preventDefault();
+    }, false);
+
+    window.addEventListener('drop', e => {
+      e.preventDefault();
+    }, false);
 
     if (els.videoDropzone && els.videoInput) {
-      els.videoDropzone.addEventListener('click', () => els.videoInput.click());
+      // Prevent input click from bubbling back up to dropzone
+      els.videoInput.addEventListener('click', e => {
+        e.stopPropagation();
+      });
 
-      els.videoDropzone.addEventListener('dragover', e => {
+      const openPicker = () => {
+        els.videoInput.click();
+      };
+
+      // Tapping or clicking dropzone area
+      els.videoDropzone.addEventListener('click', e => {
+        // If the inner button was clicked, let its dedicated handler run
+        if (e.target === els.btnSelectVideo || (els.btnSelectVideo && els.btnSelectVideo.contains(e.target))) {
+          return;
+        }
+        openPicker();
+      });
+
+      if (els.btnSelectVideo) {
+        els.btnSelectVideo.addEventListener('click', e => {
+          e.stopPropagation();
+          openPicker();
+        });
+      }
+
+      // Keyboard activation for accessibility
+      els.videoDropzone.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openPicker();
+        }
+      });
+
+      // Drag and drop with counter to prevent flickering on child elements
+      let dropzoneDragCounter = 0;
+
+      els.videoDropzone.addEventListener('dragenter', e => {
         e.preventDefault();
+        dropzoneDragCounter++;
         els.videoDropzone.classList.add('dragover');
       });
 
-      els.videoDropzone.addEventListener('dragleave', () => {
-        els.videoDropzone.classList.remove('dragover');
+      els.videoDropzone.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'copy';
+        }
+        els.videoDropzone.classList.add('dragover');
+      });
+
+      els.videoDropzone.addEventListener('dragleave', e => {
+        e.preventDefault();
+        dropzoneDragCounter--;
+        if (dropzoneDragCounter <= 0) {
+          dropzoneDragCounter = 0;
+          els.videoDropzone.classList.remove('dragover');
+        }
       });
 
       els.videoDropzone.addEventListener('drop', e => {
         e.preventDefault();
+        e.stopPropagation();
+        dropzoneDragCounter = 0;
         els.videoDropzone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-          loadVideoFile(e.dataTransfer.files[0]);
+
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          const file = dt.files[0];
+          if (!isVideoFile(file)) {
+            showToast('Unsupported file type. Please select an MP4, MOV, or WebM video file.', 'warning');
+            if (els.videoFileInfo) {
+              els.videoFileInfo.textContent = '❌ Please drop a video file (.mp4, .mov, .webm)';
+            }
+            return;
+          }
+          loadVideoFile(file);
         }
       });
 
       els.videoInput.addEventListener('change', e => {
-        if (e.target.files.length) {
-          loadVideoFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length > 0) {
+          const file = e.target.files[0];
+          if (!isVideoFile(file)) {
+            showToast('Unsupported file type. Please select an MP4, MOV, or WebM video file.', 'warning');
+            e.target.value = '';
+            return;
+          }
+          loadVideoFile(file);
         }
+        // Reset input value so re-selecting the exact same file triggers change
+        e.target.value = '';
       });
     }
 
@@ -645,8 +726,8 @@
   }
 
   function loadVideoFile(file) {
-    if (!file || !file.type.startsWith('video/')) {
-      showToast('Please select a valid video file');
+    if (!isVideoFile(file)) {
+      showToast('Please select a valid video file (.mp4, .mov, or .webm)', 'warning');
       return;
     }
     state.videoFile = file;
@@ -654,7 +735,7 @@
     els.studioVideo.src = url;
     els.studioVideo.load();
     if (els.videoFileInfo) {
-      els.videoFileInfo.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+      els.videoFileInfo.textContent = `✅ ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
     }
     showToast(`Loaded video: ${file.name}`);
   }
@@ -1184,8 +1265,13 @@
         e.stopPropagation();
         selectThisProduct();
         if (window.CatalogSmithApp && typeof window.CatalogSmithApp.openUniversalImageSearch === 'function') {
-          window.CatalogSmithApp.openUniversalImageSearch(prod.name, prod.category, (chosenImg) => {
+          window.CatalogSmithApp.openUniversalImageSearch(prod.name || prod.category, prod.category, (chosenImg, meta) => {
             prod.image = chosenImg;
+            if (meta) {
+              prod.imageSource = meta.sourceUrl || '';
+              prod.imagePublisher = meta.publisher || '';
+              prod.imageAttribution = meta.attribution || '';
+            }
             const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
             if (thumbImg) {
               thumbImg.src = prod.image;
@@ -2828,6 +2914,7 @@ Return pure JSON only.`;
       generateInitialThumbnailsForFixture,
       formatPrice
     };
+  }
 
-    init();
-  })();
+  init();
+})();

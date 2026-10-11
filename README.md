@@ -154,6 +154,20 @@ CatalogSmith provides a zero-backend, client-side PDF catalog generator:
    - Uses the native Web Share API (`navigator.share`) to share the catalog PDF or storefront link across WhatsApp chats, WhatsApp Status, Instagram DMs, or AirDrop.
    - Automatically falls back to a pre-filled `https://wa.me/?text=...` chat link if Web Share is unavailable.
 
+## 🔍 Web Image Search API Integration
+
+CatalogSmith provides real provider-backed web image search via `/api/search-images?q=<query>`:
+1. **Zero-Configuration Fallback**:
+   - Out of the box, queries the **Wikimedia Commons Open Media API** for creative commons and public domain commercial product imagery with no API keys required.
+2. **Supported Web Providers (Optional Environment Variables)**:
+   - **Microsoft Bing Image Search**: Set `BING_IMAGE_SEARCH_KEY` (or `AZURE_BING_KEY`) in your Vercel Project Settings for full web image search coverage.
+   - **Unsplash API**: Set `UNSPLASH_ACCESS_KEY` for high-resolution curated photography.
+3. **Product Persistence**:
+   - Selecting a search result stores the image URL, source page URL, dimensions, and publisher attribution on the product record.
+   - The photo persists across wizard navigation, workspace reviews, and live storefront exports.
+
+---
+
 ## 🔄 Fallback: Frame-by-Frame Extraction
 
 If a fast-scrolling screen recording causes whole-video extraction to miss products:
