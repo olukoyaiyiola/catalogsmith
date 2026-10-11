@@ -204,6 +204,17 @@
     const activePane = document.getElementById(`pane-step-${state.currentStep}`);
     if (activePane) activePane.classList.add('active');
 
+    if (state.currentStep === 2) {
+      const reviewGrid = document.querySelector('.grid-studio-review');
+      if (reviewGrid) {
+        reviewGrid.classList.toggle('no-video-loaded', !state.videoLoaded);
+      }
+      const banner = document.getElementById('no-video-banner');
+      if (banner) {
+        banner.style.display = !state.videoLoaded ? 'flex' : 'none';
+      }
+    }
+
     if (state.currentStep === 4) {
       updateLivePreview();
     }
@@ -618,6 +629,19 @@
     if (els.btnGenerateDemoVideo) {
       els.btnGenerateDemoVideo.addEventListener('click', generateDemoCanvasVideo);
     }
+
+    // Toggle video scrubber when in Direct Catalogue mode
+    const btnToggleVideoCol = document.getElementById('btn-toggle-video-column');
+    if (btnToggleVideoCol) {
+      btnToggleVideoCol.addEventListener('click', () => {
+        const reviewGrid = document.querySelector('.grid-studio-review');
+        if (reviewGrid) {
+          reviewGrid.classList.toggle('no-video-loaded');
+          const isHidden = reviewGrid.classList.contains('no-video-loaded');
+          btnToggleVideoCol.textContent = isHidden ? '📹 Attach Video Scrubber' : '✕ Hide Video Scrubber';
+        }
+      });
+    }
   }
 
   function loadVideoFile(file) {
@@ -1006,6 +1030,7 @@
             <button type="button" class="btn-thumb-action" id="btn-edit-${prod.id}" title="Edit brightness, contrast, crop & studio lighting">✂️ Edit</button>
             <button type="button" class="btn-thumb-action" id="btn-ai-${prod.id}" title="Generate clean studio photo with AI">🤖 AI</button>
             <button type="button" class="btn-thumb-action" id="btn-upload-${prod.id}" title="Upload photo from camera or disk">📁 Upload</button>
+            <button type="button" class="btn-thumb-action" id="btn-search-${prod.id}" title="Search e-commerce image">🔍 Search</button>
             <button type="button" class="btn-thumb-action" id="btn-snap-${prod.id}" title="Capture current video frame">📸 Frame</button>
           </div>
           <input type="file" id="file-upload-${prod.id}" accept="image/*" style="display: none;">
@@ -1153,6 +1178,29 @@
       });
     }
 
+    const btnSearch = document.getElementById(`btn-search-${prod.id}`);
+    if (btnSearch) {
+      btnSearch.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectThisProduct();
+        if (window.CatalogSmithApp && typeof window.CatalogSmithApp.openUniversalImageSearch === 'function') {
+          window.CatalogSmithApp.openUniversalImageSearch(prod.name, prod.category, (chosenImg) => {
+            prod.image = chosenImg;
+            const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
+            if (thumbImg) {
+              thumbImg.src = prod.image;
+              thumbImg.style.display = 'block';
+            }
+            const emptyDiv = document.getElementById(`thumb-empty-${prod.id}`);
+            if (emptyDiv) emptyDiv.style.display = 'none';
+            saveStateToLocalStorage();
+            updateLivePreview();
+            showToast(`Photo updated for "${prod.name}"`);
+          });
+        }
+      });
+    }
+
     if (btnSnap) btnSnap.addEventListener('click', (e) => {
       e.stopPropagation();
       selectThisProduct();
@@ -1270,21 +1318,23 @@
   }
 
   // Generate Storefront Bundle HTML & CSS
-  function generateStorefrontHTML(inlinedImages = false) {
+  function generateStorefrontHTML(inlinedImages = false, customData = null) {
     // Generate static HTML for the storefront using the template
-    const vendorName = state.vendor_name || 'Vendor Catalog';
-    const vendorPhone = state.vendor_phone || '';
-    const defaultCurrency = state.currency_default || 'NGN';
+    const source = customData || state;
+    const vendorName = source.vendor_name || 'Vendor Catalog';
+    const vendorPhone = source.vendor_phone || '';
+    const defaultCurrency = source.currency_default || 'NGN';
+    const prods = source.products || [];
 
     const cleanData = {
       vendor_name: vendorName,
       vendor_phone: vendorPhone,
       currency_default: defaultCurrency,
-      tagline: state.tagline || '',
-      theme: state.theme || 'emerald',
-      layout: state.layout || 'standard',
-      order_button_text: state.order_button_text || 'Order on WhatsApp',
-      products: state.products.map(p => ({
+      tagline: source.tagline || '',
+      theme: source.theme || 'emerald',
+      layout: source.layout || 'standard',
+      order_button_text: source.order_button_text || 'Order on WhatsApp',
+      products: prods.map(p => ({
         id: p.id,
         name: p.name,
         price: p.price,
@@ -1292,13 +1342,13 @@
         category: p.category,
         best_timestamp_sec: p.best_timestamp_sec,
         confidence: p.confidence,
-        image: inlinedImages ? (p.image || '') : `images/${p.id}.jpg`
+        image: inlinedImages ? (p.image || '') : (p.image && p.image.startsWith('data:') ? p.image : `images/${p.id}.jpg`)
       }))
     };
 
     const cssContent = getStorefrontCSS();
-    const themeClass = state.theme ? `theme-${state.theme}` : 'theme-emerald';
-    const layoutClass = state.layout === 'compact' ? ' layout-compact' : '';
+    const themeClass = source.theme ? `theme-${source.theme}` : 'theme-emerald';
+    const layoutClass = source.layout === 'compact' ? ' layout-compact' : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -1327,7 +1377,7 @@ ${cssContent}
               </svg>
             </span>
           </h1>
-          <p class="store-tagline">${escapeHtml(state.tagline || 'Fast orders directly on WhatsApp')}</p>
+          <p class="store-tagline">${escapeHtml(source.tagline || 'Fast orders directly on WhatsApp')}</p>
         </div>
       </div>
 
@@ -1378,7 +1428,7 @@ ${cssContent}
   <!-- Store Stats -->
   <section class="store-intro" aria-label="Catalog Overview">
     <div class="catalog-stats-bar">
-      <span>Catalog: <strong class="stats-count">${state.products.length} item${state.products.length === 1 ? '' : 's'}</strong></span>
+      <span>Catalog: <strong class="stats-count">${cleanData.products.length} item${cleanData.products.length === 1 ? '' : 's'}</strong></span>
       <span>Direct WhatsApp Checkout</span>
     </div>
   </section>
@@ -1386,11 +1436,17 @@ ${cssContent}
   <!-- Product Grid -->
   <main class="main-content">
     <div class="product-grid" id="product-grid" role="list">
-${cleanData.products.map(p => {
+${cleanData.products.length === 0 ? `
+      <div style="grid-column: 1 / -1; padding: 48px 20px; text-align: center; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); margin: 20px 0;">
+        <div style="font-size: 2.2rem; margin-bottom: 10px;">🛍️</div>
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin-bottom: 6px;">Your Catalog is Ready</h3>
+        <p style="font-size: 0.875rem; color: var(--color-text-secondary); max-width: 320px; margin: 0 auto;">Add products in the workspace editor or generate starter suggestions to populate your live shop.</p>
+      </div>
+` : cleanData.products.map(p => {
   const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
   const formattedPrice = hasPrice ? formatPrice(p.price.amount, p.price.currency || defaultCurrency) : null;
   const orderMsg = hasPrice
-    ? (state.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
+    ? (source.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
         .replace(/{vendor_name}/g, vendorName)
         .replace(/{product_name}/g, p.name)
         .replace(/{product_price}/g, formattedPrice)
@@ -1398,7 +1454,7 @@ ${cleanData.products.map(p => {
 
   const orderUrl = buildWaUrl(vendorPhone, orderMsg);
   const btnClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
-  const btnLabel = hasPrice ? (state.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
+  const btnLabel = hasPrice ? (source.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
 
   return `      <article class="product-card" role="listitem" data-cat="${escapeHtml(p.category || '')}">
         <div class="product-image-wrap">

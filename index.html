@@ -72,8 +72,8 @@
         <p class="section-subtitle">Pick the option that matches what you already have today. You can always add more products and details as you go.</p>
         <div class="creation-grid">
           <!-- Option 1: Video -->
-          <div class="creation-card" id="card-opt-video">
-            <div class="creation-card-icon">📹</div>
+          <div class="creation-card" id="card-opt-video" tabindex="0" role="button" aria-label="I have a video of my products">
+            <div class="creation-card-icon" aria-hidden="true">📹</div>
             <h3>I have a video of my products</h3>
             <p>Upload a video of your shop, stock or product display. We'll help turn it into product listings.</p>
             <p class="creation-card-note"><em>You can also add a screen recording of a WhatsApp channel or chat that shows your products and prices.</em></p>
@@ -81,24 +81,24 @@
           </div>
 
           <!-- Option 2: Product pictures or list -->
-          <div class="creation-card" id="card-opt-pictures">
-            <div class="creation-card-icon">📸</div>
+          <div class="creation-card" id="card-opt-pictures" tabindex="0" role="button" aria-label="I have product pictures or a list">
+            <div class="creation-card-icon" aria-hidden="true">📸</div>
             <h3>I have product pictures or a list</h3>
             <p>Already have pictures or a list of what you sell? Add them here and we'll help arrange your products.</p>
             <button class="btn-primary" id="btn-opt-pictures">Add my products</button>
           </div>
 
           <!-- Option 3: Guided store creation -->
-          <div class="creation-card" id="card-opt-guided">
-            <div class="creation-card-icon">🧭</div>
+          <div class="creation-card" id="card-opt-guided" tabindex="0" role="button" aria-label="Help me start a store">
+            <div class="creation-card-icon" aria-hidden="true">🧭</div>
             <h3>Help me start a store</h3>
             <p>Not sure where to start? Answer a few simple questions and we'll help you put your first store together.</p>
             <button class="btn-primary" id="btn-opt-guided">Help me get started</button>
           </div>
 
           <!-- Option 4: Dropshipping -->
-          <div class="creation-card" id="card-opt-dropship">
-            <div class="creation-card-icon">📦</div>
+          <div class="creation-card" id="card-opt-dropship" tabindex="0" role="button" aria-label="I want to try dropshipping">
+            <div class="creation-card-icon" aria-hidden="true">📦</div>
             <h3>I want to try dropshipping</h3>
             <p>Want to start selling without buying stock upfront? We'll help you plan your store and organize products from a supplier you can work with.</p>
             <button class="btn-primary" id="btn-opt-dropship">Explore dropshipping</button>
@@ -348,10 +348,24 @@
 
     <!-- STEP 2: Review Table & Interactive Frame Grabber -->
     <section class="step-pane" id="pane-step-2">
-      <div class="grid-studio-review">
+      <!-- Direct Catalogue Mode Banner (when no video is loaded) -->
+      <div id="no-video-banner" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.25rem;">📦</span>
+          <div>
+            <strong style="color: #065f46; font-size: 0.875rem;">Direct Catalogue Mode</strong>
+            <div style="color: #047857; font-size: 0.75rem;">Editing your products directly. You can update titles, prices, descriptions, or search/upload photos.</div>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary" id="btn-toggle-video-column" style="font-size: 0.75rem; padding: 6px 12px; background: #fff; border-color: #6ee7b7; color: #065f46;">
+          📹 Attach Video Scrubber
+        </button>
+      </div>
+
+      <div class="grid-studio-review" id="grid-studio-review">
 
         <!-- Sticky Left Panel: Video Player & Frame Capture -->
-        <div class="video-grabber-card">
+        <div class="video-grabber-card" id="video-grabber-card">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <span style="font-weight: 700; font-size: 0.9375rem; color: var(--text-main);">Live Video Frame Grabber</span>
             <span class="time-display" id="video-time-display">0.0s / 0.0s</span>
@@ -1003,27 +1017,28 @@
           </div>
         </div>
 
-        <!-- Step 4: First Product -->
+        <!-- Step 4: Starter Catalog Generation -->
         <div class="wizard-step" id="wizard-step-4">
-          <h4 class="wizard-question">4. Add your first product</h4>
-          <p class="wizard-hint">You only need one item to get started. You can add as many as you want later.</p>
-          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
             <div>
-              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Title</label>
-              <input type="text" class="wizard-input" id="wizard-input-prod-name" placeholder="e.g. Emerald Silk Kimono" value="Emerald Silk Kimono">
+              <h4 class="wizard-question" style="margin-bottom: 2px;">4. Review your starter products</h4>
+              <p class="wizard-hint" style="margin-bottom: 0;">We generated product suggestions for your category. Verify your real prices, adjust titles, and pick photos.</p>
             </div>
-            <div>
-              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Price (₦ NGN)</label>
-              <input type="number" class="wizard-input" id="wizard-input-prod-price" placeholder="28500" value="28500">
-            </div>
-            <div>
-              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Photo (Optional)</label>
-              <div class="product-entry-image-box" id="wizard-photo-box" style="height: 120px;">
-                <span>📷 Tap to choose photo</span>
-              </div>
-              <input type="file" id="wizard-photo-input" accept="image/*" style="display: none;">
-            </div>
+            <button type="button" class="btn-secondary" id="btn-regenerate-suggestions" style="font-size: 0.75rem; padding: 6px 10px; white-space: nowrap;" title="Regenerate suggestions based on category">
+              🔄 Regenerate
+            </button>
           </div>
+          
+          <div class="wizard-starter-list" id="wizard-starter-list">
+            <!-- Dynamically populated with category suggestions -->
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+            <button type="button" class="btn-secondary" id="btn-wizard-add-item" style="font-size: 0.8125rem; padding: 8px 14px; width: 100%;">
+              + Add Another Product
+            </button>
+          </div>
+
           <div class="wizard-actions">
             <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
             <button class="btn-primary" data-wizard-next>Next: Visual Style &rarr;</button>
@@ -1061,13 +1076,25 @@
         <button class="btn-icon-subtle" id="btn-close-pictures">✕</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 18px;">
-          Quickly add products using pictures from your device or manual details. They will be added directly into your catalog.
+        <p style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 16px;">
+          Choose how you would like to add products. You can upload photos in bulk, search for photos, add manually, or import a CSV.
         </p>
 
-        <div class="product-entry-card" style="margin-bottom: 20px;">
+        <!-- Intake Action Tabs / Quick Actions -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+          <button type="button" class="btn-secondary" id="btn-batch-upload-photos" style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+            <span>📁 Upload Photo(s)</span>
+          </button>
+          <input type="file" id="batch-photos-input" multiple accept="image/*" style="display: none;">
+          <button type="button" class="btn-secondary" id="btn-open-search-from-pictures" style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+            <span>🔍 Search Image & Add</span>
+          </button>
+        </div>
+
+        <!-- Manual Product Entry Box -->
+        <div class="product-entry-card" style="margin-bottom: 16px;">
           <div>
-            <div class="product-entry-image-box" id="manual-entry-image-box">
+            <div class="product-entry-image-box" id="manual-entry-image-box" style="cursor: pointer;">
               <span>📷 Tap to add photo</span>
             </div>
             <input type="file" id="manual-entry-image-input" accept="image/*" style="display: none;">
@@ -1079,14 +1106,39 @@
               <input type="text" id="manual-category-input" placeholder="Category (e.g. Dresses)">
             </div>
             <textarea id="manual-desc-input" placeholder="Brief description, colors, sizes, or fabric material..."></textarea>
-            <button class="btn-secondary" id="btn-add-manual-product" style="padding: 10px; font-weight: 700; background: var(--bg-card-subtle);">
-              + Add This Product
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-secondary" id="btn-search-manual-img" style="padding: 8px 12px; font-size: 0.8125rem;">
+                🔍 Search Image
+              </button>
+              <button type="button" class="btn-secondary" id="btn-add-manual-product" style="flex: 1; padding: 8px 12px; font-weight: 700; background: var(--bg-card-subtle);">
+                + Add This Product
+              </button>
+            </div>
           </div>
         </div>
 
+        <!-- CSV / Spreadsheet Import Accordion -->
+        <div style="margin-bottom: 16px; border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; background: var(--bg-card-subtle);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong style="font-size: 0.8125rem; color: var(--text-main);">📊 Import CSV or Product List</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Columns: Title, Price, Category, Description</div>
+            </div>
+            <button type="button" class="btn-secondary" id="btn-import-csv-trigger" style="font-size: 0.75rem; padding: 6px 12px;">
+              Upload CSV File
+            </button>
+            <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Staged Products Container -->
+        <div id="staged-products-section" style="margin-bottom: 16px; display: none;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Staged Products for Workspace:</div>
+          <div id="staged-products-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;"></div>
+        </div>
+
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 20px;">
-          <span id="manual-items-count" style="font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">0 products added in this session</span>
+          <span id="manual-items-count" style="font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">0 product(s) added</span>
           <span style="font-size: 0.8125rem; color: var(--text-muted);">Existing catalog is preserved</span>
         </div>
 
@@ -1104,70 +1156,150 @@
     <div class="modal-content" style="max-width: 680px;">
       <div class="modal-header">
         <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-          <span>📦 Dropshipping: Plan Your Store</span>
+          <span>📦 Dropshipping: Plan & Build Your Store</span>
         </h3>
         <button class="btn-icon-subtle" id="btn-close-dropship">✕</button>
       </div>
       <div class="modal-body">
-        <div class="dropship-warning">
-          <strong>Important Reality Check for Nigerian Merchants:</strong>
+        <div class="dropship-warning" style="margin-bottom: 16px;">
+          <strong>Beginner Dropshipping Notice:</strong>
           <p style="margin-top: 4px;">
-            Selling without buying stock upfront is a great way to start, but you must confirm supplier reliability, product prices, stock availability and delivery arrangements before taking customer money.
+            Products suggested here are verified Nigerian e-commerce concepts. We do not invent supplier stocks, fake prices, or fake delivery guarantees. You must verify supplier pricing and stock before publishing.
           </p>
         </div>
 
-        <div class="dropship-info-card">
-          <h3><span>🔍</span> 4 Rules Before You Take Orders:</h3>
-          <ul>
-            <li><strong>Know your supplier's physical base:</strong> Ensure you can contact or visit them easily if an order is delayed.</li>
-            <li><strong>Check stock daily:</strong> Never advertise items without confirming your supplier actually has them in stock that morning.</li>
-            <li><strong>Factor in delivery costs:</strong> Account for dispatch rider and interstate shipping rates into your retail price.</li>
-            <li><strong>Set honest delivery times:</strong> Clearly communicate 2-4 business day fulfillment so customers don't panic.</li>
-          </ul>
+        <!-- Supplier & Category Questions -->
+        <div class="dropship-info-card" style="margin-bottom: 16px;">
+          <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">1. What is your supplier setup?</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <button type="button" class="wizard-category-btn selected" id="btn-supplier-yes" style="font-size: 0.8125rem; padding: 10px;">
+              ✅ I have an active supplier
+            </button>
+            <button type="button" class="wizard-category-btn" id="btn-supplier-no" style="font-size: 0.8125rem; padding: 10px;">
+              🔍 Sourcing suppliers now
+            </button>
+          </div>
+
+          <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">2. Which product category would you like to sell?</h4>
+          <div class="wizard-category-grid" id="dropship-category-grid" style="margin-bottom: 12px;">
+            <button type="button" class="wizard-category-btn selected" data-cat="Tech & Gadgets">📱 Tech & Gadgets</button>
+            <button type="button" class="wizard-category-btn" data-cat="Beauty & Skincare">💄 Beauty & Skincare</button>
+            <button type="button" class="wizard-category-btn" data-cat="Shoes & Bags">👜 Shoes & Bags</button>
+            <button type="button" class="wizard-category-btn" data-cat="Home & Kitchen">🍳 Home & Living</button>
+          </div>
+
+          <button type="button" class="btn-primary" id="btn-generate-dropship-starter" style="width: 100%; padding: 10px; margin-top: 4px;">
+            ✨ Generate Starter Supplier Catalog (4 Items)
+          </button>
+        </div>
+
+        <!-- Dropship Suggested Items Container -->
+        <div id="dropship-starter-container" style="display: none; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Generated Draft Products:</span>
+            <span class="starter-status-badge">⚠️ Draft — Verify Supplier Before Sale</span>
+          </div>
+          <div id="dropship-starter-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto;">
+            <!-- Populated dynamically -->
+          </div>
         </div>
 
         <!-- Profit Calculator -->
         <div class="dropship-info-card">
           <h3><span>🧮</span> Dropship Pricing & Margin Calculator</h3>
-          <p style="margin-bottom: 14px;">Calculate the correct retail price to ensure you earn your desired profit after delivery costs.</p>
+          <p style="margin-bottom: 12px;">Calculate customer retail prices with delivery and profit margin factored in.</p>
           
-          <div style="margin-bottom: 12px;">
+          <div style="margin-bottom: 10px;">
             <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Name</label>
             <input type="text" id="dropship-prod-title" class="wizard-input" value="Wireless Magnetic Powerbank" placeholder="e.g. Wireless Powerbank">
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div>
               <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Wholesale Cost (₦)</label>
-              <input type="number" id="calc-wholesale" class="wizard-input" value="8000" style="padding: 10px;">
+              <input type="number" id="calc-wholesale" class="wizard-input" value="8000" style="padding: 8px;">
             </div>
             <div>
               <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Delivery (₦)</label>
-              <input type="number" id="calc-delivery" class="wizard-input" value="2000" style="padding: 10px;">
+              <input type="number" id="calc-delivery" class="wizard-input" value="2000" style="padding: 8px;">
             </div>
             <div>
               <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Your Profit (₦)</label>
-              <input type="number" id="calc-profit" class="wizard-input" value="3500" style="padding: 10px;">
+              <input type="number" id="calc-profit" class="wizard-input" value="3500" style="padding: 8px;">
             </div>
           </div>
 
-          <div style="background: var(--bg-card-subtle); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="background: var(--bg-card-subtle); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Customer Selling Price</div>
-              <div id="calc-retail-result" style="font-size: 1.5rem; font-weight: 900; color: var(--color-primary);">₦13,500</div>
+              <div id="calc-retail-result" style="font-size: 1.375rem; font-weight: 900; color: var(--color-primary);">₦13,500</div>
             </div>
-            <div id="calc-margin-result" style="font-size: 0.875rem; font-weight: 700; color: var(--text-muted);">
+            <div id="calc-margin-result" style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted);">
               25.9% profit margin
             </div>
           </div>
 
-          <button class="btn-primary" id="btn-add-dropship-item" style="width: 100%; margin-top: 14px; padding: 12px;">
-            + Add This Item to My Storefront
+          <button class="btn-secondary" id="btn-add-dropship-item" style="width: 100%; margin-top: 12px; padding: 10px; font-weight: 700;">
+            + Add Calculated Item to Staged Products
           </button>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
-          <button class="btn-secondary" id="btn-continue-dropship">Continue to Store Workspace &rarr;</button>
+          <button class="btn-primary" id="btn-continue-dropship" style="padding: 12px 24px;">
+            Open in Store Workspace &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Universal Product Image Search -->
+  <div class="modal-overlay" id="image-search-modal">
+    <div class="modal-content img-search-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <span>🔍 Search Product Images</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-img-search">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 12px;">
+          Search clean, verified e-commerce product photos. Select a photo to preview, then confirm to apply it to your product.
+        </p>
+
+        <div class="img-search-bar-wrap">
+          <input type="text" class="img-search-input" id="img-search-query" placeholder="Search product (e.g. Boubou Gown, Handbag, Perfume, Sneakers)...">
+          <button class="btn-primary" id="btn-run-img-search" style="padding: 10px 18px;">Search</button>
+        </div>
+
+        <div class="img-search-quick-tags" id="img-search-tags">
+          <button type="button" class="img-search-tag" data-tag="fashion">👗 Fashion</button>
+          <button type="button" class="img-search-tag" data-tag="beauty">💄 Beauty & Skincare</button>
+          <button type="button" class="img-search-tag" data-tag="shoes">👠 Shoes & Heels</button>
+          <button type="button" class="img-search-tag" data-tag="bags">👜 Handbags</button>
+          <button type="button" class="img-search-tag" data-tag="jewelry">✨ Jewelry</button>
+          <button type="button" class="img-search-tag" data-tag="gadgets">📱 Tech & Gadgets</button>
+          <button type="button" class="img-search-tag" data-tag="food">🍲 Food & Provisions</button>
+        </div>
+
+        <div id="img-search-status" style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 8px; display: none;"></div>
+
+        <div class="img-search-grid" id="img-search-results">
+          <!-- Dynamic results -->
+        </div>
+
+        <div class="img-search-preview-bar" id="img-search-preview-bar" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img id="img-search-selected-preview" src="" style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div>
+              <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-main);" id="img-search-selected-title">Selected Photo</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim);" id="img-search-selected-meta">Illustrative image — verify with physical product</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" id="btn-cancel-select-img">Cancel</button>
+            <button class="btn-primary" id="btn-apply-selected-img">Apply to Product</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1175,6 +1307,11 @@
 
   <!-- Toast Notifications Container -->
   <div class="toast-container" id="toast-container"></div>
+
+  <!-- Third-party & utility libraries -->
+  <script src="js/jszip.min.js"></script>
+  <script src="js/pdf-catalog.js"></script>
+  <script src="js/fixtures.js"></script>
 
   <!-- Studio Main Logic Script -->
   <script src="js/studio.js"></script>
