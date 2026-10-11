@@ -6,51 +6,210 @@
   <title>CatalogSmith - Video-to-Storefront Tool (Phone-First, Git-Free)</title>
   <meta name="description" content="Turn vendor product videos into live mobile-first WhatsApp storefronts. Phone-first, git-free, free tier only.">
   <link rel="stylesheet" href="css/studio.css">
+  <link rel="stylesheet" href="css/app.css">
   <script src="js/jszip.min.js"></script>
   <script src="js/fixtures.js"></script>
   <script src="js/pdf-catalog.js"></script>
 </head>
 <body>
 
-  <!-- Top Navigation & Header -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand-wrapper">
-        <div class="brand-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-          </svg>
+  <!-- ================================================
+       VIEW 1: LANDING PAGE
+       ================================================ -->
+  <div id="landing-view">
+    <!-- Section A: Site Header -->
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a href="#" class="site-brand">
+          <div class="site-brand-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <span class="site-brand-name">CatalogSmith</span>
+        </a>
+        <nav class="site-nav">
+          <a href="#how-it-works">How It Works</a>
+          <a href="#example-section">Example Shop</a>
+          <button class="btn-primary btn-sm" id="nav-btn-create-store">Create my store</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Section B: Hero -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-content">
+          <h1 class="hero-title">Your products deserve a shop of their own.</h1>
+          <p class="hero-subtitle">Turn your product videos, pictures or even a few answers about your business into a neat online shop you can share with customers on WhatsApp, Instagram or anywhere.</p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <button class="btn-primary btn-lg" id="hero-btn-create-store">
+              <span>Create my store</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <a href="#example-section" class="btn-outline">See Live Example</a>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 24px; font-size: 0.8125rem; color: var(--text-muted); flex-wrap: wrap;">
+            <span>✓ 100% Free Tier</span>
+            <span>✓ Zero Server Hosting</span>
+            <span>✓ WhatsApp-First Ordering</span>
+          </div>
         </div>
-        <div>
-          <h1 class="brand-title">
-            CatalogSmith
-            <span class="badge-tag">Phone-First</span>
-          </h1>
+        <div class="hero-visual">
+          <div class="hero-phone">
+            <div class="hero-phone-notch"></div>
+            <iframe id="hero-phone-iframe" class="hero-phone-screen" title="Live Mobile Storefront Preview"></iframe>
+          </div>
         </div>
       </div>
+    </section>
 
-      <!-- Step Navigation Stepper -->
-      <nav class="stepper-nav" aria-label="Workflow Steps">
-        <button class="step-tab active" data-step="1" id="tab-step-1">
-          <span class="step-number">1</span>
-          <span>Input & Video</span>
-        </button>
-        <button class="step-tab" data-step="2" id="tab-step-2">
-          <span class="step-number">2</span>
-          <span id="tab-review-label">Review & Capture (0)</span>
-        </button>
-        <button class="step-tab" data-step="3" id="tab-step-3">
-          <span class="step-number">3</span>
-          <span>Store Settings</span>
-        </button>
-        <button class="step-tab" data-step="4" id="tab-step-4">
-          <span class="step-number">4</span>
-          <span>Preview & Export</span>
-        </button>
-      </nav>
-    </div>
-  </header>
+    <!-- Section C: Store Creation Options -->
+    <section class="creation-options" id="creation-options">
+      <div class="section-inner">
+        <h2 class="section-title">Choose how to start</h2>
+        <p class="section-subtitle">Pick the option that matches what you already have today. You can always add more products and details as you go.</p>
+        <div class="creation-grid">
+          <!-- Option 1: Video -->
+          <div class="creation-card" id="card-opt-video">
+            <div class="creation-card-icon">📹</div>
+            <h3>I have a video of my products</h3>
+            <p>Upload a video of your shop, stock or product display. We'll help turn it into product listings.</p>
+            <p class="creation-card-note"><em>You can also add a screen recording of a WhatsApp channel or chat that shows your products and prices.</em></p>
+            <button class="btn-primary" id="btn-opt-video">Upload a video</button>
+          </div>
+
+          <!-- Option 2: Product pictures or list -->
+          <div class="creation-card" id="card-opt-pictures">
+            <div class="creation-card-icon">📸</div>
+            <h3>I have product pictures or a list</h3>
+            <p>Already have pictures or a list of what you sell? Add them here and we'll help arrange your products.</p>
+            <button class="btn-primary" id="btn-opt-pictures">Add my products</button>
+          </div>
+
+          <!-- Option 3: Guided store creation -->
+          <div class="creation-card" id="card-opt-guided">
+            <div class="creation-card-icon">🧭</div>
+            <h3>Help me start a store</h3>
+            <p>Not sure where to start? Answer a few simple questions and we'll help you put your first store together.</p>
+            <button class="btn-primary" id="btn-opt-guided">Help me get started</button>
+          </div>
+
+          <!-- Option 4: Dropshipping -->
+          <div class="creation-card" id="card-opt-dropship">
+            <div class="creation-card-icon">📦</div>
+            <h3>I want to try dropshipping</h3>
+            <p>Want to start selling without buying stock upfront? We'll help you plan your store and organize products from a supplier you can work with.</p>
+            <button class="btn-primary" id="btn-opt-dropship">Explore dropshipping</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section D: How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-inner">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-subtitle">Three straightforward steps from your camera roll or notes to a finished catalogue.</p>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number-badge">1</div>
+            <h3>Add your products</h3>
+            <p>Start with a video, pictures or a product list. We'll help organize individual items with photos and prices.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number-badge">2</div>
+            <h3>Check your shop</h3>
+            <p>Review your products, prices, pictures and business details. Pick a theme that fits your brand.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number-badge">3</div>
+            <h3>Share your shop</h3>
+            <p>Use the available publishing or export options to share your products with customers on WhatsApp, Instagram or anywhere.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section E: Example Storefront -->
+    <section class="example-section" id="example-section">
+      <div class="section-inner">
+        <h2 class="section-title">Example storefront</h2>
+        <p class="section-subtitle">Here is an interactive look at what customers experience when they tap your link. No carts to abandon — just direct WhatsApp orders.</p>
+        <div class="example-phone-wrapper">
+          <div class="example-phone">
+            <div class="example-phone-notch"></div>
+            <iframe id="example-phone-iframe" class="example-iframe" title="Interactive Customer Storefront Example"></iframe>
+          </div>
+        </div>
+        <p class="example-label">Example: Lola Fabrics & Chic Wear — ready to receive orders on WhatsApp</p>
+      </div>
+    </section>
+
+    <!-- Section F: Closing CTA -->
+    <section class="closing-cta">
+      <div class="section-inner">
+        <h2>Ready to put your products in one place?</h2>
+        <p>Start with what you have. You can add more details as you go.</p>
+        <button class="btn-primary btn-lg" id="closing-btn-create-store">Create my store</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="section-inner">
+        <p>© CatalogSmith. Zero server infrastructure • Built phone-first for Nigerian & emerging market merchants.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================================================
+       VIEW 2: STORE WORKSPACE (STUDIO)
+       ================================================ -->
+  <div id="workspace-view" style="display: none;">
+    <!-- Top Navigation & Header -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand-wrapper" style="display: flex; align-items: center; gap: 12px;">
+          <button class="back-to-home" id="btn-back-to-landing" title="Return to home page">
+            ← Back to Home
+          </button>
+          <div class="brand-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">
+              CatalogSmith
+              <span class="badge-tag">Phone-First</span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- Step Navigation Stepper -->
+        <nav class="stepper-nav" aria-label="Workflow Steps">
+          <button class="step-tab active" data-step="1" id="tab-step-1">
+            <span class="step-number">1</span>
+            <span>Input & Video</span>
+          </button>
+          <button class="step-tab" data-step="2" id="tab-step-2">
+            <span class="step-number">2</span>
+            <span id="tab-review-label">Products (0)</span>
+          </button>
+          <button class="step-tab" data-step="3" id="tab-step-3">
+            <span class="step-number">3</span>
+            <span>Store Design</span>
+          </button>
+          <button class="step-tab" data-step="4" id="tab-step-4">
+            <span class="step-number">4</span>
+            <span>Publish & Export</span>
+          </button>
+        </nav>
+      </div>
+    </header>
 
   <!-- Main Application Body -->
   <main class="main-wrapper">
@@ -547,6 +706,7 @@
     </section>
 
   </main>
+  </div> <!-- /#workspace-view -->
 
 
   <!-- MODAL: Gemini AI Studio Prompts & JSON Schema -->
@@ -785,11 +945,240 @@
     </div>
   </div>
 
+  <!-- MODAL: Guided Store Creation Flow -->
+  <div class="modal-overlay" id="guided-flow-modal">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <span>🧭 Help Me Start a Store</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-guided">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Progress Dots -->
+        <div class="wizard-progress">
+          <div class="wizard-progress-dot active" id="wizard-dot-1"></div>
+          <div class="wizard-progress-dot" id="wizard-dot-2"></div>
+          <div class="wizard-progress-dot" id="wizard-dot-3"></div>
+          <div class="wizard-progress-dot" id="wizard-dot-4"></div>
+          <div class="wizard-progress-dot" id="wizard-dot-5"></div>
+        </div>
+
+        <!-- Step 1: Business Name -->
+        <div class="wizard-step active" id="wizard-step-1">
+          <h4 class="wizard-question">1. What is your business or store name?</h4>
+          <p class="wizard-hint">This appears at the top of your shop link when customers open it on WhatsApp or Instagram.</p>
+          <input type="text" class="wizard-input" id="wizard-input-name" placeholder="e.g. Lola Fabrics & Chic Wear" value="Lola Fabrics & Chic Wear">
+          <div class="wizard-actions">
+            <button class="btn-primary" data-wizard-next>Next: Choose Category &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Category -->
+        <div class="wizard-step" id="wizard-step-2">
+          <h4 class="wizard-question">2. What kind of products do you sell?</h4>
+          <p class="wizard-hint">Select the best match. This helps organize your shop for easy browsing.</p>
+          <div class="wizard-category-grid">
+            <button type="button" class="wizard-category-btn selected" data-category="Fashion & Dresses">👗 Fashion & Dresses</button>
+            <button type="button" class="wizard-category-btn" data-category="Shoes & Bags">👠 Shoes & Bags</button>
+            <button type="button" class="wizard-category-btn" data-category="Hair & Beauty">💄 Hair & Beauty</button>
+            <button type="button" class="wizard-category-btn" data-category="Gadgets & Electronics">📱 Tech & Gadgets</button>
+            <button type="button" class="wizard-category-btn" data-category="Provisions & Food">🛒 Food & Provisions</button>
+            <button type="button" class="wizard-category-btn" data-category="General Merchandise">✨ General Store</button>
+          </div>
+          <div class="wizard-actions">
+            <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
+            <button class="btn-primary" data-wizard-next>Next: WhatsApp Contact &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Contact Phone -->
+        <div class="wizard-step" id="wizard-step-3">
+          <h4 class="wizard-question">3. What WhatsApp number should receive orders?</h4>
+          <p class="wizard-hint">When customers tap "Order on WhatsApp", this number receives the pre-filled message.</p>
+          <input type="tel" class="wizard-input" id="wizard-input-phone" placeholder="e.g. +2348035550192" value="+2348035550192">
+          <div class="wizard-actions">
+            <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
+            <button class="btn-primary" data-wizard-next>Next: Add First Product &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 4: First Product -->
+        <div class="wizard-step" id="wizard-step-4">
+          <h4 class="wizard-question">4. Add your first product</h4>
+          <p class="wizard-hint">You only need one item to get started. You can add as many as you want later.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Title</label>
+              <input type="text" class="wizard-input" id="wizard-input-prod-name" placeholder="e.g. Emerald Silk Kimono" value="Emerald Silk Kimono">
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Price (₦ NGN)</label>
+              <input type="number" class="wizard-input" id="wizard-input-prod-price" placeholder="28500" value="28500">
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Photo (Optional)</label>
+              <div class="product-entry-image-box" id="wizard-photo-box" style="height: 120px;">
+                <span>📷 Tap to choose photo</span>
+              </div>
+              <input type="file" id="wizard-photo-input" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="wizard-actions">
+            <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
+            <button class="btn-primary" data-wizard-next>Next: Visual Style &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Visual Theme -->
+        <div class="wizard-step" id="wizard-step-5">
+          <h4 class="wizard-question">5. Choose your shop's visual theme</h4>
+          <p class="wizard-hint">Select a color scheme that matches your vibe.</p>
+          <div class="wizard-category-grid" style="margin-bottom: 16px;">
+            <button type="button" class="wizard-category-btn wizard-theme-btn selected" data-theme="emerald">🌿 Emerald (WhatsApp)</button>
+            <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="luxury-gold">👑 Obsidian & Gold</button>
+            <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="sunset">🌅 Sunset Warm</button>
+            <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="tech-blue">⚡ Cyber Blue</button>
+            <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="blush">🌸 Blush Rose</button>
+            <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="minimal">🖋️ Minimalist</button>
+          </div>
+          <div class="wizard-actions">
+            <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
+            <button class="btn-primary" data-wizard-next>🚀 Launch My Shop &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Product Pictures or List Flow -->
+  <div class="modal-overlay" id="pictures-flow-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <span>📸 Add Product Pictures or List</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-pictures">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 18px;">
+          Quickly add products using pictures from your device or manual details. They will be added directly into your catalog.
+        </p>
+
+        <div class="product-entry-card" style="margin-bottom: 20px;">
+          <div>
+            <div class="product-entry-image-box" id="manual-entry-image-box">
+              <span>📷 Tap to add photo</span>
+            </div>
+            <input type="file" id="manual-entry-image-input" accept="image/*" style="display: none;">
+          </div>
+          <div class="product-entry-fields">
+            <input type="text" id="manual-title-input" placeholder="Product Title (e.g. Silk Ankara Gown)">
+            <div class="product-entry-row">
+              <input type="number" id="manual-price-input" placeholder="Price ₦ (Leave empty for 'Ask on WhatsApp')">
+              <input type="text" id="manual-category-input" placeholder="Category (e.g. Dresses)">
+            </div>
+            <textarea id="manual-desc-input" placeholder="Brief description, colors, sizes, or fabric material..."></textarea>
+            <button class="btn-secondary" id="btn-add-manual-product" style="padding: 10px; font-weight: 700; background: var(--bg-card-subtle);">
+              + Add This Product
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 20px;">
+          <span id="manual-items-count" style="font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">0 products added in this session</span>
+          <span style="font-size: 0.8125rem; color: var(--text-muted);">Existing catalog is preserved</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn-primary" id="btn-done-pictures" style="padding: 12px 24px;">
+            Open in Store Workspace &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Dropshipping Planning Flow -->
+  <div class="modal-overlay" id="dropship-flow-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <span>📦 Dropshipping: Plan Your Store</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-dropship">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="dropship-warning">
+          <strong>Important Reality Check for Nigerian Merchants:</strong>
+          <p style="margin-top: 4px;">
+            Selling without buying stock upfront is a great way to start, but you must confirm supplier reliability, product prices, stock availability and delivery arrangements before taking customer money.
+          </p>
+        </div>
+
+        <div class="dropship-info-card">
+          <h3><span>🔍</span> 4 Rules Before You Take Orders:</h3>
+          <ul>
+            <li><strong>Know your supplier's physical base:</strong> Ensure you can contact or visit them easily if an order is delayed.</li>
+            <li><strong>Check stock daily:</strong> Never advertise items without confirming your supplier actually has them in stock that morning.</li>
+            <li><strong>Factor in delivery costs:</strong> Account for dispatch rider and interstate shipping rates into your retail price.</li>
+            <li><strong>Set honest delivery times:</strong> Clearly communicate 2-4 business day fulfillment so customers don't panic.</li>
+          </ul>
+        </div>
+
+        <!-- Profit Calculator -->
+        <div class="dropship-info-card">
+          <h3><span>🧮</span> Dropship Pricing & Margin Calculator</h3>
+          <p style="margin-bottom: 14px;">Calculate the correct retail price to ensure you earn your desired profit after delivery costs.</p>
+          
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Product Name</label>
+            <input type="text" id="dropship-prod-title" class="wizard-input" value="Wireless Magnetic Powerbank" placeholder="e.g. Wireless Powerbank">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Wholesale Cost (₦)</label>
+              <input type="number" id="calc-wholesale" class="wizard-input" value="8000" style="padding: 10px;">
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Delivery (₦)</label>
+              <input type="number" id="calc-delivery" class="wizard-input" value="2000" style="padding: 10px;">
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Your Profit (₦)</label>
+              <input type="number" id="calc-profit" class="wizard-input" value="3500" style="padding: 10px;">
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card-subtle); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Customer Selling Price</div>
+              <div id="calc-retail-result" style="font-size: 1.5rem; font-weight: 900; color: var(--color-primary);">₦13,500</div>
+            </div>
+            <div id="calc-margin-result" style="font-size: 0.875rem; font-weight: 700; color: var(--text-muted);">
+              25.9% profit margin
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btn-add-dropship-item" style="width: 100%; margin-top: 14px; padding: 12px;">
+            + Add This Item to My Storefront
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+          <button class="btn-secondary" id="btn-continue-dropship">Continue to Store Workspace &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notifications Container -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Studio Main Logic Script -->
   <script src="js/studio.js"></script>
+  <!-- Application & Flows Navigation Script -->
+  <script src="js/app.js"></script>
 </body>
 </html>

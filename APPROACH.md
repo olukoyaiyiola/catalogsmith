@@ -22,10 +22,12 @@
 
 ```
 catalogsmith/
-├── index.html                   # The Studio Tool (4-step responsive web application)
+├── index.html                   # Dual-view application: Landing page + Store workspace
 ├── css/
-│   └── studio.css               # Studio stylesheet (Dark-mode palette, layout, modals, scrubber)
+│   ├── app.css                  # Light-theme emerald design system & landing page styles
+│   └── studio.css               # Studio layout, modals, scrubber & photo editor
 ├── js/
+│   ├── app.js                   # Application coordinator: Landing ↔ Workspace, creation flows & wizards
 │   ├── studio.js                # Core Studio application logic (~2,700 lines)
 │   ├── pdf-catalog.js           # Zero-backend PDF generator & printable lookbook (~850 lines)
 │   ├── jszip.min.js             # Vendored JSZip v3.10.1 for client-side ZIP compilation

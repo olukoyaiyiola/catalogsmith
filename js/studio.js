@@ -2757,7 +2757,21 @@ Return pure JSON only.`;
     if (!loaded) {
       loadFixture('whatsapp');
     }
-  }
+    // Expose API for app.js and external flows
+    window.CatalogSmithStudio = {
+      state,
+      setStep,
+      renderReviewList,
+      updateLivePreview,
+      saveStateToLocalStorage,
+      debouncedSaveState,
+      showToast,
+      generateStorefrontHTML,
+      loadFixture,
+      syncFormFields,
+      generateInitialThumbnailsForFixture,
+      formatPrice
+    };
 
-  init();
-})();
+    init();
+  })();
