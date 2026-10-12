@@ -445,6 +445,16 @@
 
     let activeStorefrontData = null;
     async function showStorefront(catalogId) {
+      if (catalogId === 'undefined' || catalogId === 'null') {
+        catalogId = null;
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('store');
+          url.searchParams.delete('catalog');
+          window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+        } catch (_) {}
+      }
+
       hideAllViews();
       if (storefrontView) {
         storefrontView.style.display = 'block';
@@ -962,8 +972,52 @@
     const btnCancelCreateCat = document.getElementById('btn-cancel-create-catalog');
     const formCreateCat = document.getElementById('form-create-catalog');
 
+    let adminSlugManuallyEdited = false;
+    let adminSlugTimer = null;
+
+    async function validateAdminSlug(candidate) {
+      const slugStatus = document.getElementById('admin-create-slug-status');
+      const slugInput = document.getElementById('create-store-slug');
+      if (!slugStatus) return;
+      const clean = (candidate || '').toLowerCase().trim().replace(/[^\w-]/g, '').replace(/[\s_]+/g, '-');
+      if (!clean) {
+        slugStatus.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter an endpoint handle</span>';
+        return;
+      }
+      slugStatus.innerHTML = '<span style="color:var(--text-muted);">⏳ Checking endpoint availability...</span>';
+      if (window.CatalogStore) {
+        const res = await window.CatalogStore.isSlugAvailable(clean, null);
+        if (res.available) {
+          slugStatus.innerHTML = `<span style="color:#10b981;">✓ Endpoint <code>?store=${res.slug}</code> is available!</span>`;
+          if (slugInput) slugInput.value = res.slug;
+        } else {
+          let sugHtml = '';
+          if (res.suggested) {
+            sugHtml = ` &bull; Try: <a href="#" id="admin-pick-suggested-slug" style="color:var(--color-primary);text-decoration:underline;">${res.suggested}</a>`;
+          }
+          slugStatus.innerHTML = `<span style="color:#f59e0b;">⚠️ ${res.reason}${sugHtml}</span>`;
+          const pickSug = document.getElementById('admin-pick-suggested-slug');
+          if (pickSug && slugInput) {
+            pickSug.onclick = (e) => {
+              e.preventDefault();
+              slugInput.value = res.suggested;
+              validateAdminSlug(res.suggested);
+            };
+          }
+        }
+      }
+    }
+
     function openCreateCatalogModal() {
       if (createCatalogModal) createCatalogModal.classList.add('open');
+      adminSlugManuallyEdited = false;
+      const nameInput = document.getElementById('create-store-name');
+      const slugInput = document.getElementById('create-store-slug');
+      if (nameInput && slugInput && window.CatalogStore) {
+        const initial = window.CatalogStore.slugify(nameInput.value || 'new-store');
+        slugInput.value = initial;
+        validateAdminSlug(initial);
+      }
     }
     function closeCreateCatalogModal() {
       if (createCatalogModal) createCatalogModal.classList.remove('open');
@@ -974,10 +1028,30 @@
     if (btnCloseCreateCat) btnCloseCreateCat.addEventListener('click', closeCreateCatalogModal);
     if (btnCancelCreateCat) btnCancelCreateCat.addEventListener('click', closeCreateCatalogModal);
 
+    const adminNameInput = document.getElementById('create-store-name');
+    const adminSlugInput = document.getElementById('create-store-slug');
+    if (adminNameInput && adminSlugInput) {
+      adminNameInput.addEventListener('input', () => {
+        if (!adminSlugManuallyEdited && window.CatalogStore) {
+          const suggested = window.CatalogStore.slugify(adminNameInput.value);
+          adminSlugInput.value = suggested;
+          clearTimeout(adminSlugTimer);
+          adminSlugTimer = setTimeout(() => validateAdminSlug(suggested), 220);
+        }
+      });
+
+      adminSlugInput.addEventListener('input', () => {
+        adminSlugManuallyEdited = true;
+        clearTimeout(adminSlugTimer);
+        adminSlugTimer = setTimeout(() => validateAdminSlug(adminSlugInput.value), 220);
+      });
+    }
+
     if (formCreateCat) {
       formCreateCat.addEventListener('submit', (e) => {
         e.preventDefault();
         const nameInput = document.getElementById('create-store-name');
+        const slugInput = document.getElementById('create-store-slug');
         const phoneInput = document.getElementById('create-store-phone');
         const catInput = document.getElementById('create-store-category');
         const tagInput = document.getElementById('create-store-tagline');
@@ -990,6 +1064,9 @@
           alert('Please enter a store name');
           return;
         }
+
+        const rawSlug = slugInput && slugInput.value.trim() ? slugInput.value.trim() : storeName;
+        const chosenSlug = window.CatalogStore ? window.CatalogStore.slugify(rawSlug) : rawSlug.toLowerCase().replace(/[^\w-]/g, '-');
 
         const category = catInput ? catInput.value : 'General';
         const starterChoice = starterRadio ? starterRadio.value : 'starter';
@@ -1010,6 +1087,8 @@
 
         if (window.CatalogStore) {
           const created = window.CatalogStore.create({
+            id: chosenSlug,
+            slug: chosenSlug,
             name: storeName,
             phone: phoneInput ? phoneInput.value.trim() : '+2348035550192',
             category: category,
@@ -1024,7 +1103,7 @@
           renderAdminDashboard();
 
           if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
-            window.ContentSmithStudio.showToast(`🎉 Created store "${created.name}"!`);
+            window.ContentSmithStudio.showToast(`🎉 Created store "${created.name}" with endpoint ?store=${created.slug}!`);
           }
 
           // Open in Studio editor to add/edit items
@@ -1685,6 +1764,7 @@
 
     const wizardState = {
       storeName: 'Ada’s Glow Boutique',
+      slug: 'adas-glow-boutique',
       category: 'Fashion & Dresses',
       vendorPhone: '+2348035550192',
       theme: 'emerald',
@@ -1860,8 +1940,125 @@
       ];
     }
 
+    let wizardSlugManuallyEdited = false;
+    let wizardSlugTimer = null;
+
+    async function validateWizardSlug(candidate) {
+      const statusEl = document.getElementById('wizard-slug-status');
+      const slugInput = document.getElementById('wizard-input-slug');
+      if (!statusEl) return;
+      const clean = (candidate || '').toLowerCase().trim().replace(/[^\w-]/g, '').replace(/[\s_]+/g, '-');
+      if (!clean) {
+        statusEl.innerHTML = '<span style="color:#ef4444;">⚠️ Please enter an endpoint handle</span>';
+        return;
+      }
+      statusEl.innerHTML = '<span style="color:var(--text-muted);">⏳ Checking endpoint availability...</span>';
+      if (window.CatalogStore) {
+        const res = await window.CatalogStore.isSlugAvailable(clean, null);
+        if (res.available) {
+          statusEl.innerHTML = `<span style="color:#10b981;">✓ Endpoint <code>?store=${res.slug}</code> is available!</span>`;
+          wizardState.slug = res.slug;
+          if (slugInput) slugInput.value = res.slug;
+        } else {
+          let sugHtml = '';
+          if (res.suggested) {
+            sugHtml = ` &bull; Try: <a href="#" id="wizard-pick-suggested-slug" style="color:var(--color-primary);text-decoration:underline;">${res.suggested}</a>`;
+          }
+          statusEl.innerHTML = `<span style="color:#f59e0b;">⚠️ ${res.reason}${sugHtml}</span>`;
+          wizardState.slug = clean;
+          const pickSug = document.getElementById('wizard-pick-suggested-slug');
+          if (pickSug && slugInput) {
+            pickSug.onclick = (e) => {
+              e.preventDefault();
+              slugInput.value = res.suggested;
+              validateWizardSlug(res.suggested);
+            };
+          }
+        }
+      }
+    }
+
+    const wizardNameInput = document.getElementById('wizard-input-name');
+    const wizardSlugInput = document.getElementById('wizard-input-slug');
+    if (wizardNameInput && wizardSlugInput) {
+      wizardNameInput.addEventListener('input', () => {
+        wizardState.storeName = wizardNameInput.value.trim();
+        if (!wizardSlugManuallyEdited && window.CatalogStore) {
+          const suggested = window.CatalogStore.slugify(wizardNameInput.value);
+          wizardSlugInput.value = suggested;
+          clearTimeout(wizardSlugTimer);
+          wizardSlugTimer = setTimeout(() => validateWizardSlug(suggested), 220);
+        }
+      });
+
+      wizardSlugInput.addEventListener('input', () => {
+        wizardSlugManuallyEdited = true;
+        clearTimeout(wizardSlugTimer);
+        wizardSlugTimer = setTimeout(() => validateWizardSlug(wizardSlugInput.value), 220);
+      });
+    }
+
+    const WIZARD_THEME_LABELS = {
+      'emerald': '🌿 Emerald (WhatsApp Green)',
+      'luxury-gold': '👑 Luxury Obsidian & Champagne Gold',
+      'sunset': '🌅 Sunset Terracotta & Warm Sand',
+      'tech-blue': '⚡ Cyber Slate & Electric Blue',
+      'blush': '🌸 Blush Rose & Velvet Noir',
+      'minimal': '🖋️ Editorial Minimalist & Monochrome'
+    };
+
+    function updateWizardThemePreview(theme) {
+      const activeTheme = theme || wizardState.theme || 'emerald';
+      const frameEl = document.getElementById('wizard-mockup-frame');
+      const labelEl = document.getElementById('wizard-theme-preview-label');
+      const storeNameEl = document.getElementById('wizard-mockup-store-name');
+      const avatarEl = document.getElementById('wizard-mockup-avatar');
+      const prodTitleEl = document.getElementById('wizard-mockup-prod-title');
+      const prodPriceEl = document.getElementById('wizard-mockup-prod-price');
+      const prodImgEl = document.getElementById('wizard-mockup-prod-img');
+
+      if (frameEl) {
+        frameEl.className = 'theme-mockup-frame theme-' + activeTheme;
+      }
+      if (labelEl) {
+        labelEl.textContent = WIZARD_THEME_LABELS[activeTheme] || activeTheme;
+      }
+      if (storeNameEl) {
+        storeNameEl.textContent = wizardState.storeName || 'My Online Shop';
+      }
+      if (avatarEl) {
+        avatarEl.textContent = (wizardState.storeName || 'M').trim().charAt(0).toUpperCase() || 'M';
+      }
+
+      const sample = (wizardState.starterProducts && wizardState.starterProducts.length > 0)
+        ? wizardState.starterProducts[0]
+        : null;
+
+      if (sample) {
+        if (prodTitleEl) prodTitleEl.textContent = sample.name || 'Featured Product';
+        if (prodPriceEl) {
+          prodPriceEl.textContent = (sample.price !== null && sample.price !== undefined && !isNaN(sample.price))
+            ? '₦' + Number(sample.price).toLocaleString()
+            : 'Price on Request';
+        }
+        if (prodImgEl && sample.image) {
+          prodImgEl.src = sample.image;
+        }
+      }
+    }
+
     function resetWizard() {
       currentWizardStep = 1;
+      wizardSlugManuallyEdited = false;
+      const nameInput = document.getElementById('wizard-input-name');
+      const slugInput = document.getElementById('wizard-input-slug');
+      if (nameInput) wizardState.storeName = nameInput.value.trim() || 'Ada’s Glow Boutique';
+      if (slugInput && window.CatalogStore) {
+        const initialSlug = window.CatalogStore.slugify(wizardState.storeName);
+        slugInput.value = initialSlug;
+        wizardState.slug = initialSlug;
+        validateWizardSlug(initialSlug);
+      }
       wizardState.starterProducts = generateCategoryStarterProducts(wizardState.category);
       showWizardStep(1);
     }
@@ -1881,6 +2078,11 @@
       // When showing Step 4, render starter products
       if (stepNum === 4) {
         renderWizardStarterProducts();
+      }
+
+      // When showing Step 5, render live theme mockup
+      if (stepNum === 5) {
+        updateWizardThemePreview(wizardState.theme || 'emerald');
       }
     }
 
@@ -2045,6 +2247,7 @@
         themeButtons.forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         wizardState.theme = btn.dataset.theme;
+        updateWizardThemePreview(btn.dataset.theme);
       });
     });
 
@@ -2053,8 +2256,12 @@
       btn.addEventListener('click', () => {
         if (currentWizardStep === 1) {
           const nameInput = document.getElementById('wizard-input-name');
+          const slugInput = document.getElementById('wizard-input-slug');
           if (nameInput && nameInput.value.trim()) {
             wizardState.storeName = nameInput.value.trim();
+          }
+          if (slugInput && slugInput.value.trim()) {
+            wizardState.slug = window.CatalogStore ? window.CatalogStore.slugify(slugInput.value.trim()) : slugInput.value.trim().toLowerCase();
           }
         } else if (currentWizardStep === 3) {
           const phoneInput = document.getElementById('wizard-input-phone');
@@ -2084,6 +2291,11 @@
 
       if (window.ContentSmithStudio) {
         const { state, syncFormFields, renderReviewList, saveStateToLocalStorage, showToast, updateLivePreview } = window.ContentSmithStudio;
+
+        const chosenSlug = (wizardState.slug || (window.CatalogStore ? window.CatalogStore.slugify(wizardState.storeName) : 'my-store')).trim();
+        state.id = chosenSlug;
+        state.slug = chosenSlug;
+        state.catalog_id = chosenSlug;
 
         // Apply Store Identity
         state.vendor_name = wizardState.storeName || 'My Online Shop';
@@ -2118,8 +2330,11 @@
         syncFormFields();
         renderReviewList();
         saveStateToLocalStorage();
+        if (window.CatalogStore) {
+          window.CatalogStore.setActiveId(chosenSlug);
+        }
         updateLivePreview();
-        showToast(`🎉 Created "${state.vendor_name}" with ${state.products.length} products!`);
+        showToast(`🎉 Created "${state.vendor_name}" with endpoint ?store=${chosenSlug}!`);
       }
 
       // Enter Workspace at Step 2 (Product Review), not video upload
@@ -2642,8 +2857,27 @@
     // Auto-route based on URL parameters (?store=..., ?catalog=..., ?view=admin)
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const storeParam = urlParams.get('store') || urlParams.get('catalog');
+      const rawStore = urlParams.get('store') || urlParams.get('catalog');
+      const storeParam = (rawStore && rawStore !== 'undefined' && rawStore !== 'null') ? rawStore.trim() : null;
       const viewParam = urlParams.get('view');
+
+      // Clean up /undefined in pathname if present
+      if (window.location.pathname.endsWith('/undefined')) {
+        try {
+          const cleanPath = window.location.pathname.replace(/\/undefined\/?$/, '') || '/';
+          window.history.replaceState({}, '', cleanPath + window.location.search);
+        } catch (_) {}
+      }
+
+      // Clean up ?store=undefined or ?store=null if present
+      if (rawStore === 'undefined' || rawStore === 'null') {
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('store');
+          url.searchParams.delete('catalog');
+          window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+        } catch (_) {}
+      }
 
       if (storeParam) {
         showStorefront(storeParam);

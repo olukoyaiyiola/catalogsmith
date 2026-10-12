@@ -609,6 +609,23 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label" for="setting-store-slug">
+              Store URL Endpoint / Handle
+              <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8125rem;">(Custom sharable web link)</span>
+            </label>
+            <div style="display: flex; align-items: stretch; gap: 8px;">
+              <span style="display: flex; align-items: center; padding: 0 12px; background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.8125rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">
+                ?store=
+              </span>
+              <input type="text" id="setting-store-slug" class="form-input" style="font-family: var(--font-mono); font-weight: 700;" placeholder="e.g. lola-fabrics" value="lola-fabrics">
+            </div>
+            <div id="slug-availability-badge" style="margin-top: 6px; font-size: 0.8125rem; display: flex; align-items: center; gap: 6px;">
+              <span id="slug-status-icon" style="color: #10b981; font-weight: 800;">✓</span>
+              <span id="slug-status-text" style="color: #10b981; font-weight: 600;">Endpoint available</span>
+            </div>
+          </div>
+
+          <div class="form-group">
             <label class="form-label" for="setting-vendor-phone">Vendor WhatsApp Number (International format)</label>
             <input type="tel" id="setting-vendor-phone" class="form-input" placeholder="e.g. +2348035550192 or 2348035550192">
             <span style="font-size: 0.75rem; color: var(--text-muted);">
@@ -636,6 +653,36 @@
           </div>
 
           <!-- Theme Presets & Layout Customization -->
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label">Pick Visual Theme Preset</label>
+            <div class="theme-swatches-grid" id="step3-theme-swatches">
+              <button type="button" class="theme-swatch-btn active" data-theme="emerald">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #10b981, #059669);"></span>
+                <span>Emerald</span>
+              </button>
+              <button type="button" class="theme-swatch-btn" data-theme="luxury-gold">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #0c0d12, #fbbf24);"></span>
+                <span>Royal Gold</span>
+              </button>
+              <button type="button" class="theme-swatch-btn" data-theme="sunset">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #ea580c, #fed7aa);"></span>
+                <span>Sunset</span>
+              </button>
+              <button type="button" class="theme-swatch-btn" data-theme="tech-blue">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #0b1120, #38bdf8);"></span>
+                <span>Cyber Blue</span>
+              </button>
+              <button type="button" class="theme-swatch-btn" data-theme="blush">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #e11d48, #fecdd3);"></span>
+                <span>Blush Rose</span>
+              </button>
+              <button type="button" class="theme-swatch-btn" data-theme="minimal">
+                <span class="theme-swatch-dot" style="background: linear-gradient(135deg, #18181b, #f4f4f5);"></span>
+                <span>Minimalist</span>
+              </button>
+            </div>
+          </div>
+
           <div class="form-grid-3">
             <div class="form-group">
               <label class="form-label" for="setting-theme">Storefront Theme Preset</label>
@@ -658,6 +705,37 @@
             <div class="form-group">
               <label class="form-label" for="setting-btn-text">WhatsApp Button Text</label>
               <input type="text" id="setting-btn-text" class="form-input" value="Order on WhatsApp" placeholder="e.g. Order on WhatsApp">
+            </div>
+          </div>
+
+          <!-- Real-Time Theme Preview Mockup Card -->
+          <div class="theme-live-preview-box" id="step3-theme-preview-box">
+            <div class="theme-preview-header-label">
+              <span>✨ Live Theme Preview</span>
+              <span id="step3-theme-preview-name-badge" style="color: var(--color-primary); font-weight: 800;">Emerald (WhatsApp)</span>
+            </div>
+            <div class="theme-mockup-frame theme-emerald" id="step3-mockup-frame">
+              <div class="theme-mockup-store-header">
+                <div class="theme-mockup-brand">
+                  <div class="theme-mockup-avatar vendor-avatar" id="step3-mockup-avatar">L</div>
+                  <div class="theme-mockup-title">
+                    <span id="step3-mockup-store-name">Lola Fabrics & Chic Wear</span>
+                    <span style="color: #10b981; font-size: 0.8125rem;">✓</span>
+                  </div>
+                </div>
+                <span style="font-size: 0.6875rem; opacity: 0.75; font-weight: 600;">Theme Preview</span>
+              </div>
+              <div class="theme-mockup-prod-card">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%2310b981'/><text x='50%' y='55%' font-size='32' text-anchor='middle' dominant-baseline='middle'>👗</text></svg>" alt="Sample" class="theme-mockup-prod-img" id="step3-mockup-prod-img">
+                <div class="theme-mockup-prod-info">
+                  <div class="theme-mockup-prod-title" id="step3-mockup-prod-title">Luxury Silk Boubou Gown</div>
+                  <div class="theme-mockup-prod-price" id="step3-mockup-prod-price">₦28,500</div>
+                </div>
+              </div>
+              <button type="button" class="theme-mockup-wa-btn" id="step3-mockup-wa-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/></svg>
+                <span id="step3-mockup-btn-label">Order on WhatsApp</span>
+              </button>
             </div>
           </div>
 
@@ -1339,6 +1417,22 @@
           <h4 class="wizard-question">1. What is your business or store name?</h4>
           <p class="wizard-hint">This appears at the top of your shop link when customers open it on WhatsApp or Instagram.</p>
           <input type="text" class="wizard-input" id="wizard-input-name" placeholder="e.g. Lola Fabrics & Chic Wear" value="Lola Fabrics & Chic Wear">
+
+          <div style="margin-top: 14px; background: rgba(5,150,105,0.04); border: 1px solid rgba(5,150,105,0.2); border-radius: var(--radius-md); padding: 12px;">
+            <label class="form-label" for="wizard-input-slug" style="font-size: 0.8125rem; font-weight: 700; margin-bottom: 4px;">
+              Choose Your Store Web Link Endpoint:
+            </label>
+            <div style="display: flex; align-items: stretch; gap: 6px;">
+              <span style="display: flex; align-items: center; padding: 0 10px; background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: 700;">
+                ?store=
+              </span>
+              <input type="text" class="wizard-input" id="wizard-input-slug" placeholder="e.g. lola-fabrics" value="lola-fabrics" style="padding: 8px 12px; font-size: 0.875rem; font-family: var(--font-mono); font-weight: 700; min-height: 40px; margin: 0;">
+            </div>
+            <div id="wizard-slug-status" style="margin-top: 6px; font-size: 0.75rem; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 4px;">
+              <span>✓</span><span>Endpoint available</span>
+            </div>
+          </div>
+
           <div class="wizard-actions">
             <button class="btn-primary" data-wizard-next>Next: Choose Category &rarr;</button>
           </div>
@@ -1405,7 +1499,7 @@
         <div class="wizard-step" id="wizard-step-5">
           <h4 class="wizard-question">5. Choose your shop's visual theme</h4>
           <p class="wizard-hint">Select a color scheme that matches your vibe.</p>
-          <div class="wizard-category-grid" style="margin-bottom: 16px;">
+          <div class="wizard-category-grid" style="margin-bottom: 12px;">
             <button type="button" class="wizard-category-btn wizard-theme-btn selected" data-theme="emerald">🌿 Emerald (WhatsApp)</button>
             <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="luxury-gold">👑 Obsidian & Gold</button>
             <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="sunset">🌅 Sunset Warm</button>
@@ -1413,6 +1507,38 @@
             <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="blush">🌸 Blush Rose</button>
             <button type="button" class="wizard-category-btn wizard-theme-btn" data-theme="minimal">🖋️ Minimalist</button>
           </div>
+
+          <!-- Interactive Theme Mockup Preview Box -->
+          <div class="theme-live-preview-box" id="wizard-theme-preview-box">
+            <div class="theme-preview-header-label">
+              <span>✨ Live Theme Preview</span>
+              <span id="wizard-theme-preview-label" style="color: var(--color-primary); font-weight: 800;">Emerald (WhatsApp)</span>
+            </div>
+            <div class="theme-mockup-frame theme-emerald" id="wizard-mockup-frame">
+              <div class="theme-mockup-store-header">
+                <div class="theme-mockup-brand">
+                  <div class="theme-mockup-avatar vendor-avatar" id="wizard-mockup-avatar">M</div>
+                  <div class="theme-mockup-title">
+                    <span id="wizard-mockup-store-name">My Online Shop</span>
+                    <span style="color: #10b981; font-size: 0.8125rem;">✓</span>
+                  </div>
+                </div>
+                <span style="font-size: 0.6875rem; opacity: 0.75; font-weight: 600;">Direct WhatsApp</span>
+              </div>
+              <div class="theme-mockup-prod-card">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%2310b981'/><text x='50%' y='55%' font-size='32' text-anchor='middle' dominant-baseline='middle'>🛍️</text></svg>" alt="Sample" class="theme-mockup-prod-img" id="wizard-mockup-prod-img">
+                <div class="theme-mockup-prod-info">
+                  <div class="theme-mockup-prod-title" id="wizard-mockup-prod-title">Featured Product</div>
+                  <div class="theme-mockup-prod-price" id="wizard-mockup-prod-price">₦15,000</div>
+                </div>
+              </div>
+              <button type="button" class="theme-mockup-wa-btn" id="wizard-mockup-wa-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/></svg>
+                <span>Order on WhatsApp</span>
+              </button>
+            </div>
+          </div>
+
           <div class="wizard-actions">
             <button class="btn-secondary" data-wizard-prev>&larr; Back</button>
             <button class="btn-primary" data-wizard-next>🚀 Launch My Shop &rarr;</button>
@@ -1777,6 +1903,20 @@
           <div class="form-group">
             <label class="form-label" for="create-store-name">Store Name *</label>
             <input type="text" id="create-store-name" class="form-input" placeholder="e.g. Amaka Fabrics & Couture, Deji Tech Hub..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="create-store-slug">
+              Store URL Endpoint / Handle
+              <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8125rem;">(Custom web link for customers)</span>
+            </label>
+            <div style="display: flex; align-items: stretch; gap: 6px;">
+              <span style="display: flex; align-items: center; padding: 0 10px; background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: 700;">?store=</span>
+              <input type="text" id="create-store-slug" class="form-input" placeholder="e.g. amaka-fabrics" style="font-family: var(--font-mono); font-weight: 700;">
+            </div>
+            <div id="admin-create-slug-status" style="margin-top: 4px; font-size: 0.75rem; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 4px;">
+              <span>✓</span><span>Endpoint available</span>
+            </div>
           </div>
 
           <div class="form-group-row two-col">

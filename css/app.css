@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    ContentSmith — Light Design System
    Overrides studio.css dark tokens for a welcoming,
    mobile-first, emerald-green visual language.
@@ -1633,5 +1633,182 @@ textarea.wizard-input {
 .creation-card.active-selected {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(5,150,105,0.18), var(--shadow-md);
+}
+
+/* ================================================
+   Interactive Theme Selector & Live Preview Mockup
+   ================================================ */
+.wizard-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 520px) {
+  .wizard-theme-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.wizard-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.wizard-theme-btn:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.wizard-theme-btn.selected {
+  border-color: var(--color-primary);
+  background: rgba(5,150,105,0.08);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(5,150,105,0.2);
+}
+
+.theme-live-preview-box {
+  margin-top: 14px;
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  transition: all 0.25s ease;
+}
+
+.theme-preview-header-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.theme-mockup-frame {
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background-color: var(--color-bg, #f8fafc);
+  color: var(--color-text-primary, #0f172a);
+  border: 1px solid var(--color-border, #e2e8f0);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.theme-mockup-store-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  margin-bottom: 12px;
+}
+
+.theme-mockup-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.theme-mockup-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.theme-mockup-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theme-mockup-prod-card {
+  background-color: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.theme-mockup-prod-img {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.theme-mockup-prod-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-mockup-prod-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-mockup-prod-price {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--color-price, #047857);
+}
+
+.theme-mockup-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-wa, #25d366);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.theme-mockup-wa-btn:hover {
+  transform: translateY(-1px);
 }
 

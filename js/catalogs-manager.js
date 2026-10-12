@@ -14,14 +14,14 @@
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '_')
+      .replace(/[\s_]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'store';
   }
 
   function generateCatalogId(name) {
     const slug = slugify(name).slice(0, 24);
-    const rand = Math.random().toString(36).substring(2, 7);
-    return `cat_${slug}_${rand}`;
+    const rand = Math.random().toString(36).substring(2, 6);
+    return `${slug}-${rand}`;
   }
 
   // Safe base64 encoding/decoding for portable URLs
@@ -237,10 +237,14 @@
     },
 
     get: function (id) {
-      if (!id) return null;
+      if (!id || id === 'undefined' || id === 'null') return null;
       const cleanId = String(id).trim().toLowerCase();
       const all = this.list();
-      return all.find(c => c.id.toLowerCase() === cleanId || slugify(c.name) === cleanId) || null;
+      return all.find(c => {
+        const cId = (c.id || '').toLowerCase();
+        const cSlug = (c.slug || '').toLowerCase();
+        return cId === cleanId || cSlug === cleanId || slugify(c.name) === cleanId;
+      }) || null;
     },
 
     getActiveId: function () {
@@ -248,7 +252,7 @@
     },
 
     setActiveId: function (id) {
-      if (id) localStorage.setItem(ACTIVE_ID_KEY, id);
+      if (id && id !== 'undefined') localStorage.setItem(ACTIVE_ID_KEY, id);
     },
 
     getActiveCatalog: function () {
@@ -256,16 +260,92 @@
       return this.get(activeId) || this.list()[0] || null;
     },
 
+    /**
+     * Check if a custom URL slug / endpoint is available
+     * @param {string} slugCandidate - Desired slug (e.g. "lola-fabrics")
+     * @param {string} currentCatalogId - ID/slug of current store if editing (to allow retaining its own slug)
+     * @returns {Promise<{available: boolean, slug: string, reason?: string, suggested?: string}>}
+     */
+    isSlugAvailable: async function (slugCandidate, currentCatalogId = null) {
+      if (!slugCandidate) {
+        return { available: false, slug: '', reason: 'Endpoint cannot be empty' };
+      }
+      const clean = slugify(slugCandidate).replace(/_/g, '-');
+      if (clean.length < 2) {
+        return { available: false, slug: clean, reason: 'Endpoint must be at least 2 characters' };
+      }
+      const reserved = ['undefined', 'null', 'admin', 'api', 'studio', 'workspace', 'store', 'shop', 'catalog', 'static', 'assets', 'favicon'];
+      if (reserved.includes(clean)) {
+        return { available: false, slug: clean, reason: 'This endpoint name is reserved' };
+      }
+
+      // Check against local stores
+      const all = this.list();
+      const currentIdClean = currentCatalogId ? String(currentCatalogId).trim().toLowerCase() : null;
+      const localConflict = all.find(c => {
+        const cId = (c.id || '').toLowerCase();
+        const cSlug = (c.slug || '').toLowerCase();
+        if (currentIdClean && (cId === currentIdClean || cSlug === currentIdClean)) {
+          return false; // same catalog, allowed
+        }
+        return cId === clean || cSlug === clean;
+      });
+
+      if (localConflict) {
+        const suggestion = `${clean}-${Math.floor(Math.random() * 89 + 10)}`;
+        return {
+          available: false,
+          slug: clean,
+          reason: `"${clean}" is already taken by another store`,
+          suggested: suggestion
+        };
+      }
+
+      // Check against server API endpoint
+      try {
+        const resp = await fetch(`/api/catalogs?id=${encodeURIComponent(clean)}`);
+        if (resp.ok) {
+          const remote = await resp.json();
+          if (remote && (remote.id || remote.slug)) {
+            const rId = (remote.id || '').toLowerCase();
+            const rSlug = (remote.slug || '').toLowerCase();
+            if (!currentIdClean || (rId !== currentIdClean && rSlug !== currentIdClean)) {
+              const suggestion = `${clean}-${Math.floor(Math.random() * 89 + 10)}`;
+              return {
+                available: false,
+                slug: clean,
+                reason: `"${clean}" is already claimed on server`,
+                suggested: suggestion
+              };
+            }
+          }
+        }
+      } catch (_) {}
+
+      return { available: true, slug: clean };
+    },
+
     save: function (catalogData) {
       if (!catalogData) return null;
       const all = this.list();
-      const id = catalogData.id ? String(catalogData.id).trim() : generateCatalogId(catalogData.name);
+      
+      // Determine chosen slug and ID
+      let slug = catalogData.slug || catalogData.id || catalogData.name || 'my-store';
+      slug = slugify(slug).replace(/_/g, '-');
+      if (slug === 'undefined' || slug === 'null') slug = 'store-' + Math.floor(Math.random() * 8999 + 1000);
+      
+      const id = catalogData.id && catalogData.id !== 'undefined' ? String(catalogData.id).trim() : slug;
 
       const now = Date.now();
-      const existingIdx = all.findIndex(c => c.id.toLowerCase() === id.toLowerCase());
+      const existingIdx = all.findIndex(c => {
+        const cId = (c.id || '').toLowerCase();
+        const cSlug = (c.slug || '').toLowerCase();
+        return cId === id.toLowerCase() || (slug && cSlug === slug.toLowerCase());
+      });
 
       const cleanCatalog = {
         id: id,
+        slug: slug,
         name: catalogData.name || catalogData.vendor_name || 'My Store',
         phone: catalogData.phone || catalogData.vendor_phone || '+2348035550192',
         currency: catalogData.currency || catalogData.currency_default || 'NGN',
@@ -331,9 +411,13 @@
 
     create: function (options = {}) {
       const name = options.name || 'New Store';
-      const id = generateCatalogId(name);
+      const cleanSlug = options.slug ? slugify(options.slug).replace(/_/g, '-') : null;
+      const cleanId = options.id ? slugify(options.id).replace(/_/g, '-') : null;
+      const finalId = cleanId || cleanSlug || generateCatalogId(name);
+      const finalSlug = cleanSlug || cleanId || slugify(name);
       const newCat = {
-        id: id,
+        id: finalId,
+        slug: finalSlug,
         name: name,
         phone: options.phone || '+2348035550192',
         currency: options.currency || 'NGN',
@@ -343,6 +427,7 @@
         layout: options.layout || 'standard',
         order_button_text: options.order_button_text || 'Order on WhatsApp',
         message_template: options.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})',
+        verified: options.verified !== undefined ? Boolean(options.verified) : true,
         products: Array.isArray(options.products) ? options.products : [],
         created_at: Date.now(),
         updated_at: Date.now()
@@ -355,26 +440,35 @@
     // -----------------------------------------------------------------
     getSharableUrl: function (catalog, includeHashFallback = false) {
       if (!catalog) return window.location.href;
+      const rawId = catalog.slug || catalog.id || catalog.catalog_id || (catalog.name ? slugify(catalog.name) : 'store');
+      let cleanId = String(rawId).trim();
+      if (!cleanId || cleanId === 'undefined' || cleanId === 'null') {
+        cleanId = catalog.name ? slugify(catalog.name) : 'store-' + Math.floor(Math.random() * 899 + 100);
+      }
+      cleanId = slugify(cleanId).replace(/_/g, '-');
+
       const baseOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '';
       let pathname = window.location.pathname || '/';
-      // Normalize pathname
+      // Strip any trailing /undefined or duplicate slashes
+      pathname = pathname.replace(/\/undefined\/?$/, '/').replace(/\/+/g, '/');
       if (pathname.endsWith('/') === false && pathname.indexOf('.') === -1) {
         pathname += '/';
       }
 
-      const cleanUrl = `${baseOrigin}${pathname}?store=${encodeURIComponent(catalog.id)}`;
+      const cleanUrl = `${baseOrigin}${pathname}?store=${encodeURIComponent(cleanId)}`;
 
       if (includeHashFallback) {
         try {
           const snapshot = {
-            id: catalog.id,
-            name: catalog.name,
-            phone: catalog.phone,
-            currency: catalog.currency,
-            tagline: catalog.tagline,
-            category: catalog.category,
-            theme: catalog.theme,
-            layout: catalog.layout,
+            id: cleanId,
+            slug: cleanId,
+            name: catalog.name || catalog.vendor_name || 'My Store',
+            phone: catalog.phone || catalog.vendor_phone || '+2348035550192',
+            currency: catalog.currency || catalog.currency_default || 'NGN',
+            tagline: catalog.tagline || '',
+            category: catalog.category || 'General',
+            theme: catalog.theme || 'emerald',
+            layout: catalog.layout || 'standard',
             verified: catalog.verified !== false,
             products: (catalog.products || []).map(p => ({
               id: p.id,
@@ -398,7 +492,9 @@
     resolveCatalogFromUrl: function () {
       const urlParams = new URLSearchParams(window.location.search);
       const storeParam = urlParams.get('store') || urlParams.get('catalog');
-      if (!storeParam) return null;
+      if (!storeParam || storeParam === 'undefined' || storeParam === 'null' || !storeParam.trim()) {
+        return null;
+      }
 
       const cleanId = storeParam.trim();
       let found = this.get(cleanId);
@@ -424,6 +520,7 @@
         const fix = window.ContentSmith_FIXTURES[cleanId].data;
         found = {
           id: cleanId,
+          slug: cleanId,
           name: fix.vendor_name,
           phone: fix.vendor_phone,
           currency: fix.currency_default,
@@ -439,7 +536,7 @@
     },
 
     fetchCatalogById: async function (id) {
-      if (!id) return null;
+      if (!id || id === 'undefined' || id === 'null') return null;
       const cleanId = String(id).trim().toLowerCase();
       let found = this.get(cleanId);
       if (found && Array.isArray(found.products) && found.products.length > 0 && found.products.some(p => p.image)) {
@@ -450,7 +547,7 @@
         const resp = await fetch(`/api/catalogs?id=${encodeURIComponent(cleanId)}`);
         if (resp.ok) {
           const remote = await resp.json();
-          if (remote && remote.id) {
+          if (remote && (remote.id || remote.slug)) {
             this.save(remote);
             return remote;
           }
@@ -574,8 +671,20 @@
       let modal = document.getElementById('share-catalog-modal');
       if (!modal) return;
 
-      const shareUrl = this.getSharableUrl(catalog, false);
-      const portableUrl = this.getSharableUrl(catalog, true);
+      const storeName = catalog.name || catalog.vendor_name || 'Storefront';
+      const storeTag = catalog.tagline || 'Direct WhatsApp storefront';
+      const storeSlug = catalog.slug || catalog.id || catalog.catalog_id || slugify(storeName);
+
+      const normalized = {
+        ...catalog,
+        id: storeSlug,
+        slug: storeSlug,
+        name: storeName,
+        tagline: storeTag
+      };
+
+      const shareUrl = this.getSharableUrl(normalized, false);
+      const portableUrl = this.getSharableUrl(normalized, true);
 
       // Populate text details
       const nameEl = document.getElementById('share-modal-store-name');
@@ -584,14 +693,14 @@
       const avatarEl = document.getElementById('share-modal-avatar');
       const inputEl = document.getElementById('share-modal-url-input');
 
-      if (nameEl) nameEl.textContent = catalog.name || 'Storefront';
-      if (tagEl) tagEl.textContent = catalog.tagline || 'Direct WhatsApp storefront';
+      if (nameEl) nameEl.textContent = storeName;
+      if (tagEl) tagEl.textContent = storeTag;
       if (countEl) countEl.textContent = `${(catalog.products || []).length} Products`;
-      if (avatarEl) avatarEl.textContent = (catalog.name || 'S').trim().charAt(0).toUpperCase();
+      if (avatarEl) avatarEl.textContent = storeName.trim().charAt(0).toUpperCase() || 'S';
       if (inputEl) inputEl.value = shareUrl;
 
       // WhatsApp Message Formatting
-      const waText = `🛍️ *${catalog.name} - Online Store*\n${catalog.tagline || 'Order directly on WhatsApp'}\n\nBrowse verified products and order with 1 tap:\n👉 ${shareUrl}`;
+      const waText = `🛍️ *${storeName} - Online Store*\n${storeTag}\n\nBrowse verified products and order with 1 tap:\n👉 ${shareUrl}`;
       const waShareUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
 
       const btnWa = document.getElementById('btn-share-modal-wa');

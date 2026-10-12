@@ -24,8 +24,14 @@ export default async function handler(req, res) {
   if (method === 'GET') {
     const id = req.query ? req.query.id : null;
     if (id) {
-      const cleanId = String(id).toLowerCase();
-      const found = global._ContentSmith_CATALOGS_CACHE.find(c => c.id && c.id.toLowerCase() === cleanId);
+      const cleanId = String(id).trim().toLowerCase();
+      if (cleanId === 'undefined' || cleanId === 'null') {
+        return res.status(404).json({ error: 'Invalid catalog identifier' });
+      }
+      const found = global._ContentSmith_CATALOGS_CACHE.find(c => 
+        (c.id && c.id.toLowerCase() === cleanId) || 
+        (c.slug && c.slug.toLowerCase() === cleanId)
+      );
       if (found) {
         return res.status(200).json(found);
       }

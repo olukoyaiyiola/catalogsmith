@@ -39,7 +39,7 @@
    =================================================== */
 
 /* Theme 1: Luxury Obsidian & Champagne Gold */
-body.theme-luxury-gold {
+body.theme-luxury-gold, .theme-luxury-gold {
   --color-bg: #0c0d12;
   --color-surface: #141721;
   --color-text-primary: #f8fafc;
@@ -55,13 +55,13 @@ body.theme-luxury-gold {
   --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-fab: 0 6px 20px rgba(217, 119, 6, 0.4);
 }
-body.theme-luxury-gold .vendor-avatar {
+body.theme-luxury-gold .vendor-avatar, .theme-luxury-gold .vendor-avatar {
   background: linear-gradient(135deg, #b45309, #fbbf24);
   color: #0c0d12;
 }
 
 /* Theme 2: Sunset Terracotta & Warm Sand */
-body.theme-sunset {
+body.theme-sunset, .theme-sunset {
   --color-bg: #fffbf5;
   --color-surface: #ffffff;
   --color-text-primary: #1c1917;
@@ -76,12 +76,12 @@ body.theme-sunset {
   --color-wa-dark: #9a3412;
   --shadow-fab: 0 6px 16px rgba(234, 88, 12, 0.35);
 }
-body.theme-sunset .vendor-avatar {
+body.theme-sunset .vendor-avatar, .theme-sunset .vendor-avatar {
   background: linear-gradient(135deg, #c2410c, #f97316);
 }
 
 /* Theme 3: Electric Tech & Cyber Slate */
-body.theme-tech-blue {
+body.theme-tech-blue, .theme-tech-blue {
   --color-bg: #0b1120;
   --color-surface: #0f172a;
   --color-text-primary: #f8fafc;
@@ -96,12 +96,12 @@ body.theme-tech-blue {
   --color-wa-dark: #075985;
   --shadow-fab: 0 6px 20px rgba(2, 132, 199, 0.4);
 }
-body.theme-tech-blue .vendor-avatar {
+body.theme-tech-blue .vendor-avatar, .theme-tech-blue .vendor-avatar {
   background: linear-gradient(135deg, #0284c7, #38bdf8);
 }
 
 /* Theme 4: Editorial Ivory & Monochrome */
-body.theme-minimal {
+body.theme-minimal, .theme-minimal {
   --color-bg: #f5f5f4;
   --color-surface: #ffffff;
   --color-text-primary: #18181b;
@@ -116,13 +116,13 @@ body.theme-minimal {
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-fab: 0 6px 16px rgba(24, 24, 27, 0.3);
 }
-body.theme-minimal .vendor-avatar {
+body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar {
   background: #18181b;
   color: #ffffff;
 }
 
 /* Theme 5: Blush Rose & Velvet Noir (Beauty, Perfumes, Cosmetics) */
-body.theme-blush {
+body.theme-blush, .theme-blush {
   --color-bg: #fff1f2;
   --color-surface: #ffffff;
   --color-text-primary: #881337;
@@ -138,7 +138,7 @@ body.theme-blush {
   --shadow-card: 0 4px 12px rgba(225, 29, 72, 0.08);
   --shadow-fab: 0 6px 20px rgba(225, 29, 72, 0.35);
 }
-body.theme-blush .vendor-avatar {
+body.theme-blush .vendor-avatar, .theme-blush .vendor-avatar {
   background: linear-gradient(135deg, #e11d48, #fb7185);
   color: #ffffff;
 }

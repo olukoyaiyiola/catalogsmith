@@ -8,6 +8,8 @@
 
   // Default initial state
   const state = {
+    id: 'lola-fabrics',
+    slug: 'lola-fabrics',
     catalog_id: 'cat_lola_fabrics',
     vendor_name: 'Lola Fabrics & Chic Wear',
     vendor_phone: '+2348035550192',
@@ -81,10 +83,23 @@
 
     // Step 3: Settings
     settingVendorName: document.getElementById('setting-vendor-name'),
+    settingStoreSlug: document.getElementById('setting-store-slug'),
+    slugAvailabilityBadge: document.getElementById('slug-availability-badge'),
+    slugStatusIcon: document.getElementById('slug-status-icon'),
+    slugStatusText: document.getElementById('slug-status-text'),
     settingVendorPhone: document.getElementById('setting-vendor-phone'),
     settingCurrency: document.getElementById('setting-currency'),
     settingTagline: document.getElementById('setting-tagline'),
     settingTheme: document.getElementById('setting-theme'),
+    step3ThemeSwatches: document.querySelectorAll('#step3-theme-swatches .theme-swatch-btn'),
+    step3MockupFrame: document.getElementById('step3-mockup-frame'),
+    step3ThemeNameBadge: document.getElementById('step3-theme-preview-name-badge'),
+    step3MockupStoreName: document.getElementById('step3-mockup-store-name'),
+    step3MockupAvatar: document.getElementById('step3-mockup-avatar'),
+    step3MockupProdTitle: document.getElementById('step3-mockup-prod-title'),
+    step3MockupProdPrice: document.getElementById('step3-mockup-prod-price'),
+    step3MockupProdImg: document.getElementById('step3-mockup-prod-img'),
+    step3MockupBtnLabel: document.getElementById('step3-mockup-btn-label'),
     settingLayout: document.getElementById('setting-layout'),
     settingBtnText: document.getElementById('setting-btn-text'),
     settingMessageTemplate: document.getElementById('setting-message-template'),
@@ -302,18 +317,37 @@
   if (els.btnBackStep2) els.btnBackStep2.addEventListener('click', () => setStep(2));
   if (els.btnGotoStep4) els.btnGotoStep4.addEventListener('click', () => setStep(4));
 
+  function getNormalizedShareState() {
+    const slug = state.slug || state.id || state.catalog_id || (state.vendor_name ? slugify(state.vendor_name) : 'my-store');
+    return {
+      ...state,
+      id: slug,
+      slug: slug,
+      name: state.vendor_name || 'My Store',
+      phone: state.vendor_phone || '+2348035550192',
+      currency: state.currency_default || 'NGN',
+      tagline: state.tagline || '',
+      theme: state.theme || 'emerald',
+      layout: state.layout || 'standard',
+      products: state.products || []
+    };
+  }
+
   // Update Step 4 Live Sharable URL banner
   function updateStep4ShareBanner() {
     const input = document.getElementById('step4-share-url-input');
     if (input && window.CatalogStore) {
-      input.value = window.CatalogStore.getSharableUrl(state);
+      input.value = window.CatalogStore.getSharableUrl(getNormalizedShareState());
     }
   }
 
   // Load a catalog directly into Studio Workspace
   function loadCatalog(catalog) {
     if (!catalog) return;
-    state.catalog_id = catalog.id || state.catalog_id;
+    const catSlug = catalog.slug || catalog.id || (catalog.name ? slugify(catalog.name) : 'my-store');
+    state.id = catSlug;
+    state.slug = catSlug;
+    state.catalog_id = catalog.id || catSlug;
     state.vendor_name = catalog.name || catalog.vendor_name || 'My Store';
     state.vendor_phone = catalog.phone || catalog.vendor_phone || '+2348035550192';
     state.currency_default = catalog.currency || catalog.currency_default || 'NGN';
@@ -388,8 +422,13 @@
         image: p.image || null
       }));
 
+      const effectiveId = state.id || state.slug || state.catalog_id || 'my-store';
+      const effectiveSlug = state.slug || state.id || state.catalog_id || 'my-store';
+
       const snapshot = {
-        catalog_id: state.catalog_id,
+        catalog_id: effectiveId,
+        id: effectiveId,
+        slug: effectiveSlug,
         vendor_name: state.vendor_name,
         vendor_phone: state.vendor_phone,
         currency_default: state.currency_default,
@@ -420,7 +459,8 @@
       // Also persist to CatalogStore
       if (window.CatalogStore) {
         window.CatalogStore.save({
-          id: state.catalog_id,
+          id: effectiveId,
+          slug: effectiveSlug,
           name: state.vendor_name,
           phone: state.vendor_phone,
           currency: state.currency_default,
@@ -438,8 +478,110 @@
     }
   }
 
+  const THEME_NAMES = {
+    'emerald': '🌿 Emerald (WhatsApp Green)',
+    'luxury-gold': '👑 Luxury Obsidian & Champagne Gold',
+    'sunset': '🌅 Sunset Terracotta & Warm Sand',
+    'tech-blue': '⚡ Cyber Slate & Electric Blue',
+    'blush': '🌸 Blush Rose & Velvet Noir',
+    'minimal': '🖋️ Editorial Minimalist & Monochrome'
+  };
+
+  function updateStep3ThemePreview(theme) {
+    const activeTheme = theme || state.theme || 'emerald';
+    if (els.step3MockupFrame) {
+      els.step3MockupFrame.className = 'theme-mockup-frame theme-' + activeTheme;
+    }
+    if (els.step3ThemeNameBadge) {
+      els.step3ThemeNameBadge.textContent = THEME_NAMES[activeTheme] || activeTheme;
+    }
+    if (els.step3MockupStoreName) {
+      els.step3MockupStoreName.textContent = state.vendor_name || 'My Store';
+    }
+    if (els.step3MockupAvatar) {
+      els.step3MockupAvatar.textContent = (state.vendor_name || 'S').trim().charAt(0).toUpperCase() || 'S';
+    }
+    if (els.step3MockupBtnLabel) {
+      els.step3MockupBtnLabel.textContent = state.order_button_text || 'Order on WhatsApp';
+    }
+
+    const firstProd = (state.products && state.products.length > 0) ? state.products[0] : null;
+    if (firstProd) {
+      if (els.step3MockupProdTitle) els.step3MockupProdTitle.textContent = firstProd.name;
+      if (els.step3MockupProdPrice) {
+        els.step3MockupProdPrice.textContent = formatPrice(firstProd.price ? firstProd.price.amount : null, state.currency_default);
+      }
+      if (els.step3MockupProdImg && firstProd.image) {
+        els.step3MockupProdImg.src = firstProd.image;
+      }
+    }
+
+    // Sync theme swatches active state
+    if (els.step3ThemeSwatches) {
+      els.step3ThemeSwatches.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === activeTheme);
+      });
+    }
+  }
+
+  let slugCheckTimeout = null;
+  async function validateStoreSlugInput(candidate) {
+    if (!els.slugStatusText || !els.slugStatusIcon) return;
+    const clean = (candidate || '').toLowerCase().trim().replace(/[^\w-]/g, '').replace(/[\s_]+/g, '-');
+    if (!clean) {
+      els.slugStatusIcon.textContent = '⚠️';
+      els.slugStatusIcon.style.color = '#ef4444';
+      els.slugStatusText.textContent = 'Please enter an endpoint';
+      els.slugStatusText.style.color = '#ef4444';
+      return;
+    }
+
+    els.slugStatusIcon.textContent = '⏳';
+    els.slugStatusText.textContent = `Checking availability for ?store=${clean}...`;
+    els.slugStatusText.style.color = 'var(--text-muted)';
+
+    if (!window.CatalogStore) return;
+    const result = await window.CatalogStore.isSlugAvailable(clean, state.id);
+    if (result.available) {
+      els.slugStatusIcon.textContent = '✓';
+      els.slugStatusIcon.style.color = '#10b981';
+      els.slugStatusText.innerHTML = `Available: <code>?store=${result.slug}</code>`;
+      els.slugStatusText.style.color = '#10b981';
+
+      state.slug = result.slug;
+      state.id = result.slug;
+      state.catalog_id = result.slug;
+      debouncedSaveState(300);
+      updateStep4ShareBanner();
+    } else {
+      els.slugStatusIcon.textContent = '⚠️';
+      els.slugStatusIcon.style.color = '#f59e0b';
+      let suggestionHtml = '';
+      if (result.suggested) {
+        suggestionHtml = ` &bull; Try: <a href="#" id="link-apply-suggested-slug" style="color:var(--color-primary);font-weight:700;text-decoration:underline;">${result.suggested}</a>`;
+      }
+      els.slugStatusText.innerHTML = `${result.reason}${suggestionHtml}`;
+      els.slugStatusText.style.color = '#f59e0b';
+
+      const linkSuggested = document.getElementById('link-apply-suggested-slug');
+      if (linkSuggested) {
+        linkSuggested.onclick = (ev) => {
+          ev.preventDefault();
+          if (els.settingStoreSlug) {
+            els.settingStoreSlug.value = result.suggested;
+            validateStoreSlugInput(result.suggested);
+          }
+        };
+      }
+    }
+  }
+
   function syncFormFields() {
     if (els.settingVendorName) els.settingVendorName.value = state.vendor_name || '';
+    if (els.settingStoreSlug) {
+      els.settingStoreSlug.value = state.slug || state.id || 'lola-fabrics';
+      validateStoreSlugInput(els.settingStoreSlug.value);
+    }
     if (els.settingVendorPhone) els.settingVendorPhone.value = state.vendor_phone || '';
     if (els.settingCurrency) els.settingCurrency.value = state.currency_default || 'NGN';
     if (els.settingTagline) els.settingTagline.value = state.tagline || '';
@@ -448,6 +590,7 @@
     if (els.settingBtnText) els.settingBtnText.value = state.order_button_text || 'Order on WhatsApp';
     if (els.settingMessageTemplate) els.settingMessageTemplate.value = state.message_template || '';
     updateMessagePreview();
+    updateStep3ThemePreview(state.theme);
   }
 
   // Update Settings Form to State
@@ -456,7 +599,16 @@
       els.settingVendorName.addEventListener('input', e => {
         state.vendor_name = e.target.value;
         updateMessagePreview();
+        updateStep3ThemePreview(state.theme);
         debouncedSaveState();
+      });
+    }
+    if (els.settingStoreSlug) {
+      els.settingStoreSlug.addEventListener('input', e => {
+        clearTimeout(slugCheckTimeout);
+        slugCheckTimeout = setTimeout(() => {
+          validateStoreSlugInput(e.target.value);
+        }, 220);
       });
     }
     if (els.settingVendorPhone) {
@@ -470,6 +622,7 @@
       els.settingCurrency.addEventListener('change', e => {
         state.currency_default = e.target.value;
         renderReviewList();
+        updateStep3ThemePreview(state.theme);
         debouncedSaveState(0);
       });
     }
@@ -482,9 +635,24 @@
     if (els.settingTheme) {
       els.settingTheme.addEventListener('change', e => {
         state.theme = e.target.value;
+        updateStep3ThemePreview(e.target.value);
         debouncedSaveState(0);
         updateLivePreview();
         showToast(`Theme changed to: ${state.theme}`);
+      });
+    }
+    if (els.step3ThemeSwatches) {
+      els.step3ThemeSwatches.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const picked = btn.dataset.theme;
+          if (!picked) return;
+          state.theme = picked;
+          if (els.settingTheme) els.settingTheme.value = picked;
+          updateStep3ThemePreview(picked);
+          debouncedSaveState(0);
+          updateLivePreview();
+          showToast(`Theme changed to: ${picked}`);
+        });
       });
     }
     if (els.settingLayout) {
@@ -498,6 +666,7 @@
     if (els.settingBtnText) {
       els.settingBtnText.addEventListener('input', e => {
         state.order_button_text = e.target.value;
+        updateStep3ThemePreview(state.theme);
         debouncedSaveState();
         updateLivePreview();
       });
@@ -1867,16 +2036,16 @@ ${cleanData.products.length === 0 ? `
 
   function getStorefrontCSS() {
     return `:root{--color-bg:#f8fafc;--color-surface:#ffffff;--color-text-primary:#0f172a;--color-text-secondary:#475569;--color-text-muted:#64748b;--color-border:#e2e8f0;--color-wa:#25D366;--color-wa-hover:#1ebc59;--color-price:#047857;--color-ask-price:#4338ca;--color-ask-price-bg:#eef2ff;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--radius-md:12px;--radius-lg:16px;--radius-full:9999px;--tap-target:48px}
-body.theme-luxury-gold{--color-bg:#0c0d12;--color-surface:#141721;--color-text-primary:#f8fafc;--color-text-secondary:#94a3b8;--color-text-muted:#64748b;--color-border:#23283b;--color-price:#fbbf24;--color-price-bg:rgba(251,191,36,0.1);--color-wa:#d97706;--color-wa-hover:#b45309}
-body.theme-luxury-gold .vendor-avatar{background:linear-gradient(135deg,#b45309,#fbbf24);color:#0c0d12}
-body.theme-sunset{--color-bg:#fffbf5;--color-surface:#ffffff;--color-text-primary:#1c1917;--color-text-secondary:#57534e;--color-text-muted:#78716c;--color-border:#e7e5e4;--color-price:#c2410c;--color-price-bg:#ffedd5;--color-wa:#ea580c;--color-wa-hover:#c2410c}
-body.theme-sunset .vendor-avatar{background:linear-gradient(135deg,#c2410c,#f97316)}
-body.theme-tech-blue{--color-bg:#0b1120;--color-surface:#0f172a;--color-text-primary:#f8fafc;--color-text-secondary:#94a3b8;--color-text-muted:#64748b;--color-border:#1e293b;--color-price:#38bdf8;--color-price-bg:rgba(56,189,248,0.1);--color-wa:#0284c7;--color-wa-hover:#0369a1}
-body.theme-tech-blue .vendor-avatar{background:linear-gradient(135deg,#0284c7,#38bdf8)}
-body.theme-blush{--color-bg:#fff1f2;--color-surface:#ffffff;--color-text-primary:#881337;--color-text-secondary:#9f1239;--color-text-muted:#be123c;--color-border:#fecdd3;--color-price:#e11d48;--color-price-bg:#ffe4e6;--color-wa:#e11d48;--color-wa-hover:#be123c}
-body.theme-blush .vendor-avatar{background:linear-gradient(135deg,#e11d48,#fb7185);color:#ffffff}
-body.theme-minimal{--color-bg:#f5f5f4;--color-surface:#ffffff;--color-text-primary:#18181b;--color-text-secondary:#52525b;--color-text-muted:#71717a;--color-border:#d4d4d8;--color-price:#18181b;--color-price-bg:#e4e4e7;--color-wa:#27272a;--color-wa-hover:#18181b}
-body.theme-minimal .vendor-avatar{background:#18181b;color:#ffffff}
+body.theme-luxury-gold, .theme-luxury-gold{--color-bg:#0c0d12;--color-surface:#141721;--color-text-primary:#f8fafc;--color-text-secondary:#94a3b8;--color-text-muted:#64748b;--color-border:#23283b;--color-price:#fbbf24;--color-price-bg:rgba(251,191,36,0.1);--color-wa:#d97706;--color-wa-hover:#b45309}
+body.theme-luxury-gold .vendor-avatar, .theme-luxury-gold .vendor-avatar{background:linear-gradient(135deg,#b45309,#fbbf24);color:#0c0d12}
+body.theme-sunset, .theme-sunset{--color-bg:#fffbf5;--color-surface:#ffffff;--color-text-primary:#1c1917;--color-text-secondary:#57534e;--color-text-muted:#78716c;--color-border:#e7e5e4;--color-price:#c2410c;--color-price-bg:#ffedd5;--color-wa:#ea580c;--color-wa-hover:#c2410c}
+body.theme-sunset .vendor-avatar, .theme-sunset .vendor-avatar{background:linear-gradient(135deg,#c2410c,#f97316)}
+body.theme-tech-blue, .theme-tech-blue{--color-bg:#0b1120;--color-surface:#0f172a;--color-text-primary:#f8fafc;--color-text-secondary:#94a3b8;--color-text-muted:#64748b;--color-border:#1e293b;--color-price:#38bdf8;--color-price-bg:rgba(56,189,248,0.1);--color-wa:#0284c7;--color-wa-hover:#0369a1}
+body.theme-tech-blue .vendor-avatar, .theme-tech-blue .vendor-avatar{background:linear-gradient(135deg,#0284c7,#38bdf8)}
+body.theme-blush, .theme-blush{--color-bg:#fff1f2;--color-surface:#ffffff;--color-text-primary:#881337;--color-text-secondary:#9f1239;--color-text-muted:#be123c;--color-border:#fecdd3;--color-price:#e11d48;--color-price-bg:#ffe4e6;--color-wa:#e11d48;--color-wa-hover:#be123c}
+body.theme-blush .vendor-avatar, .theme-blush .vendor-avatar{background:linear-gradient(135deg,#e11d48,#fb7185);color:#ffffff}
+body.theme-minimal, .theme-minimal{--color-bg:#f5f5f4;--color-surface:#ffffff;--color-text-primary:#18181b;--color-text-secondary:#52525b;--color-text-muted:#71717a;--color-border:#d4d4d8;--color-price:#18181b;--color-price-bg:#e4e4e7;--color-wa:#27272a;--color-wa-hover:#18181b}
+body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#18181b;color:#ffffff}
 .live-theme-bar{max-width:840px;margin:8px auto 0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .live-theme-selector{display:flex;align-items:center;gap:6px;background-color:var(--color-surface);border:1px solid var(--color-border);padding:4px 10px;border-radius:var(--radius-full);font-size:0.75rem;font-weight:600;color:var(--color-text-secondary)}
 .live-theme-select{background:none;border:none;color:var(--color-text-primary);font-size:0.75rem;font-weight:700;outline:none;cursor:pointer}

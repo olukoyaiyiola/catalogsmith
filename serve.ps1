@@ -38,7 +38,7 @@ try {
         $response = $context.Response
 
         $rawPath = $request.Url.LocalPath.TrimStart('/')
-        if ([string]::IsNullOrWhiteSpace($rawPath)) {
+        if ([string]::IsNullOrWhiteSpace($rawPath) -or $rawPath -eq "undefined" -or $rawPath.StartsWith("store/")) {
             $rawPath = "index.html"
         }
 
@@ -68,12 +68,24 @@ try {
                 if ([string]::IsNullOrWhiteSpace($content)) { $content = "[]" }
 
                 if (-not [string]::IsNullOrWhiteSpace($targetId)) {
+                    $cleanTarget = $targetId.Trim().ToLower()
+                    if ($cleanTarget -eq "undefined" -or $cleanTarget -eq "null") {
+                        $response.StatusCode = 404
+                        $response.ContentType = "application/json; charset=utf-8"
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Invalid catalog identifier"}')
+                        $response.ContentLength64 = $bytes.Length
+                        $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                        $response.Close()
+                        continue
+                    }
+
                     $allCats = $content | ConvertFrom-Json
                     if ($allCats -isnot [System.Array]) { $allCats = @($allCats) }
-                    $cleanTarget = $targetId.Trim().ToLower()
                     $foundCat = $null
                     foreach ($c in $allCats) {
-                        if ($c.id -and $c.id.ToString().ToLower() -eq $cleanTarget) {
+                        $cId = if ($c.id) { $c.id.ToString().ToLower() } else { "" }
+                        $cSlug = if ($c.slug) { $c.slug.ToString().ToLower() } else { "" }
+                        if ($cId -eq $cleanTarget -or $cSlug -eq $cleanTarget) {
                             $foundCat = $c
                             break
                         }
