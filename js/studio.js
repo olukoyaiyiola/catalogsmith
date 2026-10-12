@@ -1,5 +1,5 @@
 /**
- * CatalogSmith Studio - Main Application Logic
+ * ContentSmith Studio - Main Application Logic
  * Phone-first, git-free video-to-storefront builder.
  */
 
@@ -349,7 +349,7 @@
         }
       }
 
-      const saved = localStorage.getItem('catalogsmith_studio_state');
+      const saved = localStorage.getItem('ContentSmith_studio_state');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.products && Array.isArray(parsed.products)) {
@@ -385,7 +385,7 @@
         category: p.category,
         best_timestamp_sec: p.best_timestamp_sec,
         confidence: p.confidence,
-        image: (p.image && p.image.length < 35000) ? p.image : null
+        image: p.image || null
       }));
 
       const snapshot = {
@@ -400,7 +400,22 @@
         message_template: state.message_template,
         products: lightweightProducts
       };
-      localStorage.setItem('catalogsmith_studio_state', JSON.stringify(snapshot));
+
+      try {
+        localStorage.setItem('ContentSmith_studio_state', JSON.stringify(snapshot));
+      } catch (quotaErr) {
+        console.warn('LocalStorage quota reached, saving compact draft:', quotaErr);
+        try {
+          const compact = {
+            ...snapshot,
+            products: snapshot.products.map(p => ({
+              ...p,
+              image: (p.image && p.image.startsWith('http')) ? p.image : (p.image && p.image.length < 50000 ? p.image : null)
+            }))
+          };
+          localStorage.setItem('ContentSmith_studio_state', JSON.stringify(compact));
+        } catch (_) {}
+      }
 
       // Also persist to CatalogStore
       if (window.CatalogStore) {
@@ -513,11 +528,11 @@
 
   // Load Fixture Data
   function loadFixture(key) {
-    if (!window.CATALOGSMITH_FIXTURES || !window.CATALOGSMITH_FIXTURES[key]) {
+    if (!window.ContentSmith_FIXTURES || !window.ContentSmith_FIXTURES[key]) {
       showToast('Fixture not found');
       return;
     }
-    const fixture = window.CATALOGSMITH_FIXTURES[key];
+    const fixture = window.ContentSmith_FIXTURES[key];
     const data = JSON.parse(JSON.stringify(fixture.data));
 
     state.vendor_name = data.vendor_name || state.vendor_name;
@@ -656,7 +671,7 @@
 
   // Video Handling & Player
   function setupVideoHandlers() {
-    // Prevent default window-level drag/drop so dropping outside doesn't navigate away from CatalogSmith
+    // Prevent default window-level drag/drop so dropping outside doesn't navigate away from ContentSmith
     window.addEventListener('dragover', e => {
       e.preventDefault();
     }, false);
@@ -667,6 +682,7 @@
 
     const videoInput = els.videoInput || document.getElementById('video-input');
     const btnSelectVideo = document.getElementById('btn-select-video');
+    const dropzone = document.getElementById('video-dropzone') || els.videoDropzone;
     const heroBlock = document.getElementById('step1-hero-block');
     const btnChangeVideo = document.getElementById('btn-change-video');
 
@@ -689,35 +705,56 @@
         });
       }
 
-      // Drag and drop support on the hero block (for desktop users)
-      if (heroBlock) {
-        let heroDragCounter = 0;
-        heroBlock.addEventListener('dragenter', e => {
-          e.preventDefault();
-          heroDragCounter++;
-          heroBlock.classList.add('dragover');
-        });
-
-        heroBlock.addEventListener('dragover', e => {
-          e.preventDefault();
-          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-          heroBlock.classList.add('dragover');
-        });
-
-        heroBlock.addEventListener('dragleave', e => {
-          e.preventDefault();
-          heroDragCounter--;
-          if (heroDragCounter <= 0) {
-            heroDragCounter = 0;
-            heroBlock.classList.remove('dragover');
+      // Tap-to-select and keyboard activation on dropzone
+      if (dropzone) {
+        dropzone.addEventListener('click', e => {
+          if (e.target !== videoInput) {
+            openPicker();
           }
         });
 
-        heroBlock.addEventListener('drop', e => {
+        dropzone.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openPicker();
+          }
+        });
+      }
+
+      // Drag and drop support on dropzone and hero block (for desktop users)
+      const dragTargets = Array.from(new Set([dropzone, heroBlock].filter(Boolean)));
+      dragTargets.forEach(target => {
+        let dragCounter = 0;
+        target.addEventListener('dragenter', e => {
+          e.preventDefault();
+          dragCounter++;
+          target.classList.add('dragover');
+          if (dropzone) dropzone.classList.add('dragover');
+        });
+
+        target.addEventListener('dragover', e => {
+          e.preventDefault();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          target.classList.add('dragover');
+          if (dropzone) dropzone.classList.add('dragover');
+        });
+
+        target.addEventListener('dragleave', e => {
+          e.preventDefault();
+          dragCounter--;
+          if (dragCounter <= 0) {
+            dragCounter = 0;
+            target.classList.remove('dragover');
+            if (dropzone) dropzone.classList.remove('dragover');
+          }
+        });
+
+        target.addEventListener('drop', e => {
           e.preventDefault();
           e.stopPropagation();
-          heroDragCounter = 0;
-          heroBlock.classList.remove('dragover');
+          dragCounter = 0;
+          target.classList.remove('dragover');
+          if (dropzone) dropzone.classList.remove('dragover');
 
           const dt = e.dataTransfer;
           if (dt && dt.files && dt.files.length > 0) {
@@ -729,7 +766,7 @@
             loadVideoFile(file);
           }
         });
-      }
+      });
 
       videoInput.addEventListener('change', e => {
         if (e.target.files && e.target.files.length > 0) {
@@ -1432,8 +1469,8 @@
       btnSearch.addEventListener('click', (e) => {
         e.stopPropagation();
         selectThisProduct();
-        if (window.CatalogSmithApp && typeof window.CatalogSmithApp.openUniversalImageSearch === 'function') {
-          window.CatalogSmithApp.openUniversalImageSearch(prod.name || prod.category, prod.category, (chosenImg, meta) => {
+        if (window.ContentSmithApp && typeof window.ContentSmithApp.openUniversalImageSearch === 'function') {
+          window.ContentSmithApp.openUniversalImageSearch(prod.name || prod.category, prod.category, (chosenImg, meta) => {
             prod.image = chosenImg;
             if (meta) {
               prod.image_origin = meta.origin || (meta.provider === 'own_upload' ? 'own_upload' : 'stock_search');
@@ -1601,9 +1638,11 @@
         description: p.description,
         category: p.category,
         best_timestamp_sec: p.best_timestamp_sec,
-        confidence: p.confidence,
-        image: inlinedImages ? (p.image || '') : (p.image && p.image.startsWith('data:') ? p.image : `images/${p.id}.jpg`)
-      }))
+        image: inlinedImages
+          ? (p.image || '')
+          : (p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('data:') || p.image.startsWith('/'))
+              ? p.image
+              : (p.image ? `images/${p.id}.jpg` : ''))
     };
 
     const cssContent = getStorefrontCSS();
@@ -1752,9 +1791,9 @@ ${cleanData.products.length === 0 ? `
   </footer>
 
   <script>
-    window.CATALOGSMITH_DATA = ${JSON.stringify(cleanData, null, 2)};
+    window.CatalogSmith_DATA = window.ContentSmith_DATA = ${JSON.stringify(cleanData, null, 2)};
     (function() {
-      const data = window.CATALOGSMITH_DATA;
+      const data = window.CatalogSmith_DATA || window.ContentSmith_DATA;
       const thSel = document.getElementById('live-theme-select');
       const laySel = document.getElementById('live-layout-select');
       function updateClasses() {
@@ -1774,7 +1813,7 @@ ${cleanData.products.length === 0 ? `
         shareBtn.onclick = function() {
           try {
             if (window.parent && window.parent !== window) {
-              window.parent.postMessage({ type: 'CATALOGSMITH_SHARE_CURRENT' }, '*');
+              window.parent.postMessage({ type: 'ContentSmith_SHARE_CURRENT' }, '*');
               return;
             }
           } catch(e) {}
@@ -1896,8 +1935,8 @@ body.theme-minimal .vendor-avatar{background:#18181b;color:#ffffff}
       zip.file('storefront.css', getStorefrontCSS());
 
       // 2b. catalog-lookbook.html (Standalone Printable A4 Lookbook)
-      if (window.CatalogSmithPDF && window.CatalogSmithPDF.createLookbookHTML) {
-        zip.file('catalog-lookbook.html', window.CatalogSmithPDF.createLookbookHTML(state));
+      if (window.ContentSmithPDF && window.ContentSmithPDF.createLookbookHTML) {
+        zip.file('catalog-lookbook.html', window.ContentSmithPDF.createLookbookHTML(state));
       }
 
       // 3. products.json
@@ -1933,7 +1972,7 @@ body.theme-minimal .vendor-avatar{background:#18181b;color:#ffffff}
       // 5. DEPLOY_GUIDE.md
       const deployGuide = `# Deployment Instructions for ${state.vendor_name || 'Vendor Store'}
 
-Congratulations! Your CatalogSmith mobile storefront package is ready to go live.
+Congratulations! Your ContentSmith mobile storefront package is ready to go live.
 Zero git accounts, zero servers, and zero configuration needed.
 
 ---
@@ -1959,7 +1998,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
 
       // Generate ZIP blob
       const content = await zip.generateAsync({ type: 'blob' });
-      const filename = `catalogsmith-${(state.vendor_name || 'store').toLowerCase().replace(/[^a-z0-9]/g, '-')}.zip`;
+      const filename = `ContentSmith-${(state.vendor_name || 'store').toLowerCase().replace(/[^a-z0-9]/g, '-')}.zip`;
 
       const link = document.createElement('a');
       link.href = URL.createObjectURL(content);
@@ -2005,7 +2044,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
       products: state.products
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const filename = `catalogsmith-project-${Date.now()}.json`;
+    const filename = `ContentSmith-project-${Date.now()}.json`;
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -2021,8 +2060,8 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
   if (els.btnExportSingleHtml) els.btnExportSingleHtml.addEventListener('click', exportSingleFileHtml);
   if (els.btnDownloadPdf) {
     els.btnDownloadPdf.addEventListener('click', () => {
-      if (window.CatalogSmithPDF && window.CatalogSmithPDF.downloadCatalogPDF) {
-        window.CatalogSmithPDF.downloadCatalogPDF(state);
+      if (window.ContentSmithPDF && window.ContentSmithPDF.downloadCatalogPDF) {
+        window.ContentSmithPDF.downloadCatalogPDF(state);
       } else {
         showToast('PDF engine not loaded');
       }
@@ -2030,8 +2069,8 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
   }
   if (els.btnOpenLookbook) {
     els.btnOpenLookbook.addEventListener('click', () => {
-      if (window.CatalogSmithPDF && window.CatalogSmithPDF.openPrintableLookbook) {
-        window.CatalogSmithPDF.openPrintableLookbook(state);
+      if (window.ContentSmithPDF && window.ContentSmithPDF.openPrintableLookbook) {
+        window.ContentSmithPDF.openPrintableLookbook(state);
       } else {
         showToast('PDF engine not loaded');
       }
@@ -2042,8 +2081,8 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     els.btnShareCatalog.addEventListener('click', () => {
       if (window.CatalogStore && window.CatalogStore.openShareModal) {
         window.CatalogStore.openShareModal(state);
-      } else if (window.CatalogSmithPDF && window.CatalogSmithPDF.shareCatalog) {
-        window.CatalogSmithPDF.shareCatalog(state);
+      } else if (window.ContentSmithPDF && window.ContentSmithPDF.shareCatalog) {
+        window.ContentSmithPDF.shareCatalog(state);
       }
     });
   }
@@ -2062,8 +2101,8 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
   const btnWorkspaceToAdmin = document.getElementById('btn-workspace-to-admin');
   if (btnWorkspaceToAdmin) {
     btnWorkspaceToAdmin.addEventListener('click', () => {
-      if (window.CatalogSmithApp && window.CatalogSmithApp.showAdmin) {
-        window.CatalogSmithApp.showAdmin();
+      if (window.ContentSmithApp && window.ContentSmithApp.showAdmin) {
+        window.ContentSmithApp.showAdmin();
       }
     });
   }
@@ -2117,7 +2156,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
 
   // Cross-frame listener for simulator iframe share button
   window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'CATALOGSMITH_SHARE_CURRENT') {
+    if (e.data && e.data.type === 'ContentSmith_SHARE_CURRENT') {
       if (window.CatalogStore && window.CatalogStore.openShareModal) {
         window.CatalogStore.openShareModal(state);
       }
@@ -2884,7 +2923,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
 
   function loadSavedApiKey() {
     try {
-      const saved = localStorage.getItem('catalogsmith_gemini_api_key');
+      const saved = localStorage.getItem('ContentSmith_gemini_api_key');
       if (saved) {
         inMemoryGeminiKey = saved;
         if (els.geminiApiKey) els.geminiApiKey.value = saved;
@@ -3112,9 +3151,9 @@ Return pure JSON only.`;
         if (els.checkRememberKey && els.checkRememberKey.checked) {
           try {
             if (inMemoryGeminiKey) {
-              localStorage.setItem('catalogsmith_gemini_api_key', inMemoryGeminiKey);
+              localStorage.setItem('ContentSmith_gemini_api_key', inMemoryGeminiKey);
             } else {
-              localStorage.removeItem('catalogsmith_gemini_api_key');
+              localStorage.removeItem('ContentSmith_gemini_api_key');
             }
           } catch (_) {}
         }
@@ -3125,9 +3164,9 @@ Return pure JSON only.`;
         try {
           if (els.checkRememberKey.checked) {
             const key = inMemoryGeminiKey || (els.geminiApiKey ? els.geminiApiKey.value.trim() : '');
-            if (key) localStorage.setItem('catalogsmith_gemini_api_key', key);
+            if (key) localStorage.setItem('ContentSmith_gemini_api_key', key);
           } else {
-            localStorage.removeItem('catalogsmith_gemini_api_key');
+            localStorage.removeItem('ContentSmith_gemini_api_key');
           }
         } catch (_) {}
       });
@@ -3154,7 +3193,7 @@ Return pure JSON only.`;
       loadFixture('whatsapp');
     }
     // Expose API for app.js and external flows
-    window.CatalogSmithStudio = {
+    window.ContentSmithStudio = window.CatalogSmithStudio = {
       state,
       setStep,
       renderReviewList,

@@ -1,4 +1,4 @@
-# CatalogSmith: Whole-Video Extraction Prompt & Schema
+﻿# ContentSmith: Whole-Video Extraction Prompt & Schema
 
 This prompt is designed for **Google AI Studio** (free tier) running directly in a mobile or desktop browser. It leverages Gemini's multimodal audio and video ingestion to extract a structured catalog in a single pass without needing FFmpeg or a backend server.
 
@@ -97,4 +97,4 @@ In Google AI Studio, under **Model Settings -> Advanced Settings -> Structured O
 6. (Optional) Set Structured Output to JSON or paste the schema.
 7. Tap **Run** (Cmd/Ctrl+Enter or the Run button).
 8. Once finished, tap the **Copy** icon on the generated response.
-9. Open **CatalogSmith Studio** in your browser and paste the JSON directly into Step 1!
+9. Open **ContentSmith Studio** in your browser and paste the JSON directly into Step 1!

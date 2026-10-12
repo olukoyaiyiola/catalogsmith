@@ -1,7 +1,7 @@
-# CatalogSmith 🛍️🎥
+﻿# ContentSmith 🛍️🎥
 ### Video-to-Storefront Tool (Git-Free, Phone-First)
 
-**CatalogSmith** turns a vendor product video into a live mobile-first storefront with **zero infrastructure, zero GitHub account, and 100% free tiers**. 
+**ContentSmith** turns a vendor product video into a live mobile-first storefront with **zero infrastructure, zero GitHub account, and 100% free tiers**. 
 
 Built for mobile-native merchants and operators who do everything from a smartphone, have no developer setup, and want to publish a live shareable catalog in minutes.
 
@@ -12,7 +12,7 @@ Built for mobile-native merchants and operators who do everything from a smartph
 1. **One Multimodal Pass Replaces Complex Pipelines**:
    Gemini accepts video directly via its Files API (up to 2GB per file on the free tier). One multimodal call over the entire video replaces manual frame extraction, scene detection, deduplication, and audio transcription.
 2. **Client-Side Frame Capture (No Server-Side FFmpeg)**:
-   The user selects their local video in the browser. Using an HTML5 `<video>` element and `<canvas>`, CatalogSmith jumps directly to `best_timestamp_sec`, lets the user nudge the frame if blurry, and captures a crisp JPEG thumbnail in milliseconds.
+   The user selects their local video in the browser. Using an HTML5 `<video>` element and `<canvas>`, ContentSmith jumps directly to `best_timestamp_sec`, lets the user nudge the frame if blurry, and captures a crisp JPEG thumbnail in milliseconds.
 3. **Git-Free, Serverless Hosting**:
    Storefronts are exported as a self-contained ZIP or standalone HTML file and deployed directly to **Cloudflare Pages** or **Netlify Drop** (`app.netlify.com/drop`) in under 60 seconds with zero terminal or git commands.
 4. **WhatsApp-First Ordering (No Cart, No Checkout Gateways)**:
@@ -22,7 +22,7 @@ Built for mobile-native merchants and operators who do everything from a smartph
 
 ## 📱 The 3 Supported Video Scenarios
 
-CatalogSmith is calibrated and tested on five real-world vendor video formats:
+ContentSmith is calibrated and tested on five real-world vendor video formats:
 
 | Scenario | Typical Input | Price Detection Source | Included Fixture |
 | :--- | :--- | :--- | :--- |
@@ -50,8 +50,8 @@ Vendors can instantly personalize their storefront without writing CSS:
 ## 📂 Project Structure
 
 ```
-catalogsmith/
-├── index.html                 # CatalogSmith Studio (Browser tool, responsive phone-first)
+ContentSmith/
+├── index.html                 # ContentSmith Studio (Browser tool, responsive phone-first)
 ├── css/
 │   └── studio.css             # Sleek dark-mode Studio stylesheet
 ├── js/
@@ -84,7 +84,7 @@ catalogsmith/
 
 ### Step 1: Automated Video Extraction (Zero Copy-Paste Needed)
 In **Step 1: Input & Automation**:
-- **Option A (1-Click Grounded Gemini AI Extraction)**: Enter your free Gemini API key, select your model (`gemini-1.5-flash` or `gemini-2.0-flash`), and click **"Auto-Extract Catalog with Gemini"**. CatalogSmith samples visual keyframes from the video, sends them to Gemini with strict zero-hallucination grounding, extracts authentic product names, visible prices, and exact timestamps, and captures sharp photo frames for every item!
+- **Option A (1-Click Grounded Gemini AI Extraction)**: Enter your free Gemini API key, select your model (`gemini-1.5-flash` or `gemini-2.0-flash`), and click **"Auto-Extract Catalog with Gemini"**. ContentSmith samples visual keyframes from the video, sends them to Gemini with strict zero-hallucination grounding, extracts authentic product names, visible prices, and exact timestamps, and captures sharp photo frames for every item!
 - **Option B (Smart Local Auto-Scan - No Key Needed)**: Click **"Smart Local Auto-Scan"**. The in-browser engine scans the video timeline directly via HTML5 Canvas, captures real candidate product frames across scenes, and creates clean items ready for you to title and price.
 - **Option C (Manual / Google AI Studio)**: You can also use [aistudio.google.com](https://aistudio.google.com) to paste whole-video prompts and load JSON manually.
 
@@ -143,7 +143,7 @@ The storefront template (`template/index.html`) is built specifically for users 
 
 ## 📄 PDF Catalog & Mobile Lookbook Sharing
 
-CatalogSmith provides a zero-backend, client-side PDF catalog generator:
+ContentSmith provides a zero-backend, client-side PDF catalog generator:
 1. **Download PDF Catalog (`.pdf`)**:
    - Generates a standalone multi-page `%PDF-1.4` binary document containing high-resolution product photos, prices, descriptions, and category tags.
    - Built-in WhatsApp links: Tapping any product or order button directly inside the PDF launches WhatsApp with a pre-filled order inquiry to the vendor.
@@ -156,7 +156,7 @@ CatalogSmith provides a zero-backend, client-side PDF catalog generator:
 
 ## 🔍 Web Image Search API Integration
 
-CatalogSmith provides real provider-backed web image search via `/api/search-images?q=<query>`:
+ContentSmith provides real provider-backed web image search via `/api/search-images?q=<query>`:
 1. **Zero-Configuration Fallback**:
    - Out of the box, queries the **Wikimedia Commons Open Media API** for creative commons and public domain commercial product imagery with no API keys required.
 2. **Supported Web Providers (Optional Environment Variables)**:

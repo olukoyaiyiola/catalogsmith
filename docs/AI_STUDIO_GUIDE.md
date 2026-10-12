@@ -1,4 +1,4 @@
-# Phone-First Guide: Video Extraction via Google AI Studio
+﻿# Phone-First Guide: Video Extraction via Google AI Studio
 
 This guide shows how a vendor or operator can turn any product video into structured catalog JSON directly from a smartphone with **zero coding, zero GitHub, and 100% free tiers**.
 
@@ -32,7 +32,7 @@ Google AI Studio provides free access to Gemini Flash models (`gemini-1.5-flash`
    - Panning clip of boutique shelves (`.mp4` / `.mov`)
 5. Wait a few seconds for the upload progress bar to finish.
 
-### Step 3: Paste the CatalogSmith Extraction Prompt
+### Step 3: Paste the ContentSmith Extraction Prompt
 In the prompt box, paste the following text:
 
 ```text
@@ -40,13 +40,13 @@ You are analyzing a vendor's product video. It may be a WhatsApp chat screen rec
 ```
 
 *(Optional - For Guaranteed Strict JSON):*
-Tap the **Settings (Sliders)** icon -> expand **Advanced Settings** -> enable **Structured Output** / **JSON Schema**, and paste the CatalogSmith JSON schema from `prompts/schema.json`.
+Tap the **Settings (Sliders)** icon -> expand **Advanced Settings** -> enable **Structured Output** / **JSON Schema**, and paste the ContentSmith JSON schema from `prompts/schema.json`.
 
 ### Step 4: Run and Copy the JSON
 1. Tap the **Run** button (blue play arrow).
 2. Gemini will analyze the video (usually 15 to 45 seconds).
 3. Tap the **Copy** icon at the top-right of Gemini's response.
-4. Switch to your browser tab with **CatalogSmith Studio** -> open Step 1 -> paste into the JSON box and tap **Load & Review Products**!
+4. Switch to your browser tab with **ContentSmith Studio** -> open Step 1 -> paste into the JSON box and tap **Load & Review Products**!
 
 ---
 
@@ -62,7 +62,7 @@ Tap the **Settings (Sliders)** icon -> expand **Advanced Settings** -> enable **
 
 ## What If Items Are Missed? (Fallback Extraction)
 If a screen recording was scrolled too quickly and AI Studio missed a card:
-1. Open **CatalogSmith Studio** -> tap **Fallback Frames** in the top bar.
+1. Open **ContentSmith Studio** -> tap **Fallback Frames** in the top bar.
 2. Select your video and click **Extract Frame Strip** (samples frames every 1.5s in your browser).
 3. Tap any candidate frame that was missed to seek the video player to that exact moment.
 4. Add the product manually or copy the **Per-Frame Prompt** (`prompts/per-frame-prompt.md`) into AI Studio with the single screenshot.

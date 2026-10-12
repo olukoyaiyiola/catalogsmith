@@ -1,5 +1,5 @@
-// Pre-packaged test datasets for CatalogSmith Studio
-window.CATALOGSMITH_FIXTURES = {
+// Pre-packaged test datasets for ContentSmith Studio
+window.CONTENTSMITH_FIXTURES = window.ContentSmith_FIXTURES = window.CATALOGSMITH_FIXTURES = {
   whatsapp: {
     name: "1. WhatsApp Chat Scroll",
     description: "Lola Fabrics & Chic Wear (Screen recording of WhatsApp chat cards and text prices)",

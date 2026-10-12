@@ -1,9 +1,9 @@
 /**
- * CatalogSmith - SSRF-Safe Image Importer
+ * ContentSmith - SSRF-Safe Image Importer
  * Endpoint: POST /api/import-image
  * Body: { url: string, provider?: string, author?: string, license?: string }
  * 
- * Complies with CatalogSmith Phase I Item 5:
+ * Complies with ContentSmith Phase I Item 5:
  * - Anti-hotlinking: fetches image from trusted stock provider to local storage or Vercel Blob
  * - HTTPS only
  * - Provider domain allowlist
@@ -55,7 +55,7 @@ function isHostAllowed(hostname) {
   return ALLOWED_HOST_SUFFIXES.some(suffix => h === suffix || h.endsWith('.' + suffix));
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -113,7 +113,7 @@ module.exports = async function handler(req, res) {
       fetchResp = await fetch(parsedUrl.toString(), {
         method: 'GET',
         headers: {
-          'User-Agent': 'CatalogSmith-ImageImporter/1.0 (+https://catalogsmith.vercel.app)',
+          'User-Agent': 'ContentSmith-ImageImporter/1.0 (+https://ContentSmith.vercel.app)',
           'Accept': 'image/jpeg,image/png,image/webp,image/gif;q=0.9,*/*;q=0.5'
         },
         signal: controller.signal,
@@ -145,7 +145,7 @@ module.exports = async function handler(req, res) {
         fetchResp = await fetch(redirectParsed.toString(), {
           method: 'GET',
           headers: {
-            'User-Agent': 'CatalogSmith-ImageImporter/1.0 (+https://catalogsmith.vercel.app)',
+            'User-Agent': 'ContentSmith-ImageImporter/1.0 (+https://ContentSmith.vercel.app)',
             'Accept': 'image/jpeg,image/png,image/webp,image/gif;q=0.9,*/*;q=0.5'
           },
           signal: redirectController.signal,

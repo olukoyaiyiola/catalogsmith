@@ -1,13 +1,13 @@
-# CatalogSmith: Master Architectural Approach & Iteration Guide
+﻿# ContentSmith: Master Architectural Approach & Iteration Guide
 
 > **Target Audience**: AI Engineering Assistants (Claude / GPT), Senior Frontend Engineers, and System Architects.
-> **Purpose**: Serves as the complete mental model, architectural reference, UI specification, and roadmap for understanding, modifying, and extending CatalogSmith without regressions.
+> **Purpose**: Serves as the complete mental model, architectural reference, UI specification, and roadmap for understanding, modifying, and extending ContentSmith without regressions.
 
 ---
 
 ## 1. Executive Summary & Core Philosophy
 
-**CatalogSmith** is a **phone-first video-to-storefront generator with built-in hosted persistence and instant shareable links**. It empowers mobile-native merchants (e.g. WhatsApp, Instagram, TikTok vendors, and marketplace stall owners in Nigeria and emerging markets) to convert raw product showcase videos into high-converting, mobile-optimized digital storefronts and structured marketplace export feeds.
+**ContentSmith** is a **phone-first video-to-storefront generator with built-in hosted persistence and instant shareable links**. It empowers mobile-native merchants (e.g. WhatsApp, Instagram, TikTok vendors, and marketplace stall owners in Nigeria and emerging markets) to convert raw product showcase videos into high-converting, mobile-optimized digital storefronts and structured marketplace export feeds.
 
 ### Core Architectural Tenets:
 1. **Built-in Hosting & Durability**: Fast offline draft editing in `localStorage`, backed by serverless hosting (`/api/publish`, `/api/catalogue`), direct-to-Blob photo storage, and Neon Postgres persistence for durable, instant shareable storefront links.
@@ -22,7 +22,7 @@
 ## 2. Repository Structure & File Map
 
 ```
-catalogsmith/
+ContentSmith/
 ├── index.html                   # Dual-view application: Landing page + Store workspace
 ├── css/
 │   ├── app.css                  # Light-theme emerald design system & landing page styles
@@ -66,12 +66,12 @@ catalogsmith/
 ## 3. UI/UX Architecture & Visual Design System
 
 The application has two distinct UI surfaces:
-1. **The Studio App** ([`index.html`](file:///c:/Users/Odg/Documents/catalogsmith/index.html), [`css/studio.css`](file:///c:/Users/Odg/Documents/catalogsmith/css/studio.css)): High-craft, dark-mode developer/merchant tool.
-2. **The Customer Storefront** ([`template/index.html`](file:///c:/Users/Odg/Documents/catalogsmith/template/index.html), [`template/storefront.css`](file:///c:/Users/Odg/Documents/catalogsmith/template/storefront.css)): Lightweight, lightning-fast, themed mobile site.
+1. **The Studio App** ([`index.html`](file:///c:/Users/Odg/Documents/ContentSmith/index.html), [`css/studio.css`](file:///c:/Users/Odg/Documents/ContentSmith/css/studio.css)): High-craft, dark-mode developer/merchant tool.
+2. **The Customer Storefront** ([`template/index.html`](file:///c:/Users/Odg/Documents/ContentSmith/template/index.html), [`template/storefront.css`](file:///c:/Users/Odg/Documents/ContentSmith/template/storefront.css)): Lightweight, lightning-fast, themed mobile site.
 
 ---
 
-### 3.1 Studio App Design Tokens ([`css/studio.css`](file:///c:/Users/Odg/Documents/catalogsmith/css/studio.css))
+### 3.1 Studio App Design Tokens ([`css/studio.css`](file:///c:/Users/Odg/Documents/ContentSmith/css/studio.css))
 
 ```css
 :root {
@@ -158,7 +158,7 @@ The application has two distinct UI surfaces:
 
 ---
 
-### 3.3 Customer Storefront Theme Presets ([`template/storefront.css`](file:///c:/Users/Odg/Documents/catalogsmith/template/storefront.css))
+### 3.3 Customer Storefront Theme Presets ([`template/storefront.css`](file:///c:/Users/Odg/Documents/ContentSmith/template/storefront.css))
 
 The generated customer storefront supports 6 pre-configured CSS themes via body classes:
 
@@ -184,7 +184,7 @@ The generated customer storefront supports 6 pre-configured CSS themes via body 
 
 ## 4. State Management & Data Schema
 
-### 4.1 Global Application State ([`js/studio.js`](file:///c:/Users/Odg/Documents/catalogsmith/js/studio.js#L10-L26))
+### 4.1 Global Application State ([`js/studio.js`](file:///c:/Users/Odg/Documents/ContentSmith/js/studio.js#L10-L26))
 The state in `studio.js` is encapsulated within a closure:
 
 ```javascript
@@ -207,7 +207,7 @@ const state = {
 };
 ```
 
-### 4.2 Product Item Schema ([`prompts/schema.json`](file:///c:/Users/Odg/Documents/catalogsmith/prompts/schema.json))
+### 4.2 Product Item Schema ([`prompts/schema.json`](file:///c:/Users/Odg/Documents/ContentSmith/prompts/schema.json))
 
 ```json
 {
@@ -232,7 +232,7 @@ const state = {
 * **`best_timestamp_sec`**: Precise float timestamp where item is most steady and centered.
 
 ### 4.3 Persistence Lifecycle
-* **`localStorage` Key**: `'catalogsmith_studio_state'`
+* **`localStorage` Key**: `'ContentSmith_studio_state'`
 * **Debounced Auto-Save**: Function `debouncedSaveState()` triggers `localStorage.setItem` after user edits with a 500ms debounce.
 * **Auto-Hydration**: On application mount, checks `localStorage`. If saved state exists, deserializes and populates fields, restoring active products and custom images.
 
@@ -256,12 +256,12 @@ To avoid server-side FFmpeg or transcoding bottlenecks:
 
 ### 5.2 Pipeline 2: Automated AI Extraction & Smart Scan
 
-CatalogSmith provides two automated extraction methods:
+ContentSmith provides two automated extraction methods:
 
 #### A. 1-Click Grounded Gemini AI Extraction (`runAutoExtractGemini`)
 1. Samples 6–8 chronological keyframe images evenly distributed across the video timeline.
 2. Formats keyframes as inline base64 image parts to the Gemini multimodal API (`generateContent`).
-3. Sends structured system instructions requiring strict JSON output adhering to [`prompts/schema.json`](file:///c:/Users/Odg/Documents/catalogsmith/prompts/schema.json).
+3. Sends structured system instructions requiring strict JSON output adhering to [`prompts/schema.json`](file:///c:/Users/Odg/Documents/ContentSmith/prompts/schema.json).
 4. Strictly forbids hallucinated prices; if a price is not clearly visible on-screen or spoken in audio, sets `price.amount: null`.
 5. Resolves candidate timestamps, auto-seeks the video, and attaches crisp JPEG thumbnails to each detected item.
 
@@ -275,7 +275,7 @@ CatalogSmith provides two automated extraction methods:
 ### 5.3 Pipeline 3: Client-Side Photo Studio & AI Enhancer
 
 #### A. In-Browser Filter Canvas Editor
-Built directly into [`studio.js`](file:///c:/Users/Odg/Documents/catalogsmith/js/studio.js#L1855-L2152):
+Built directly into [`studio.js`](file:///c:/Users/Odg/Documents/ContentSmith/js/studio.js#L1855-L2152):
 * Interactive sliders for **Brightness**, **Contrast**, **Saturation**, and **Warmth** (sepia/hue-rotate).
 * Aspect ratio cropping: `Original`, `1:1 (Square)`, `4:3 (Standard)`, `3:4 (Portrait)`.
 * **Soft Studio Spotlight**: Renders a custom radial gradient vignette on canvas to mimic commercial studio lighting.
@@ -294,8 +294,8 @@ Built directly into [`studio.js`](file:///c:/Users/Odg/Documents/catalogsmith/js
 
 #### A. Storefront ZIP Bundle (`exportZipBundle`)
 Uses vendored `JSZip` to generate a production-ready package:
-* `index.html`: Fully populated storefront markup based on [`template/index.html`](file:///c:/Users/Odg/Documents/catalogsmith/template/index.html).
-* `storefront.css`: Copied from [`template/storefront.css`](file:///c:/Users/Odg/Documents/catalogsmith/template/storefront.css).
+* `index.html`: Fully populated storefront markup based on [`template/index.html`](file:///c:/Users/Odg/Documents/ContentSmith/template/index.html).
+* `storefront.css`: Copied from [`template/storefront.css`](file:///c:/Users/Odg/Documents/ContentSmith/template/storefront.css).
 * `products.json`: Pure JSON manifest of the catalog.
 * `images/`: Decodes all base64 product images into binary JPEG blobs (`p1.jpg`, `p2.jpg`, etc.).
 * `DEPLOY_GUIDE.md`: Deployment instructions for Netlify Drop and Cloudflare Pages.
@@ -304,7 +304,7 @@ Uses vendored `JSZip` to generate a production-ready package:
 * Inlines the entire CSS stylesheet and embeds product images as base64 data URLs.
 * Produces a single `.html` file that works when opened offline from a smartphone file manager or shared over WhatsApp.
 
-#### C. Binary PDF Generator & Lookbook ([`js/pdf-catalog.js`](file:///c:/Users/Odg/Documents/catalogsmith/js/pdf-catalog.js))
+#### C. Binary PDF Generator & Lookbook ([`js/pdf-catalog.js`](file:///c:/Users/Odg/Documents/ContentSmith/js/pdf-catalog.js))
 * **Standalone Binary `%PDF-1.4` Compiler**: Handcrafted client-side PDF synthesizer containing page objects, cross-reference tables (`xref`), and clickable WhatsApp URL annotations (`/Type /Annot /Subtype /Link /A << /S /URI /URI (...) >>`).
 * **Printable Lookbook**: Generates an A4 print-optimized HTML view with `@media print` rules, page breaks, and high-resolution vendor contact headers.
 

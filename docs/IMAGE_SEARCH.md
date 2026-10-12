@@ -1,4 +1,4 @@
-# CatalogSmith: Image Search & Asset Acquisition Architecture
+﻿# ContentSmith: Image Search & Asset Acquisition Architecture
 
 > **Document Status**: Verified against live provider APIs and current official platform documentation.
 > **Last Updated**: October 2026 (Phase I Compliance).
@@ -7,16 +7,16 @@
 
 ## 1. Overview & Core Philosophy
 
-In CatalogSmith, product photography follows an uncompromising hierarchy of trust:
+In ContentSmith, product photography follows an uncompromising hierarchy of trust:
 1. **Vendor's Own Authentic Photos (Primary & Highest Priority)**: WhatsApp and social-commerce buyers in emerging markets (Nigeria, Kenya, Ghana) demand real, authentic photos of in-hand inventory. The Modal IA puts camera capture and local gallery upload at the very top.
 2. **Free Commercial Stock Photography (Secondary / Fallback)**: Used only as temporary representative illustrations when a merchant has not yet captured an authentic photo. Stock images are clearly labeled with a warning in the UI (*"⚠️ May not show exact product"*) and **excluded from partner/marketplace exports by default** unless the vendor explicitly certifies usage rights.
-3. **No Fake "Verified" Assets**: Pseudo-illustrations (e.g. generated SVGs labeled "Verified Catalog Asset") have been completely removed from search results. When a search returns zero results, CatalogSmith presents an honest empty state with suggested keywords and direct camera shortcuts.
+3. **No Fake "Verified" Assets**: Pseudo-illustrations (e.g. generated SVGs labeled "Verified Catalog Asset") have been completely removed from search results. When a search returns zero results, ContentSmith presents an honest empty state with suggested keywords and direct camera shortcuts.
 
 ---
 
 ## 2. Evaluated Providers & Legal / Commercial Assessment
 
-| Provider | API Key Needed? | Free Tier Limits | License Types | Commercial Use OK? | Copying / Anti-Hotlink Terms | Status in CatalogSmith |
+| Provider | API Key Needed? | Free Tier Limits | License Types | Commercial Use OK? | Copying / Anti-Hotlink Terms | Status in ContentSmith |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Openverse** | **No** (Zero Config) | ~100 req/min unauthenticated | CC0, CC-BY, CC-BY-SA, CC-BY-ND | **Yes** (filtered with `license_type=commercial`) | Permitted under CC licenses with proper attribution. | **Primary Default Provider** |
 | **Pexels** | Yes (`PEXELS_API_KEY`) | 200 req/hr, 20,000 req/mo | Pexels Custom License | **Yes** | Permitted. Guidelines encourage local caching to avoid CDN abuse. | **Supported (Optional Key)** |
@@ -41,7 +41,7 @@ In CatalogSmith, product photography follows an uncompromising hierarchy of trus
 
 ### C. Google Custom Search JSON API
 - **Official Status**: Google Cloud's official developer console confirms the Custom Search JSON API is closed to new project activations. Existing projects are supported until **January 1, 2027**.
-- **Action Taken**: Excluded from CatalogSmith to prevent building on a deprecated dependency. Web scraping Google Images "usage rights" violates Google Terms of Service and is strictly prohibited.
+- **Action Taken**: Excluded from ContentSmith to prevent building on a deprecated dependency. Web scraping Google Images "usage rights" violates Google Terms of Service and is strictly prohibited.
 
 ---
 
@@ -79,7 +79,7 @@ Tested against the live endpoint with `commercial_only=1&debug=1` on the local s
 
 ## 6. Anti-Hotlinking & SSRF-Safe Image Importer (`/api/import-image`)
 
-Per Phase I Ground Rules, CatalogSmith **never hotlinks** remote stock photo URLs directly in customer storefronts:
+Per Phase I Ground Rules, ContentSmith **never hotlinks** remote stock photo URLs directly in customer storefronts:
 1. When a vendor selects a stock photo, the client calls `POST /api/import-image` with `{ url: "https://..." }`.
 2. **SSRF Guardrails**:
    - Protocol restricted to secure `https:` only.
@@ -96,7 +96,7 @@ Per Phase I Ground Rules, CatalogSmith **never hotlinks** remote stock photo URL
 
 ## 7. Data Model: Image Provenance & Marketplace Rights
 
-Every product in CatalogSmith tracks full provenance fields:
+Every product in ContentSmith tracks full provenance fields:
 ```json
 {
   "image": "https://... or data:image/jpeg;base64,...",

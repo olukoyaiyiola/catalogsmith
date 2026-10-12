@@ -1,8 +1,8 @@
 /**
- * CatalogSmith - Multi-Provider Image Search Engine
+ * ContentSmith - Multi-Provider Image Search Engine
  * Endpoint: /api/search-images?q=<query>&limit=12&commercial_only=1&debug=1
  * 
- * Complies with CatalogSmith Phase I:
+ * Complies with ContentSmith Phase I:
  * 1. Openverse API (Zero-config Creative Commons & Public Domain with commercial filter)
  * 2. Pexels API (Optional PEXELS_API_KEY, 200 req/hr free tier, commercial use OK)
  * 3. Pixabay API (Optional PIXABAY_API_KEY, 100 req/min free tier, commercial use OK)
@@ -41,8 +41,10 @@ function cleanSearchQuery(rawQuery) {
   q = q.replace(/\b\d{4,}\b/g, ''); // 4+ digit standalone prices
   // Strip sizing noise
   q = q.replace(/\b(size\s*\d+|xl|xxl|xxxl|small|medium|large)\b/gi, '');
-  // Strip promotional chatter
-  q = q.replace(/\b(original|authentic|cheap|promo|affordable|discount|best quality|dm for price|order now)\b/gi, '');
+  // Strip promotional chatter and query-diluting generic terms
+  q = q.replace(/\b(original|authentic|cheap|promo|affordable|discount|best quality|dm for price|order now|product|photo|picture|images?|for\s+sale|buy|online)\b/gi, '');
+  // Strip punctuation noise
+  q = q.replace(/[&+,/\\()]+/g, ' ');
   // Normalize whitespace
   q = q.replace(/\s+/g, ' ').trim();
   return q || rawQuery.trim();
@@ -63,12 +65,14 @@ export default async function handler(req, res) {
   const startTime = Date.now();
   let query = '';
   let limit = 12;
+  let page = 1;
   let isDebug = false;
   let commercialOnly = true;
 
   if (req.query) {
     query = req.query.q || req.query.query || '';
     if (req.query.limit) limit = Math.min(24, Math.max(1, parseInt(req.query.limit, 10)));
+    if (req.query.page) page = Math.max(1, parseInt(req.query.page, 10));
     isDebug = req.query.debug === '1' || req.query.debug === 'true';
     if (req.query.commercial_only === '0') commercialOnly = false;
   } else if (req.url) {
@@ -77,6 +81,8 @@ export default async function handler(req, res) {
       query = parsedUrl.searchParams.get('q') || parsedUrl.searchParams.get('query') || '';
       const l = parsedUrl.searchParams.get('limit');
       if (l) limit = Math.min(24, Math.max(1, parseInt(l, 10)));
+      const p = parsedUrl.searchParams.get('page');
+      if (p) page = Math.max(1, parseInt(p, 10));
       isDebug = parsedUrl.searchParams.get('debug') === '1';
       if (parsedUrl.searchParams.get('commercial_only') === '0') commercialOnly = false;
     } catch (_) {}
@@ -141,10 +147,10 @@ export default async function handler(req, res) {
     // 1. OPENVERSE (Zero-config, Commercial Creative Commons & Public Domain)
     const openversePromise = runProvider('openverse', true, async (signal) => {
       const filter = commercialOnly ? '&license_type=commercial' : '';
-      const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(cleanQuery)}${filter}&page_size=${limit}`;
+      const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(cleanQuery)}${filter}&page_size=${limit}&page=${page}`;
       const resp = await fetch(url, {
         signal,
-        headers: { 'User-Agent': 'CatalogSmith-ImageSearch/1.0 (catalogsmith; phone-first storefront tool)' }
+        headers: { 'User-Agent': 'ContentSmith-ImageSearch/1.0 (ContentSmith; phone-first storefront tool)' }
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
       const data = await resp.json();
@@ -169,7 +175,7 @@ export default async function handler(req, res) {
     // 2. PEXELS (Optional key, Commercial use OK)
     const pexelsKey = process.env.PEXELS_API_KEY;
     const pexelsPromise = runProvider('pexels', Boolean(pexelsKey), async (signal) => {
-      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&per_page=${limit}&orientation=landscape`;
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&per_page=${limit}&orientation=landscape&page=${page}`;
       const resp = await fetch(url, {
         signal,
         headers: { 'Authorization': pexelsKey }
@@ -196,7 +202,7 @@ export default async function handler(req, res) {
     // 3. PIXABAY (Optional key, Commercial use OK)
     const pixabayKey = process.env.PIXABAY_API_KEY;
     const pixabayPromise = runProvider('pixabay', Boolean(pixabayKey), async (signal) => {
-      const url = `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(cleanQuery)}&image_type=photo&per_page=${limit}&safesearch=true`;
+      const url = `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(cleanQuery)}&image_type=photo&per_page=${limit}&safesearch=true&page=${page}`;
       const resp = await fetch(url, { signal });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
@@ -220,7 +226,7 @@ export default async function handler(req, res) {
     // 4. UNSPLASH (Optional key, Commercial use OK with attribution)
     const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
     const unsplashPromise = runProvider('unsplash', Boolean(unsplashKey), async (signal) => {
-      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(cleanQuery)}&per_page=${limit}&orientation=squarish`;
+      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(cleanQuery)}&per_page=${limit}&page=${page}&orientation=squarish`;
       const resp = await fetch(url, {
         signal,
         headers: { 'Authorization': `Client-ID ${unsplashKey}` }
@@ -262,10 +268,11 @@ export default async function handler(req, res) {
     // 5. WIKIMEDIA COMMONS FALLBACK (Zero-config, executed only if primary providers returned < 3 results)
     if (combined.length < 3) {
       const wikiResults = await runProvider('wikimedia', true, async (signal) => {
-        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=${limit}&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*`;
+        const gsroffset = (page - 1) * limit;
+        const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=${limit}&gsroffset=${gsroffset}&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*`;
         const resp = await fetch(wikiUrl, {
           signal,
-          headers: { 'User-Agent': 'CatalogSmith-ImageSearch/1.0 (catalogsmith; phone-first storefront tool)' }
+          headers: { 'User-Agent': 'ContentSmith-ImageSearch/1.0 (ContentSmith; phone-first storefront tool)' }
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
@@ -332,6 +339,7 @@ export default async function handler(req, res) {
     const responsePayload = {
       query: cleanQuery,
       original_query: query,
+      page: page,
       total: deduplicated.length,
       commercial_only: commercialOnly,
       primary_provider: primaryProvider,

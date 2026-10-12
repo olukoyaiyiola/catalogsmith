@@ -1,6 +1,6 @@
-# CatalogSmith: Validation & Testing Report
+﻿# ContentSmith: Validation & Testing Report
 
-This report documents the architectural testing and validation of CatalogSmith across all three target video input types and the end-to-end browser studio tool.
+This report documents the architectural testing and validation of ContentSmith across all three target video input types and the end-to-end browser studio tool.
 
 ---
 
@@ -20,7 +20,7 @@ We tested the whole-video prompt and schema against real-world test fixtures rep
 
 ## 1B. Storefront Customization & Theme Testing
 
-CatalogSmith now includes 5 vendor theme presets and 2 mobile grid densities verified in both the live phone simulator and exported bundles:
+ContentSmith now includes 5 vendor theme presets and 2 mobile grid densities verified in both the live phone simulator and exported bundles:
 - **🌿 Emerald & Mint (Clean WhatsApp Native)**: Default trusted merchant look.
 - **👑 Luxury Obsidian & Champagne Gold**: Deep dark background with warm gold borders for luxury fashion and jewelry.
 - **🌅 Sunset Terracotta & Warm Sand**: Earthy boutique warmth tailored for handcrafted leather and artisanal goods.
@@ -57,7 +57,7 @@ CatalogSmith now includes 5 vendor theme presets and 2 mobile grid densities ver
 - **Sticky Contact**: Verified bottom-right floating action button stays accessible throughout the page scroll.
 
 ### E. Git-Free Packaging & Export
-- **ZIP Bundler**: Tested vendored `JSZip v3.10.1` generating `catalogsmith-store.zip` containing `index.html`, `storefront.css`, `products.json`, binary JPEG images, and `DEPLOY_GUIDE.md`.
+- **ZIP Bundler**: Tested vendored `JSZip v3.10.1` generating `ContentSmith-store.zip` containing `index.html`, `storefront.css`, `products.json`, binary JPEG images, and `DEPLOY_GUIDE.md`.
 - **Single-File HTML**: Verified standalone `.html` exporter with base64 data URIs and inline CSS for zero-folder distribution.
 
 ---

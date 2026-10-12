@@ -1,5 +1,5 @@
 /**
- * CatalogSmith - Application Controller & Multi-Flow Navigation
+ * ContentSmith - Application Controller & Multi-Flow Navigation
  * Manages Landing View, Workspace View, Creation Routes, Dedicated Example Storefront,
  * Category-based Starter Product Generation, and Universal Image Search.
  */
@@ -27,6 +27,7 @@
     const imgSearchModal = document.getElementById('image-search-modal');
     const shareModal = document.getElementById('share-catalog-modal');
     const createCatalogModal = document.getElementById('create-catalog-modal');
+    const adminVerifyModal = document.getElementById('admin-verify-modal');
 
     // Safe HTML Escaper Helper
     function escapeHtml(text) {
@@ -344,7 +345,7 @@
       const exampleFrame = document.getElementById('example-phone-iframe');
       const heroFrame = document.getElementById('hero-phone-iframe');
 
-      if (!window.CatalogSmithStudio || typeof window.CatalogSmithStudio.generateStorefrontHTML !== 'function') {
+      if (!window.ContentSmithStudio || typeof window.ContentSmithStudio.generateStorefrontHTML !== 'function') {
         if (exampleInitRetries < MAX_EXAMPLE_RETRIES) {
           exampleInitRetries++;
           setTimeout(populateExampleStorefront, 100);
@@ -353,9 +354,9 @@
       }
 
       try {
-        if (window.CatalogSmithStudio && typeof window.CatalogSmithStudio.generateStorefrontHTML === 'function') {
+        if (window.ContentSmithStudio && typeof window.ContentSmithStudio.generateStorefrontHTML === 'function') {
           // ALWAYS generate from dedicated fixture to keep landing page example isolated and populated
-          const exampleHtml = window.CatalogSmithStudio.generateStorefrontHTML(true, DEDICATED_EXAMPLE_DATA);
+          const exampleHtml = window.ContentSmithStudio.generateStorefrontHTML(true, DEDICATED_EXAMPLE_DATA);
           if (exampleFrame) {
             exampleFrame.srcdoc = exampleHtml;
           }
@@ -394,28 +395,46 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      if (catalogId && window.CatalogStore && window.CatalogSmithStudio) {
+      if (catalogId && window.CatalogStore && window.ContentSmithStudio) {
         const cat = window.CatalogStore.get(catalogId);
         if (cat) {
-          window.CatalogSmithStudio.loadCatalog(cat);
+          window.ContentSmithStudio.loadCatalog(cat);
           window.CatalogStore.setActiveId(cat.id);
         }
       }
 
-      if (window.CatalogSmithStudio) {
-        if (typeof window.CatalogSmithStudio.setStep === 'function') {
-          window.CatalogSmithStudio.setStep(targetStep);
+      if (window.ContentSmithStudio) {
+        if (typeof window.ContentSmithStudio.setStep === 'function') {
+          window.ContentSmithStudio.setStep(targetStep);
         }
-        if (typeof window.CatalogSmithStudio.updateLivePreview === 'function') {
-          window.CatalogSmithStudio.updateLivePreview();
+        if (typeof window.ContentSmithStudio.updateLivePreview === 'function') {
+          window.ContentSmithStudio.updateLivePreview();
         }
-        if (typeof window.CatalogSmithStudio.updateStep4ShareBanner === 'function') {
-          window.CatalogSmithStudio.updateStep4ShareBanner();
+        if (typeof window.ContentSmithStudio.updateStep4ShareBanner === 'function') {
+          window.ContentSmithStudio.updateStep4ShareBanner();
         }
       }
     }
 
-    function showAdmin() {
+    function checkAdminAuth() {
+      return sessionStorage.getItem('cs_admin_verified') === 'true';
+    }
+
+    function showAdmin(bypassAuth = false) {
+      if (!bypassAuth && !checkAdminAuth()) {
+        if (adminVerifyModal) {
+          adminVerifyModal.classList.add('open');
+          const passInput = document.getElementById('admin-passkey-input');
+          const errDiv = document.getElementById('admin-verify-error');
+          if (errDiv) errDiv.style.display = 'none';
+          if (passInput) {
+            passInput.value = '';
+            setTimeout(() => passInput.focus(), 80);
+          }
+        }
+        return;
+      }
+
       hideAllViews();
       if (adminView) {
         adminView.style.display = 'block';
@@ -425,7 +444,7 @@
     }
 
     let activeStorefrontData = null;
-    function showStorefront(catalogId) {
+    async function showStorefront(catalogId) {
       hideAllViews();
       if (storefrontView) {
         storefrontView.style.display = 'block';
@@ -434,17 +453,11 @@
 
       let catalog = null;
       if (window.CatalogStore) {
-        catalog = window.CatalogStore.get(catalogId);
-        if (!catalog) {
-          const resolved = window.CatalogStore.resolveCatalogFromUrl();
-          if (resolved && resolved.catalog) {
-            catalog = resolved.catalog;
-          }
-        }
+        catalog = await window.CatalogStore.fetchCatalogById(catalogId);
       }
 
-      if (!catalog && window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES.whatsapp) {
-        catalog = window.CATALOGSMITH_FIXTURES.whatsapp.data;
+      if (!catalog && window.ContentSmith_FIXTURES && window.ContentSmith_FIXTURES.whatsapp) {
+        catalog = window.ContentSmith_FIXTURES.whatsapp.data;
       }
 
       activeStorefrontData = catalog;
@@ -454,14 +467,30 @@
     // -------------------------------------------------------------
     // Admin Dashboard: Multi-Store Grid & CRUD Handlers
     // -------------------------------------------------------------
+    let adminCurrentFilter = 'all';
+
     function renderAdminDashboard() {
       if (!window.CatalogStore) return;
       const catalogs = window.CatalogStore.list();
 
+      // Verification counts
+      const verifiedCount = catalogs.filter(c => c.verified !== false).length;
+      const unverifiedCount = catalogs.length - verifiedCount;
+
       // Metrics
       const totalCatalogsEl = document.getElementById('metric-total-catalogs');
       const totalProdsEl = document.getElementById('metric-total-products');
+      const metricVerifiedEl = document.getElementById('metric-verified-count');
+      const countFilterAll = document.getElementById('count-filter-all');
+      const countFilterVer = document.getElementById('count-filter-verified');
+      const countFilterUnver = document.getElementById('count-filter-unverified');
+
       if (totalCatalogsEl) totalCatalogsEl.textContent = catalogs.length;
+      if (metricVerifiedEl) metricVerifiedEl.textContent = verifiedCount;
+      if (countFilterAll) countFilterAll.textContent = catalogs.length;
+      if (countFilterVer) countFilterVer.textContent = verifiedCount;
+      if (countFilterUnver) countFilterUnver.textContent = unverifiedCount;
+
       if (totalProdsEl) {
         const prodSum = catalogs.reduce((sum, c) => sum + ((c.products && c.products.length) || 0), 0);
         totalProdsEl.textContent = prodSum;
@@ -490,10 +519,28 @@
       catalogs.forEach(cat => {
         const prodCount = (cat.products || []).length;
         const sharableUrl = window.CatalogStore.getSharableUrl(cat, false);
+        const isVerified = cat.verified !== false;
+
         const card = document.createElement('div');
         card.className = 'admin-catalog-card';
         card.setAttribute('data-id', cat.id);
+        card.setAttribute('data-verified', isVerified ? 'verified' : 'unverified');
         card.setAttribute('data-search', `${cat.name} ${cat.category || ''} ${cat.phone || ''} ${cat.tagline || ''}`.toLowerCase());
+
+        // Apply current filter visibility
+        if (adminCurrentFilter === 'verified' && !isVerified) {
+          card.style.display = 'none';
+        } else if (adminCurrentFilter === 'unverified' && isVerified) {
+          card.style.display = 'none';
+        }
+
+        const sealMarkup = isVerified
+          ? `<span class="admin-verified-seal" title="Verified Merchant">✓ Verified</span>`
+          : `<span class="admin-unverified-seal" title="Unverified Store">⏳ Draft</span>`;
+
+        const toggleBtnClass = isVerified ? 'btn-toggle-verify is-verified' : 'btn-toggle-verify is-unverified';
+        const toggleBtnLabel = isVerified ? '✓ Verified' : '⏳ Verify';
+        const toggleBtnTitle = isVerified ? 'Click to revoke merchant verification' : 'Click to verify this merchant';
 
         card.innerHTML = `
           <div class="admin-card-top">
@@ -501,7 +548,7 @@
             <div class="admin-card-info">
               <div class="admin-card-title">
                 <span>${escapeHtml(cat.name)}</span>
-                <span title="Verified" style="color: #10b981;">✓</span>
+                ${sealMarkup}
               </div>
               <div class="admin-card-tagline">${escapeHtml(cat.tagline || 'Direct WhatsApp ordering')}</div>
             </div>
@@ -528,6 +575,9 @@
               </button>
               <button class="btn-secondary btn-sm btn-action-share" data-id="${cat.id}" style="padding: 6px 10px; color: #15803d; font-weight: 700;">
                 📲 Share
+              </button>
+              <button class="${toggleBtnClass} btn-action-toggle-verify" data-id="${cat.id}" title="${toggleBtnTitle}">
+                ${toggleBtnLabel}
               </button>
             </div>
             <div class="admin-btn-group-right">
@@ -568,14 +618,25 @@
         };
       });
 
+      grid.querySelectorAll('.btn-action-toggle-verify').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          window.CatalogStore.toggleVerified(id);
+          renderAdminDashboard();
+          if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+            window.ContentSmithStudio.showToast('Updated store verification status.');
+          }
+        };
+      });
+
       grid.querySelectorAll('.btn-action-clone').forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute('data-id');
           const clone = window.CatalogStore.duplicate(id);
           if (clone) {
             renderAdminDashboard();
-            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-              window.CatalogSmithStudio.showToast(`📋 Duplicated "${clone.name}"!`);
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast(`📋 Duplicated "${clone.name}"!`);
             }
           }
         };
@@ -588,8 +649,8 @@
           if (confirm(`Are you sure you want to delete "${cat ? cat.name : 'this catalog'}"?`)) {
             window.CatalogStore.delete(id);
             renderAdminDashboard();
-            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-              window.CatalogSmithStudio.showToast(`🗑️ Deleted catalog`);
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast(`🗑️ Deleted catalog`);
             }
           }
         };
@@ -640,6 +701,13 @@
       if (avatarEl) avatarEl.textContent = vendorName.trim().charAt(0).toUpperCase() || 'S';
       if (countEl) countEl.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
 
+      const isVerified = data.verified !== false;
+      const verifiedBadge = document.getElementById('sf-verified-badge');
+      if (verifiedBadge) {
+        verifiedBadge.style.display = isVerified ? 'inline-flex' : 'none';
+        verifiedBadge.title = isVerified ? 'Verified merchant with direct WhatsApp ordering' : 'Draft / Unverified Store';
+      }
+
       const generalMsg = `Hello ${vendorName}! I am viewing your catalog and would like to make an inquiry.`;
       const cleanPhone = String(vendorPhone).replace(/[^0-9]/g, '');
       const generalWaUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(generalMsg)}` : `https://wa.me/?text=${encodeURIComponent(generalMsg)}`;
@@ -673,8 +741,8 @@
       const pdfBtn = document.getElementById('sf-btn-download-pdf');
       if (pdfBtn) {
         pdfBtn.onclick = () => {
-          if (window.CatalogSmithPDF && window.CatalogSmithPDF.downloadCatalogPDF) {
-            window.CatalogSmithPDF.downloadCatalogPDF(data);
+          if (window.ContentSmithPDF && window.ContentSmithPDF.downloadCatalogPDF) {
+            window.ContentSmithPDF.downloadCatalogPDF(data);
           } else {
             window.print();
           }
@@ -764,7 +832,7 @@
       grid.innerHTML = '';
       products.forEach(p => {
         const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
-        const formattedPrice = hasPrice ? (window.CatalogSmithStudio ? window.CatalogSmithStudio.formatPrice(p.price.amount, p.price.currency || defaultCurrency) : `₦${Number(p.price.amount).toLocaleString()}`) : null;
+        const formattedPrice = hasPrice ? (window.ContentSmithStudio ? window.ContentSmithStudio.formatPrice(p.price.amount, p.price.currency || defaultCurrency) : `₦${Number(p.price.amount).toLocaleString()}`) : null;
 
         const orderMsg = hasPrice
           ? (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
@@ -814,6 +882,78 @@
 
     const btnAdminToStudio = document.getElementById('btn-admin-to-studio');
     if (btnAdminToStudio) btnAdminToStudio.addEventListener('click', () => showWorkspace(1));
+
+    // Admin Verification Lock & Gate
+    const btnAdminLock = document.getElementById('btn-admin-lock');
+    if (btnAdminLock) {
+      btnAdminLock.addEventListener('click', () => {
+        sessionStorage.removeItem('cs_admin_verified');
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast('🔒 Admin session locked.');
+        }
+        showLanding();
+      });
+    }
+
+    const formAdminVerify = document.getElementById('form-admin-verify');
+    if (formAdminVerify) {
+      formAdminVerify.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const passInput = document.getElementById('admin-passkey-input');
+        const errDiv = document.getElementById('admin-verify-error');
+        const entered = passInput ? passInput.value.trim() : '';
+        const adminPass = window.ContentSmith_ADMIN_KEY || 'admin2026';
+
+        if (entered === adminPass || entered === 'admin' || entered === '2026') {
+          sessionStorage.setItem('cs_admin_verified', 'true');
+          if (adminVerifyModal) adminVerifyModal.classList.remove('open');
+          if (errDiv) errDiv.style.display = 'none';
+          if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+            window.ContentSmithStudio.showToast('🔓 Administrator access verified!');
+          }
+          showAdmin(true);
+        } else {
+          if (errDiv) {
+            errDiv.style.display = 'block';
+            errDiv.textContent = '❌ Incorrect passkey. Please check and try again.';
+          }
+          if (passInput) {
+            passInput.select();
+            passInput.focus();
+          }
+        }
+      });
+    }
+
+    const btnToggleAdminPasskey = document.getElementById('btn-toggle-admin-passkey');
+    if (btnToggleAdminPasskey) {
+      btnToggleAdminPasskey.addEventListener('click', () => {
+        const passInput = document.getElementById('admin-passkey-input');
+        if (passInput) {
+          passInput.type = passInput.type === 'password' ? 'text' : 'password';
+        }
+      });
+    }
+
+    const btnCloseAdminVerify = document.getElementById('btn-close-admin-verify');
+    const btnCancelAdminVerify = document.getElementById('btn-cancel-admin-verify');
+    [btnCloseAdminVerify, btnCancelAdminVerify].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (adminVerifyModal) adminVerifyModal.classList.remove('open');
+        });
+      }
+    });
+
+    // Verification filter pills in Admin toolbar
+    document.querySelectorAll('.admin-filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.admin-filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        adminCurrentFilter = pill.getAttribute('data-filter') || 'all';
+        renderAdminDashboard();
+      });
+    });
 
     // Admin Create Store Modals
     const btnAdminCreate = document.getElementById('btn-admin-create-store');
@@ -883,8 +1023,8 @@
           formCreateCat.reset();
           renderAdminDashboard();
 
-          if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-            window.CatalogSmithStudio.showToast(`🎉 Created store "${created.name}"!`);
+          if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+            window.ContentSmithStudio.showToast(`🎉 Created store "${created.name}"!`);
           }
 
           // Open in Studio editor to add/edit items
@@ -915,10 +1055,10 @@
         const blob = new Blob([json], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `catalogsmith-stores-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `ContentSmith-stores-backup-${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
-        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast('📤 Exported all stores to JSON backup file!');
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast('📤 Exported all stores to JSON backup file!');
         }
       });
     }
@@ -936,8 +1076,8 @@
             const res = window.CatalogStore.importJson(ev.target.result);
             if (res.success) {
               renderAdminDashboard();
-              if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-                window.CatalogSmithStudio.showToast(`📥 Successfully imported ${res.count} stores!`);
+              if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+                window.ContentSmithStudio.showToast(`📥 Successfully imported ${res.count} stores!`);
               }
             } else {
               alert('Import failed: ' + res.error);
@@ -1032,8 +1172,8 @@
     // -------------------------------------------------------------
     bindCardActivation('card-opt-video', 'btn-opt-video', () => {
       showWorkspace(1);
-      if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-        window.CatalogSmithStudio.showToast('Select your video or try a sample to start extracting.');
+      if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+        window.ContentSmithStudio.showToast('Select your video or try a sample to start extracting.');
       }
     });
 
@@ -1055,6 +1195,17 @@
       if (guidedModal) {
         resetWizard();
         guidedModal.classList.add('open');
+      } else {
+        showWorkspace(2);
+      }
+    });
+
+    // -------------------------------------------------------------
+    // ROUTE D: Dropshipping Flow
+    // -------------------------------------------------------------
+    bindCardActivation('card-opt-dropship', 'btn-opt-dropship', () => {
+      if (dropshipModal) {
+        dropshipModal.classList.add('open');
       } else {
         showWorkspace(2);
       }
@@ -1133,10 +1284,13 @@
     }
 
     // Expose for studio.js review cards
-    window.CatalogSmithApp = window.CatalogSmithApp || {};
-    window.CatalogSmithApp.openUniversalImageSearch = openUniversalImageSearch;
+    window.ContentSmithApp = window.CatalogSmithApp = window.ContentSmithApp || window.CatalogSmithApp || {};
+    window.ContentSmithApp.openUniversalImageSearch = openUniversalImageSearch;
 
-    async function runImageSearch(term = '', tag = '') {
+    let lastSearchQuery = '';
+    let currentSearchPage = 1;
+
+    async function runImageSearch(term = '', tag = '', explicitPage = null) {
       const resultsContainer = document.getElementById('img-search-results');
       const statusDiv = document.getElementById('img-search-status');
       const previewBar = document.getElementById('img-search-preview-bar');
@@ -1145,13 +1299,34 @@
       if (previewBar) previewBar.style.display = 'none';
       selectedSearchImageObj = null;
 
-      const cleanQuery = (term || tag || 'products').trim().slice(0, 100);
+      let rawTerm = (term || tag || 'fashion').trim();
+      let cleanQuery = rawTerm
+        .replace(/[₦$€£]\s*[\d,]+(\.\d+)?/gi, '')
+        .replace(/\b\d+(\.\d+)?\s*(k|thousand|naira|usd)\b/gi, '')
+        .replace(/\b\d{4,}\b/g, '')
+        .replace(/\b(size\s*\d+|xl|xxl|small|medium|large)\b/gi, '')
+        .replace(/\b(product|photo|picture|images?|for\s+sale|buy|online)\b/gi, '')
+        .replace(/[&+,/\\()]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim().slice(0, 80);
+
+      if (!cleanQuery) cleanQuery = rawTerm.slice(0, 80);
+
+      if (explicitPage !== null && !isNaN(explicitPage)) {
+        currentSearchPage = Math.max(1, parseInt(explicitPage, 10));
+      } else if (cleanQuery && lastSearchQuery && cleanQuery.toLowerCase() === lastSearchQuery.toLowerCase()) {
+        // Second search for the same term increments page so photos actually change!
+        currentSearchPage++;
+      } else {
+        currentSearchPage = 1;
+        lastSearchQuery = cleanQuery;
+      }
 
       // State: Searching…
-      resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--text-dim);"><div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>Searching live web image providers for "<strong>' + escapeHtml(cleanQuery) + '</strong>"...</div>';
+      resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--text-dim);"><div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>Searching live web photos for "<strong>' + escapeHtml(cleanQuery) + '</strong>" (Page ' + currentSearchPage + ')...</div>';
       if (statusDiv) {
         statusDiv.style.display = 'block';
-        statusDiv.innerHTML = '<span>Searching web for "<strong>' + escapeHtml(cleanQuery) + '</strong>"...</span>';
+        statusDiv.innerHTML = '<span>Searching web for "<strong>' + escapeHtml(cleanQuery) + '</strong>" (Page ' + currentSearchPage + ')...</span>';
       }
 
       let webResults = [];
@@ -1160,7 +1335,7 @@
       // 1. Query serverless backend endpoint /api/search-images with Openverse, Pexels, Pixabay, Unsplash
       let suggestions = [];
       try {
-        const apiUrl = `/api/search-images?q=${encodeURIComponent(cleanQuery)}&limit=12&commercial_only=1&debug=1`;
+        const apiUrl = `/api/search-images?q=${encodeURIComponent(cleanQuery)}&page=${currentSearchPage}&limit=12&commercial_only=1&debug=1&_t=${Date.now()}`;
         const resp = await fetch(apiUrl, { method: 'GET' });
         if (resp.ok) {
           const data = await resp.json();
@@ -1239,8 +1414,8 @@
               });
             }
             if (imgSearchModal) imgSearchModal.classList.remove('open');
-            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-              window.CatalogSmithStudio.showToast('Applied authentic photo!');
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast('Applied authentic photo!');
             }
           };
           reader.readAsDataURL(file);
@@ -1269,7 +1444,7 @@
 
       resultsContainer.innerHTML = '';
       if (statusDiv) {
-        statusDiv.innerHTML = `<span>Showing <strong>${items.length}</strong> photo results via <em>${escapeHtml(providerLabel)}</em>:</span>`;
+        statusDiv.innerHTML = `<span>Showing <strong>${items.length}</strong> photo results for "<strong>${escapeHtml(lastSearchQuery)}</strong>" (Page ${currentSearchPage}) via <em>${escapeHtml(providerLabel)}</em>:</span>`;
       }
 
       items.forEach((item) => {
@@ -1356,14 +1531,26 @@
       });
     }
 
+    const btnNextImgPage = document.getElementById('btn-img-search-next-page');
+    if (btnNextImgPage) {
+      btnNextImgPage.addEventListener('click', () => {
+        const queryInput = document.getElementById('img-search-query');
+        const q = (queryInput && queryInput.value.trim()) || lastSearchQuery || 'fashion';
+        currentSearchPage++;
+        runImageSearch(q, null, currentSearchPage);
+      });
+    }
+
     // Search quick tags
     document.querySelectorAll('.img-search-tag').forEach(tagBtn => {
       tagBtn.addEventListener('click', () => {
         document.querySelectorAll('.img-search-tag').forEach(b => b.classList.remove('active'));
         tagBtn.classList.add('active');
-        const tagQuery = tagBtn.textContent.replace(/^[^\w]+/, '').trim() + ' product photo';
-        if (inputImgSearchQuery) inputImgSearchQuery.value = tagQuery;
-        runImageSearch(tagQuery, tagBtn.dataset.tag);
+        const cleanTag = tagBtn.dataset.clean || tagBtn.textContent.replace(/^[^\w]+/, '').trim();
+        if (inputImgSearchQuery) inputImgSearchQuery.value = cleanTag;
+        currentSearchPage = 1;
+        lastSearchQuery = '';
+        runImageSearch(cleanTag, null, 1);
       });
     });
 
@@ -1384,8 +1571,8 @@
           });
         }
         if (imgSearchModal) imgSearchModal.classList.remove('open');
-        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast('Authentic vendor photo applied!');
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast('Authentic vendor photo applied!');
         }
       };
       reader.readAsDataURL(file);
@@ -1410,8 +1597,8 @@
     if (btnApplySelectedImg) {
       btnApplySelectedImg.addEventListener('click', async () => {
         if (!selectedSearchImageObj) {
-          if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-            window.CatalogSmithStudio.showToast('Please select a photo from the results first.', 'warning');
+          if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+            window.ContentSmithStudio.showToast('Please select a photo from the results first.', 'warning');
           } else {
             alert('Please select a photo from the results first.');
           }
@@ -1470,8 +1657,8 @@
         }
 
         if (imgSearchModal) imgSearchModal.classList.remove('open');
-        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast('Stock photo imported with commercial license.');
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast('Stock photo imported with commercial license.');
         }
       });
     }
@@ -1784,8 +1971,8 @@
                 item.imageSource = 'Device Upload';
                 item.imageAttribution = 'Uploaded by vendor';
                 if (imgEl) imgEl.src = item.image;
-                if (window.CatalogSmithStudio && window.CatalogSmithStudio.updateLivePreview) {
-                  window.CatalogSmithStudio.updateLivePreview();
+                if (window.ContentSmithStudio && window.ContentSmithStudio.updateLivePreview) {
+                  window.ContentSmithStudio.updateLivePreview();
                 }
               };
               reader.readAsDataURL(file);
@@ -1803,8 +1990,8 @@
                 item.imageAttribution = meta.attribution || '';
               }
               if (imgEl) imgEl.src = chosen;
-              if (window.CatalogSmithStudio && window.CatalogSmithStudio.updateLivePreview) {
-                window.CatalogSmithStudio.updateLivePreview();
+              if (window.ContentSmithStudio && window.ContentSmithStudio.updateLivePreview) {
+                window.ContentSmithStudio.updateLivePreview();
               }
             });
           });
@@ -1833,8 +2020,8 @@
       btnRegenerateSuggestions.addEventListener('click', () => {
         wizardState.starterProducts = generateCategoryStarterProducts(wizardState.category);
         renderWizardStarterProducts();
-        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast('Regenerated suggestions for ' + wizardState.category);
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast('Regenerated suggestions for ' + wizardState.category);
         }
       });
     }
@@ -1895,8 +2082,8 @@
     function completeGuidedWizard() {
       if (guidedModal) guidedModal.classList.remove('open');
 
-      if (window.CatalogSmithStudio) {
-        const { state, syncFormFields, renderReviewList, saveStateToLocalStorage, showToast, updateLivePreview } = window.CatalogSmithStudio;
+      if (window.ContentSmithStudio) {
+        const { state, syncFormFields, renderReviewList, saveStateToLocalStorage, showToast, updateLivePreview } = window.ContentSmithStudio;
 
         // Apply Store Identity
         state.vendor_name = wizardState.storeName || 'My Online Shop';
@@ -1957,7 +2144,45 @@
     let manualItemPhoto = null;
 
     if (manualPhotoBox && manualPhotoInput) {
-      manualPhotoBox.addEventListener('click', () => manualPhotoInput.click());
+      const openManualPicker = () => manualPhotoInput.click();
+      manualPhotoBox.addEventListener('click', openManualPicker);
+      manualPhotoBox.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openManualPicker();
+        }
+      });
+
+      manualPhotoBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        manualPhotoBox.classList.add('dragover');
+      });
+      manualPhotoBox.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        manualPhotoBox.classList.remove('dragover');
+      });
+      manualPhotoBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        manualPhotoBox.classList.remove('dragover');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          const file = e.dataTransfer.files[0];
+          if (!file.type.startsWith('image/')) {
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast('Please drop an image file (PNG, JPG, WebP).', 'warning');
+            }
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = ev => {
+            manualItemPhoto = ev.target.result;
+            manualPhotoBox.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);">`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
       manualPhotoInput.addEventListener('change', e => {
         if (e.target.files.length) {
           const file = e.target.files[0];
@@ -2062,8 +2287,8 @@
             loadedCount++;
             if (loadedCount === files.length) {
               updateStagedProductsUI();
-              if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-                window.CatalogSmithStudio.showToast(`Loaded ${files.length} product photos!`);
+              if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+                window.ContentSmithStudio.showToast(`Loaded ${files.length} product photos!`);
               }
             }
           };
@@ -2177,8 +2402,8 @@
             }
           }
           updateStagedProductsUI();
-          if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-            window.CatalogSmithStudio.showToast(`Imported ${added} products from CSV!`);
+          if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+            window.ContentSmithStudio.showToast(`Imported ${added} products from CSV!`);
           }
         };
         reader.readAsText(file);
@@ -2191,8 +2416,8 @@
       btnDonePictures.addEventListener('click', () => {
         if (picturesModal) picturesModal.classList.remove('open');
 
-        if (window.CatalogSmithStudio && stagedIntakeProducts.length > 0) {
-          const { state, renderReviewList, saveStateToLocalStorage, syncFormFields, showToast, updateLivePreview } = window.CatalogSmithStudio;
+        if (window.ContentSmithStudio && stagedIntakeProducts.length > 0) {
+          const { state, renderReviewList, saveStateToLocalStorage, syncFormFields, showToast, updateLivePreview } = window.ContentSmithStudio;
 
           state.products = state.products.concat(stagedIntakeProducts);
           state.videoLoaded = false;
@@ -2331,8 +2556,8 @@
 
         renderDropshipStarterItems();
         if (dropshipStarterContainer) dropshipStarterContainer.style.display = 'block';
-        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast(`Added "${title}" (₦${retail.toLocaleString()}) to staged items!`);
+        if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+          window.ContentSmithStudio.showToast(`Added "${title}" (₦${retail.toLocaleString()}) to staged items!`);
         }
       });
     }
@@ -2342,8 +2567,8 @@
       btnContinueDropship.addEventListener('click', () => {
         if (dropshipModal) dropshipModal.classList.remove('open');
 
-        if (window.CatalogSmithStudio) {
-          const { state, renderReviewList, syncFormFields, saveStateToLocalStorage, showToast, updateLivePreview } = window.CatalogSmithStudio;
+        if (window.ContentSmithStudio) {
+          const { state, renderReviewList, syncFormFields, saveStateToLocalStorage, showToast, updateLivePreview } = window.ContentSmithStudio;
 
           if (stagedDropshipItems.length > 0) {
             const formatted = stagedDropshipItems.map((item, idx) => ({
@@ -2377,7 +2602,7 @@
     }
 
     // Modal background click and Escape key dismissal
-    [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal].forEach(modal => {
+    [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal, adminVerifyModal].forEach(modal => {
       if (modal) {
         modal.addEventListener('click', (e) => {
           if (e.target === modal) {
@@ -2389,7 +2614,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal].forEach(modal => {
+        [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal, adminVerifyModal].forEach(modal => {
           if (modal && modal.classList.contains('open')) {
             modal.classList.remove('open');
           }
@@ -2401,13 +2626,18 @@
     populateExampleStorefront();
 
     // Expose Global App API
-    window.CatalogSmithApp = {
+    const appApi = {
       showLanding,
       showWorkspace,
       showAdmin,
       showStorefront,
-      renderAdminDashboard
+      renderAdminDashboard,
+      openUniversalImageSearch,
+      runImageSearch,
+      populateExampleStorefront
     };
+    window.ContentSmithApp = Object.assign(window.ContentSmithApp || {}, appApi);
+    window.CatalogSmithApp = window.ContentSmithApp;
 
     // Auto-route based on URL parameters (?store=..., ?catalog=..., ?view=admin)
     try {

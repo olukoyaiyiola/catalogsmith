@@ -1,13 +1,13 @@
 /**
- * CatalogSmith - Central Multi-Store Catalog Manager & Share Engine
+ * ContentSmith - Central Multi-Store Catalog Manager & Share Engine
  * Manages Catalog CRUD, Multi-Store Storage, Sharable URLs, Offline Sync, and QR Generation.
  */
 
 (function (global) {
   'use strict';
 
-  const STORAGE_KEY = 'catalogsmith_catalogs_v1';
-  const ACTIVE_ID_KEY = 'catalogsmith_active_catalog_id';
+  const STORAGE_KEY = 'ContentSmith_catalogs_v1';
+  const ACTIVE_ID_KEY = 'ContentSmith_active_catalog_id';
 
   function slugify(text) {
     return String(text || '')
@@ -66,7 +66,7 @@
 
       // 1. Check if user already had a draft in legacy localStorage
       try {
-        const legacy = localStorage.getItem('catalogsmith_studio_state');
+        const legacy = localStorage.getItem('ContentSmith_studio_state');
         if (legacy) {
           const parsed = JSON.parse(legacy);
           if (parsed && parsed.products && parsed.products.length > 0) {
@@ -89,9 +89,45 @@
         }
       } catch (_) {}
 
+      function makeQuickSvg(title, cat, c1, c2, emoji) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g_${emoji.codePointAt(0)}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${c1}"/>
+      <stop offset="100%" stop-color="${c2}"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#g_${emoji.codePointAt(0)})"/>
+  <circle cx="300" cy="180" r="140" fill="rgba(255,255,255,0.12)"/>
+  <g transform="translate(300, 185) scale(1.6)">
+    <circle cx="0" cy="0" r="46" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+    <text x="0" y="16" font-family="-apple-system, system-ui, sans-serif" font-size="38" text-anchor="middle" fill="#ffffff">${emoji}</text>
+  </g>
+  <rect x="30" y="325" width="540" height="90" rx="14" fill="rgba(15, 23, 42, 0.78)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <text x="50" y="360" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="20" fill="#ffffff">${title.replace(/&/g, '&amp;').slice(0, 36)}</text>
+  <text x="50" y="390" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="14" fill="#10b981">🏷️ ${cat.replace(/&/g, '&amp;')} • Verified Item</text>
+</svg>`.trim();
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+      }
+
       // 2. Pre-seed with Lola Fabrics fixture if empty
-      if (initial.length === 0 && window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES.whatsapp) {
-        const fix = window.CATALOGSMITH_FIXTURES.whatsapp.data;
+      if (initial.length === 0 && window.ContentSmith_FIXTURES && window.ContentSmith_FIXTURES.whatsapp) {
+        const fix = window.ContentSmith_FIXTURES.whatsapp.data;
+        const lolaProds = (fix.products || []).map((p, idx) => {
+          const svgs = [
+            makeQuickSvg('Luxury Silk Boubou Gown', 'Fashion & Dresses', '#064e3b', '#047857', '👗'),
+            makeQuickSvg('2-Piece Ankara Co-ord Set', 'Fashion & Dresses', '#c2410c', '#ea580c', '✨'),
+            makeQuickSvg('Mini Kelly Handbag', 'Bags & Accessories', '#1e293b', '#334155', '👜'),
+            makeQuickSvg('Royal Blue Aso-Oke Gele', 'Traditional Wear', '#1e1b4b', '#312e81', '👑'),
+            makeQuickSvg('Crystal Strap Block Mules', 'Shoes & Footwear', '#78350f', '#92400e', '👡'),
+            makeQuickSvg('Velvet Kimono Coat', 'Fashion & Dresses', '#4c0519', '#881337', '👘')
+          ];
+          return {
+            ...p,
+            image: p.image || svgs[idx % svgs.length]
+          };
+        });
+
         initial.push({
           id: 'cat_lola_fabrics',
           name: fix.vendor_name || 'Lola Fabrics & Chic Wear',
@@ -101,9 +137,10 @@
           category: 'Fashion & Dresses',
           theme: fix.theme || 'emerald',
           layout: 'standard',
+          verified: true,
           order_button_text: 'Order on WhatsApp',
           message_template: 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog.',
-          products: fix.products || [],
+          products: lolaProds,
           created_at: Date.now() - 3600000 * 48,
           updated_at: Date.now() - 3600000 * 2
         });
@@ -119,6 +156,7 @@
         category: 'Tech & Gadgets',
         theme: 'tech-blue',
         layout: 'standard',
+        verified: true,
         order_button_text: 'Order on WhatsApp',
         message_template: 'Hello {vendor_name}! I saw *{product_name}* on your catalog. Is it available for delivery today?',
         products: [
@@ -130,7 +168,7 @@
             category: 'Accessories',
             best_timestamp_sec: 0,
             confidence: 0.98,
-            image: null
+            image: makeQuickSvg('20,000mAh Power Bank', 'Tech Accessories', '#0f172a', '#1e293b', '🔋')
           },
           {
             id: 't2',
@@ -140,7 +178,7 @@
             category: 'Audio',
             best_timestamp_sec: 0,
             confidence: 0.95,
-            image: null
+            image: makeQuickSvg('Wireless ANC Headphones', 'Audio Gadgets', '#1e1b4b', '#2563eb', '🎧')
           },
           {
             id: 't3',
@@ -150,7 +188,7 @@
             category: 'Wearables',
             best_timestamp_sec: 0,
             confidence: 0.96,
-            image: null
+            image: makeQuickSvg('AMOLED Smartwatch', 'Wearables', '#064e3b', '#059669', '⌚')
           },
           {
             id: 't4',
@@ -160,7 +198,7 @@
             category: 'Charging',
             best_timestamp_sec: 0,
             confidence: 0.92,
-            image: null
+            image: makeQuickSvg('4-in-1 Wireless Charger', 'Charging Tech', '#312e81', '#4f46e5', '⚡')
           }
         ],
         created_at: Date.now() - 3600000 * 24,
@@ -237,6 +275,7 @@
         layout: catalogData.layout || 'standard',
         order_button_text: catalogData.order_button_text || 'Order on WhatsApp',
         message_template: catalogData.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})',
+        verified: catalogData.verified !== undefined ? Boolean(catalogData.verified) : (existingIdx >= 0 && all[existingIdx].verified !== undefined ? all[existingIdx].verified : true),
         products: Array.isArray(catalogData.products) ? catalogData.products : [],
         created_at: existingIdx >= 0 && all[existingIdx].created_at ? all[existingIdx].created_at : now,
         updated_at: now
@@ -336,17 +375,18 @@
             category: catalog.category,
             theme: catalog.theme,
             layout: catalog.layout,
+            verified: catalog.verified !== false,
             products: (catalog.products || []).map(p => ({
               id: p.id,
               name: p.name,
               price: p.price,
               description: p.description,
               category: p.category,
-              image: p.image && p.image.length < 40000 ? p.image : null
+              image: p.image || null
             }))
           };
           const b64 = toUrlSafeBase64(JSON.stringify(snapshot));
-          if (b64 && b64.length < 8000) {
+          if (b64 && b64.length < 32000) {
             return `${cleanUrl}#d=${b64}`;
           }
         } catch (_) {}
@@ -380,8 +420,8 @@
       }
 
       // If still not found, check if it matches fixture key (e.g. "whatsapp", "handheld")
-      if (!found && window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES[cleanId]) {
-        const fix = window.CATALOGSMITH_FIXTURES[cleanId].data;
+      if (!found && window.ContentSmith_FIXTURES && window.ContentSmith_FIXTURES[cleanId]) {
+        const fix = window.ContentSmith_FIXTURES[cleanId].data;
         found = {
           id: cleanId,
           name: fix.vendor_name,
@@ -390,6 +430,7 @@
           tagline: fix.tagline,
           theme: fix.theme || 'emerald',
           layout: 'standard',
+          verified: true,
           products: fix.products || []
         };
       }
@@ -397,12 +438,49 @@
       return { storeId: cleanId, catalog: found };
     },
 
+    fetchCatalogById: async function (id) {
+      if (!id) return null;
+      const cleanId = String(id).trim().toLowerCase();
+      let found = this.get(cleanId);
+      if (found && Array.isArray(found.products) && found.products.length > 0 && found.products.some(p => p.image)) {
+        return found;
+      }
+
+      try {
+        const resp = await fetch(`/api/catalogs?id=${encodeURIComponent(cleanId)}`);
+        if (resp.ok) {
+          const remote = await resp.json();
+          if (remote && remote.id) {
+            this.save(remote);
+            return remote;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend catalog query failed:', err);
+      }
+
+      const hashResolved = this.resolveCatalogFromUrl();
+      if (hashResolved && hashResolved.catalog) {
+        return hashResolved.catalog;
+      }
+
+      return found;
+    },
+
+    toggleVerified: function (id) {
+      const cat = this.get(id);
+      if (!cat) return null;
+      cat.verified = !(cat.verified !== false);
+      cat.updated_at = Date.now();
+      return this.save(cat);
+    },
+
     // -----------------------------------------------------------------
     // Server Synchronization
     // -----------------------------------------------------------------
     syncWithServer: function () {
       try {
-        fetch('api/catalogs')
+        fetch('/api/catalogs')
           .then(res => {
             if (!res.ok) return null;
             return res.json();
@@ -573,8 +651,8 @@
               btnCopy.style.color = '';
             }, 2500);
 
-            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-              window.CatalogSmithStudio.showToast(`📋 Copied sharable link for "${catalog.name}"!`);
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast(`📋 Copied sharable link for "${catalog.name}"!`);
             }
           }
         };
@@ -591,8 +669,8 @@
 
       // QR Code Generation
       const qrBox = document.getElementById('share-modal-qr-box');
-      if (qrBox && window.CatalogSmithQR) {
-        qrBox.innerHTML = window.CatalogSmithQR.generateSvg(shareUrl, { size: 180, margin: 2, fgColor: '#0f172a' });
+      if (qrBox && window.ContentSmithQR) {
+        qrBox.innerHTML = window.ContentSmithQR.generateSvg(shareUrl, { size: 180, margin: 2, fgColor: '#0f172a' });
       }
 
       // Download QR Code image
@@ -600,14 +678,14 @@
       if (btnDownloadQr) {
         btnDownloadQr.onclick = function () {
           const c = document.createElement('canvas');
-          if (window.CatalogSmithQR) {
-            window.CatalogSmithQR.renderToCanvas(c, shareUrl, { size: 500, margin: 3, fgColor: '#0f172a' });
+          if (window.ContentSmithQR) {
+            window.ContentSmithQR.renderToCanvas(c, shareUrl, { size: 500, margin: 3, fgColor: '#0f172a' });
             const link = document.createElement('a');
             link.download = `${slugify(catalog.name)}-qr-code.png`;
             link.href = c.toDataURL('image/png');
             link.click();
-            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-              window.CatalogSmithStudio.showToast(`Saved QR Code for "${catalog.name}"!`);
+            if (window.ContentSmithStudio && window.ContentSmithStudio.showToast) {
+              window.ContentSmithStudio.showToast(`Saved QR Code for "${catalog.name}"!`);
             }
           }
         };

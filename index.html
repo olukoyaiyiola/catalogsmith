@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <title>CatalogSmith - Video-to-Storefront Tool (Phone-First, Git-Free)</title>
+  <title>ContentSmith - Video-to-Storefront Tool (Phone-First, Git-Free)</title>
   <meta name="description" content="Turn vendor product videos into live mobile-first WhatsApp storefronts. Phone-first, git-free, free tier only.">
   <link rel="stylesheet" href="css/studio.css">
   <link rel="stylesheet" href="css/app.css">
@@ -26,7 +26,7 @@
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
             </svg>
           </div>
-          <span class="site-brand-name">CatalogSmith</span>
+          <span class="site-brand-name">ContentSmith</span>
         </a>
         <nav class="site-nav">
           <a href="#how-it-works">How It Works</a>
@@ -216,7 +216,7 @@
           </div>
           <div>
             <h1 class="brand-title">
-              CatalogSmith
+              ContentSmith
               <span class="badge-tag">Phone-First</span>
             </h1>
           </div>
@@ -265,18 +265,30 @@
           <h2 class="step1-title">Add your products</h2>
           <p class="step1-subtitle">Record or choose a video of your shop, stock or WhatsApp chat. We'll find the products for you.</p>
 
-          <div class="step1-primary-action">
+          <div class="step1-primary-action dropzone-box" id="video-dropzone" role="button" tabindex="0" aria-label="Tap or drag to select vendor video" style="cursor: pointer;">
+            <svg class="dropzone-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="pointer-events: none; margin-bottom: 4px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <div class="dropzone-text" style="pointer-events: none; text-align: center;">
+              <strong class="dropzone-title" style="font-size: 1.0625rem; color: var(--text-main); display: block; margin-bottom: 4px;">Tap or drag to select vendor video</strong>
+              <p class="dropzone-sub" id="video-file-info" style="font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 8px 0;">
+                Supports .mp4, .mov, .webm (WhatsApp chats, walkthroughs, or shelf footage)
+              </p>
+            </div>
+            
             <input type="file" id="video-input" accept="video/*,.mp4,.mov,.webm,.m4v,.mkv" style="display: none;">
             
-            <button type="button" class="btn-primary step1-btn-choose" id="btn-select-video">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="btn-primary step1-btn-choose" id="btn-select-video" style="pointer-events: auto;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="23 7 16 12 23 17 23 7"></polygon>
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
               </svg>
               <span>Choose or record a video</span>
             </button>
             
-            <p class="desktop-drop-hint" id="desktop-drop-hint">or drag and drop a video file here</p>
+            <p class="desktop-drop-hint" id="desktop-drop-hint" style="pointer-events: none; margin-top: 6px;">or drag and drop a video file here</p>
           </div>
         </div>
 
@@ -877,7 +889,7 @@
         <div class="admin-brand">
           <div class="admin-brand-icon">👑</div>
           <div class="admin-title-wrap">
-            <h1>CatalogSmith Admin</h1>
+            <h1>ContentSmith Admin</h1>
             <span class="admin-tagline">Manage, edit, and share multiple vendor catalogs</span>
           </div>
         </div>
@@ -885,6 +897,7 @@
           <button class="btn-secondary btn-sm" id="btn-admin-to-landing">← Back to Home</button>
           <button class="btn-secondary btn-sm" id="btn-admin-to-studio">🛠️ Open Studio Editor</button>
           <button class="btn-primary btn-sm" id="btn-admin-create-store-top" style="font-weight: 700;">➕ Create New Catalog</button>
+          <button class="btn-secondary btn-sm" id="btn-admin-lock" style="border-color: rgba(239, 68, 68, 0.4); color: #dc2626; font-weight: 700;" title="Lock administrator access">🔒 Lock Admin</button>
         </div>
       </div>
     </header>
@@ -914,10 +927,10 @@
           </div>
         </div>
         <div class="admin-metric-card">
-          <div class="admin-metric-icon">⚡</div>
+          <div class="admin-metric-icon">🛡️</div>
           <div>
-            <div class="admin-metric-val" id="metric-active-themes">6</div>
-            <div class="admin-metric-label">Live Themes</div>
+            <div class="admin-metric-val" id="metric-verified-count">0</div>
+            <div class="admin-metric-label">Verified Stores</div>
           </div>
         </div>
       </section>
@@ -927,6 +940,11 @@
         <div class="admin-search-wrap">
           <span class="admin-search-icon">🔍</span>
           <input type="text" id="admin-search-input" class="admin-search-input" placeholder="Search catalogs by name, category, or phone...">
+        </div>
+        <div class="admin-verify-filters" id="admin-verify-filters" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button class="admin-filter-pill active" data-filter="all">All (<span id="count-filter-all">0</span>)</button>
+          <button class="admin-filter-pill" data-filter="verified">✓ Verified (<span id="count-filter-verified">0</span>)</button>
+          <button class="admin-filter-pill" data-filter="unverified">⏳ Unverified (<span id="count-filter-unverified">0</span>)</button>
         </div>
         <div class="admin-toolbar-actions">
           <button class="btn-secondary btn-sm" id="btn-admin-import-json" title="Import stores from JSON file">
@@ -975,10 +993,11 @@
           <div class="vendor-info">
             <h1 class="store-name" id="sf-store-name-title">
               <span id="sf-store-name-text">Store Name</span>
-              <span class="verified-badge" title="Direct Vendor Verified">
+              <span class="verified-badge" id="sf-verified-badge" title="Direct Vendor Verified">
                 <svg class="icon" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
+                <span>Verified Store</span>
               </span>
             </h1>
             <p class="store-tagline" id="sf-store-tagline-text">Fast orders directly on WhatsApp</p>
@@ -1055,7 +1074,7 @@
     </a>
 
     <footer class="store-footer">
-      <p>Powered by CatalogSmith &bull; Mobile-First Video Storefront &bull; <a href="#" id="sf-footer-admin-link" style="color: inherit; text-decoration: underline; cursor: pointer;">Admin</a></p>
+      <p>Powered by ContentSmith &bull; Mobile-First Video Storefront &bull; <a href="#" id="sf-footer-admin-link" style="color: inherit; text-decoration: underline; cursor: pointer;">Admin</a></p>
     </footer>
   </div> <!-- /#storefront-view -->
 
@@ -1638,19 +1657,22 @@
             Free commercial photos to illustrate your listing until you have time to take real pictures.
           </p>
 
-          <div class="img-search-bar-wrap">
-            <input type="text" class="img-search-input" id="img-search-query" placeholder="Search product (e.g. Boubou Gown, Handbag, Perfume, Sneakers)...">
-            <button class="btn-primary" id="btn-run-img-search" style="min-height: 48px; padding: 10px 18px;">Search</button>
+          <div class="img-search-bar-wrap" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="text" class="img-search-input" id="img-search-query" placeholder="Search product (e.g. Boubou Gown, Handbag, Perfume, Sneakers)..." style="flex: 1; min-width: 200px;">
+            <button class="btn-primary" id="btn-run-img-search" style="min-height: 48px; padding: 10px 18px; font-weight: 700;">Search</button>
+            <button type="button" class="btn-secondary" id="btn-img-search-next-page" title="Show different photos for this query" style="min-height: 48px; padding: 10px 14px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.8125rem;">
+              <span>🔄 Different Photos</span>
+            </button>
           </div>
 
           <div class="img-search-quick-tags" id="img-search-tags">
-            <button type="button" class="img-search-tag" data-tag="fashion">👗 Fashion</button>
-            <button type="button" class="img-search-tag" data-tag="beauty">💄 Beauty & Skincare</button>
-            <button type="button" class="img-search-tag" data-tag="shoes">👠 Shoes & Heels</button>
-            <button type="button" class="img-search-tag" data-tag="bags">👜 Handbags</button>
-            <button type="button" class="img-search-tag" data-tag="jewelry">✨ Jewelry</button>
-            <button type="button" class="img-search-tag" data-tag="gadgets">📱 Tech & Gadgets</button>
-            <button type="button" class="img-search-tag" data-tag="food">🍲 Food & Provisions</button>
+            <button type="button" class="img-search-tag" data-tag="fashion" data-clean="fashion dress">👗 Fashion & Dresses</button>
+            <button type="button" class="img-search-tag" data-tag="bags" data-clean="handbag purse">👜 Handbags</button>
+            <button type="button" class="img-search-tag" data-tag="shoes" data-clean="sneakers shoes">👠 Shoes & Sneakers</button>
+            <button type="button" class="img-search-tag" data-tag="beauty" data-clean="cosmetics perfume">💄 Beauty & Skincare</button>
+            <button type="button" class="img-search-tag" data-tag="jewelry" data-clean="luxury watch jewelry">✨ Jewelry & Watches</button>
+            <button type="button" class="img-search-tag" data-tag="gadgets" data-clean="smartphone electronics">📱 Tech & Gadgets</button>
+            <button type="button" class="img-search-tag" data-tag="food" data-clean="food groceries">🍲 Food & Provisions</button>
           </div>
 
           <div id="img-search-status" style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 8px; display: none;"></div>
@@ -1827,6 +1849,53 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Admin Security Verification Gate -->
+  <div class="modal-overlay" id="admin-verify-modal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <span>🔐 Admin Access Verification</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-admin-verify">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+          Enter your administrator security passkey to access multi-store management, merchant verification badges, and catalogue CRUD operations.
+        </p>
+
+        <form id="form-admin-verify">
+          <div style="margin-bottom: 14px;">
+            <label for="admin-passkey-input" style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">
+              Admin Passkey / PIN:
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="admin-passkey-input" class="form-input" placeholder="Enter passkey (default: admin2026)" autocomplete="current-password" required style="width: 100%; padding-right: 42px; min-height: 48px;">
+              <button type="button" id="btn-toggle-admin-passkey" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem; padding: 4px;" title="Show or hide passkey">
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <div id="admin-verify-error" style="display: none; padding: 10px 12px; margin-bottom: 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); font-size: 0.8125rem; color: #dc2626;">
+            ❌ Incorrect passkey. Please try again.
+          </div>
+
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn-secondary" id="btn-cancel-admin-verify" style="min-height: 48px; padding: 10px 16px;">Cancel</button>
+            <button type="submit" class="btn-primary" id="btn-submit-admin-verify" style="min-height: 48px; padding: 10px 20px; font-weight: 700;">
+              Verify & Enter Admin →
+            </button>
+          </div>
+        </form>
+
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+          <span>Default key: <code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-weight: 700;">admin2026</code></span>
+          <span>Session verified</span>
+        </div>
       </div>
     </div>
   </div>

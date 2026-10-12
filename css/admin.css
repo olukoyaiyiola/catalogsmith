@@ -1,6 +1,6 @@
 /* ================================================
-   CatalogSmith — Multi-Store Admin, Share Modal & Live Storefront Styles
-   Aesthetic, mobile-first design matching CatalogSmith design system.
+   ContentSmith — Multi-Store Admin, Share Modal & Live Storefront Styles
+   Aesthetic, mobile-first design matching ContentSmith design system.
    ================================================ */
 
 /* ------------------------------------------------
@@ -736,4 +736,119 @@
   font-weight: 600;
   padding: 6px 10px;
   outline: none;
+}
+
+/* ------------------------------------------------
+   11. ADMIN VERIFICATION & MERCHANT TRUST STYLES
+   ------------------------------------------------ */
+.admin-verify-filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-filter-pill {
+  padding: 6px 14px;
+  background: var(--bg-card-subtle, #f1f5f9);
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted, #475569);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 36px;
+}
+
+.admin-filter-pill:hover {
+  background: #e2e8f0;
+  color: var(--text-main, #0f172a);
+}
+
+.admin-filter-pill.active {
+  background: var(--color-primary, #059669);
+  color: #ffffff;
+  border-color: var(--color-primary, #059669);
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.admin-verified-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-unverified-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.btn-toggle-verify {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-toggle-verify.is-verified {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #059669;
+}
+
+.btn-toggle-verify.is-verified:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #dc2626;
+}
+
+.btn-toggle-verify.is-unverified {
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  color: #475569;
+}
+
+.btn-toggle-verify.is-unverified:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #059669;
+}
+
+/* Storefront Header Verified Badge */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+  vertical-align: middle;
 }

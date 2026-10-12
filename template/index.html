@@ -113,7 +113,7 @@
   </footer>
 
   <!-- Store Data Slot -->
-  <script id="catalogsmith-data">
+  <script id="CatalogSmith-data">
     /* INLINE_DATA_PLACEHOLDER */
   </script>
 
@@ -396,18 +396,18 @@
           .replace(/'/g, '&#039;');
       }
 
-      if (window.CATALOGSMITH_DATA) {
-        renderStore(window.CATALOGSMITH_DATA);
+      if (window.ContentSmith_DATA) {
+        renderStore(window.ContentSmith_DATA);
       } else {
         fetch('products.json')
           .then(res => res.json())
           .then(data => {
-            window.CATALOGSMITH_DATA = data;
+            window.ContentSmith_DATA = data;
             renderStore(data);
           })
           .catch(() => {
-            if (window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES.whatsapp) {
-              renderStore(window.CATALOGSMITH_FIXTURES.whatsapp.data);
+            if (window.ContentSmith_FIXTURES && window.ContentSmith_FIXTURES.whatsapp) {
+              renderStore(window.ContentSmith_FIXTURES.whatsapp.data);
             }
           });
       }

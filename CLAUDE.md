@@ -1,6 +1,6 @@
-# CatalogSmith: Context & Instructions for Claude
+﻿# ContentSmith: Context & Instructions for Claude
 
-This repository contains **CatalogSmith**, a phone-first tool that turns a vendor's product video into an instantly hosted WhatsApp storefront, PDF, and partner data feeds. Vendors are mobile-first WhatsApp/Instagram merchants in Nigeria and similar markets.
+This repository contains **ContentSmith**, a phone-first tool that turns a vendor's product video into an instantly hosted WhatsApp storefront, PDF, and partner data feeds. Vendors are mobile-first WhatsApp/Instagram merchants in Nigeria and similar markets.
 
 > 📖 **Full Architectural Reference**: For an exhaustive technical breakdown of every pipeline, design token, data schema, and modal, see [APPROACH.md](APPROACH.md).
 

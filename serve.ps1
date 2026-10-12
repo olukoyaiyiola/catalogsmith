@@ -63,8 +63,43 @@ try {
             }
 
             if ($request.HttpMethod -eq "GET") {
+                $targetId = $request.QueryString["id"]
                 $content = Get-Content -Path $dataFile -Raw -Encoding UTF8
                 if ([string]::IsNullOrWhiteSpace($content)) { $content = "[]" }
+
+                if (-not [string]::IsNullOrWhiteSpace($targetId)) {
+                    $allCats = $content | ConvertFrom-Json
+                    if ($allCats -isnot [System.Array]) { $allCats = @($allCats) }
+                    $cleanTarget = $targetId.Trim().ToLower()
+                    $foundCat = $null
+                    foreach ($c in $allCats) {
+                        if ($c.id -and $c.id.ToString().ToLower() -eq $cleanTarget) {
+                            $foundCat = $c
+                            break
+                        }
+                    }
+                    if ($foundCat) {
+                        $foundJson = $foundCat | ConvertTo-Json -Depth 10
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes($foundJson)
+                        $response.StatusCode = 200
+                        $response.ContentType = "application/json; charset=utf-8"
+                        $response.AddHeader("Access-Control-Allow-Origin", "*")
+                        $response.ContentLength64 = $bytes.Length
+                        $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                        $response.Close()
+                        continue
+                    } else {
+                        $notFoundBytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Catalog not found"}')
+                        $response.StatusCode = 404
+                        $response.ContentType = "application/json; charset=utf-8"
+                        $response.AddHeader("Access-Control-Allow-Origin", "*")
+                        $response.ContentLength64 = $notFoundBytes.Length
+                        $response.OutputStream.Write($notFoundBytes, 0, $notFoundBytes.Length)
+                        $response.Close()
+                        continue
+                    }
+                }
+
                 $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
                 $response.StatusCode = 200
                 $response.ContentType = "application/json; charset=utf-8"
@@ -165,10 +200,21 @@ try {
                 continue
             }
 
-            # Clean query
+            # Parse page parameter
+            $page = 1
+            if ($request.QueryString["page"]) {
+                $pVal = 1
+                if ([int]::TryParse($request.QueryString["page"], [ref]$pVal)) {
+                    $page = [Math]::Max(1, $pVal)
+                }
+            }
+
+            # Clean query for maximum provider relevance
             $cleanQ = $query.Trim()
             $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '(?i)\b\d+(k|thousand|naira|usd)\b', '')
             $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '(?i)\b(size\s*\d+|xl|xxl|small|medium|large)\b', '')
+            $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '(?i)\b(product|photo|picture|images?|for\s+sale|buy|online)\b', '')
+            $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '[&+,/\\()]+', ' ')
             $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '\s+', ' ').Trim()
             if ([string]::IsNullOrWhiteSpace($cleanQ)) { $cleanQ = $query.Trim() }
 
@@ -176,12 +222,12 @@ try {
             $primaryProvider = "none"
             $diagnostics = @()
 
-            # 1. Try Openverse API (Commercial Creative Commons & Public Domain)
+            # 1. Try Openverse API (Commercial Creative Commons & Public Domain) with page pagination
             $ovStart = [DateTime]::UtcNow
             try {
                 $ovEscaped = [uri]::EscapeDataString($cleanQ)
-                $ovUrl = "https://api.openverse.org/v1/images/?q=$ovEscaped&license_type=commercial&page_size=12"
-                $ovRes = Invoke-RestMethod -Uri $ovUrl -Headers @{ "User-Agent" = "CatalogSmithLocal/1.0" } -TimeoutSec 5
+                $ovUrl = "https://api.openverse.org/v1/images/?q=$ovEscaped&license_type=commercial&page_size=12&page=$page"
+                $ovRes = Invoke-RestMethod -Uri $ovUrl -Headers @{ "User-Agent" = "ContentSmithLocal/1.0" } -TimeoutSec 5
                 $ovMs = ([DateTime]::UtcNow - $ovStart).TotalMilliseconds
                 $ovItems = @($ovRes.results)
                 $diagnostics += @{ provider = "openverse"; configured = $true; status = "ok"; result_count = $ovItems.Count; duration_ms = [int]$ovMs }
@@ -218,8 +264,9 @@ try {
                 $wmStart = [DateTime]::UtcNow
                 try {
                     $wmEscaped = [uri]::EscapeDataString($cleanQ)
-                    $wikiUrl = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=$wmEscaped&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*"
-                    $wikiRes = Invoke-RestMethod -Uri $wikiUrl -Headers @{ "User-Agent" = "CatalogSmithLocal/1.0" } -TimeoutSec 5
+                    $wmOffset = ($page - 1) * 12
+                    $wikiUrl = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=$wmEscaped&gsrnamespace=6&gsrlimit=12&gsroffset=$wmOffset&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*"
+                    $wikiRes = Invoke-RestMethod -Uri $wikiUrl -Headers @{ "User-Agent" = "ContentSmithLocal/1.0" } -TimeoutSec 5
                     $wmMs = ([DateTime]::UtcNow - $wmStart).TotalMilliseconds
                     $wmCount = 0
 
@@ -264,6 +311,7 @@ try {
             $jsonObj = @{
                 query = $cleanQ
                 original_query = $query
+                page = $page
                 total = $results.Count
                 commercial_only = $true
                 primary_provider = $primaryProvider
@@ -329,7 +377,7 @@ try {
                 }
 
                 $wc = New-Object System.Net.WebClient
-                $wc.Headers.Add("User-Agent", "CatalogSmith-ImageImporter/1.0")
+                $wc.Headers.Add("User-Agent", "ContentSmith-ImageImporter/1.0")
                 $imgBytes = $wc.DownloadData($uri)
                 if ($imgBytes.Length -gt 5242880) {
                     throw "Image exceeds 5MB limit."

@@ -1,5 +1,5 @@
 /**
- * CatalogSmith - Serverless Multi-Store Catalogs API
+ * ContentSmith - Serverless Multi-Store Catalogs API
  * Endpoint: /api/catalogs
  * Supports GET (list or by id), POST (create/update), DELETE (by id)
  */
@@ -15,8 +15,8 @@ export default async function handler(req, res) {
   }
 
   // Support local in-memory fallback for serverless
-  if (!global._CATALOGSMITH_CATALOGS_CACHE) {
-    global._CATALOGSMITH_CATALOGS_CACHE = [];
+  if (!global._ContentSmith_CATALOGS_CACHE) {
+    global._ContentSmith_CATALOGS_CACHE = [];
   }
 
   const method = req.method;
@@ -24,13 +24,14 @@ export default async function handler(req, res) {
   if (method === 'GET') {
     const id = req.query ? req.query.id : null;
     if (id) {
-      const found = global._CATALOGSMITH_CATALOGS_CACHE.find(c => c.id === id);
+      const cleanId = String(id).toLowerCase();
+      const found = global._ContentSmith_CATALOGS_CACHE.find(c => c.id && c.id.toLowerCase() === cleanId);
       if (found) {
         return res.status(200).json(found);
       }
       return res.status(404).json({ error: 'Catalog not found' });
     }
-    return res.status(200).json(global._CATALOGSMITH_CATALOGS_CACHE);
+    return res.status(200).json(global._ContentSmith_CATALOGS_CACHE);
   }
 
   if (method === 'POST') {
@@ -40,11 +41,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Catalog payload missing id' });
       }
 
-      const idx = global._CATALOGSMITH_CATALOGS_CACHE.findIndex(c => c.id === catalog.id);
+      const idx = global._ContentSmith_CATALOGS_CACHE.findIndex(c => c.id === catalog.id);
       if (idx >= 0) {
-        global._CATALOGSMITH_CATALOGS_CACHE[idx] = catalog;
+        global._ContentSmith_CATALOGS_CACHE[idx] = catalog;
       } else {
-        global._CATALOGSMITH_CATALOGS_CACHE.unshift(catalog);
+        global._ContentSmith_CATALOGS_CACHE.unshift(catalog);
       }
 
       return res.status(200).json({ success: true, id: catalog.id });
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
   if (method === 'DELETE') {
     const id = req.query ? req.query.id : null;
     if (id) {
-      global._CATALOGSMITH_CATALOGS_CACHE = global._CATALOGSMITH_CATALOGS_CACHE.filter(c => c.id !== id);
+      global._ContentSmith_CATALOGS_CACHE = global._ContentSmith_CATALOGS_CACHE.filter(c => c.id !== id);
     }
     return res.status(200).json({ success: true });
   }

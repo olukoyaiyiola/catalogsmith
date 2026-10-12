@@ -1,4 +1,4 @@
-# CatalogSmith: Fallback Per-Frame Extraction Prompt & Deduplication
+﻿# ContentSmith: Fallback Per-Frame Extraction Prompt & Deduplication
 
 Use this fallback workflow if a fast-scrolling screen recording or chaotic video misses products during the whole-video pass.
 
@@ -46,7 +46,7 @@ Return either `null` (if no product is visible) or an object matching this struc
 
 When frames are extracted at 1.0–2.0 second intervals, the same item will likely appear across 2 to 4 consecutive frames.
 
-CatalogSmith Studio includes a built-in Deduplication Merger tool that applies the following rules:
+ContentSmith Studio includes a built-in Deduplication Merger tool that applies the following rules:
 1. **Timestamp Proximity**: Products appearing within 3 seconds of each other.
 2. **Text / Name Jaccard & Levenshtein Similarity**: If normalized product names share >70% token overlap or edit distance ratio > 0.8.
 3. **Merge Strategy**:

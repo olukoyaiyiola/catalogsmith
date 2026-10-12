@@ -1,6 +1,6 @@
-# Git-Free Deployment Guide: Launching in Under 60 Seconds
+﻿# Git-Free Deployment Guide: Launching in Under 60 Seconds
 
-CatalogSmith is engineered from the ground up to eliminate all developer friction:
+ContentSmith is engineered from the ground up to eliminate all developer friction:
 - **No Git repository**
 - **No Node.js or build steps**
 - **No server configuration**
@@ -14,8 +14,8 @@ Here are the two simplest ways to deploy your generated storefront package.
 
 Netlify Drop allows anyone to deploy a static website by dragging and dropping a ZIP file.
 
-1. In **CatalogSmith Studio**, navigate to **Step 4: Preview & Export**.
-2. Tap **Download Storefront ZIP (.zip)** to save `catalogsmith-store.zip` to your phone or computer.
+1. In **ContentSmith Studio**, navigate to **Step 4: Preview & Export**.
+2. Tap **Download Storefront ZIP (.zip)** to save `ContentSmith-store.zip` to your phone or computer.
 3. Open a browser tab to **[app.netlify.com/drop](https://app.netlify.com/drop)**.
 4. Drag and drop the downloaded `.zip` file into the upload zone (or tap to browse files on mobile).
 5. Netlify immediately deploys the site and generates a live HTTPS URL (e.g., `https://friendly-mooncake-4a123.netlify.app`).
@@ -28,7 +28,7 @@ Netlify Drop allows anyone to deploy a static website by dragging and dropping a
 
 Cloudflare Pages provides completely free direct-folder uploads with unlimited bandwidth.
 
-1. Extract the downloaded `catalogsmith-store.zip` into a folder on your device.
+1. Extract the downloaded `ContentSmith-store.zip` into a folder on your device.
 2. Go to **[dash.cloudflare.com](https://dash.cloudflare.com)** and sign in.
 3. In the sidebar, select **Workers & Pages**.
 4. Click **Create application** -> select the **Pages** tab.
@@ -43,7 +43,7 @@ Cloudflare Pages provides completely free direct-folder uploads with unlimited b
 ## Method 3: Standalone Single-File HTML (Ultra-Lightweight)
 
 If you don't even want to manage ZIPs or folders:
-1. In CatalogSmith Studio, tap **Download Single-File HTML (.html)**.
+1. In ContentSmith Studio, tap **Download Single-File HTML (.html)**.
 2. You get a single file: `vendor-store.html` where all CSS and product photos are inlined.
 3. This single file can be:
    - Hosted on any simple free static host (like Tiiny.host, Surge, or Neocities).
@@ -53,7 +53,7 @@ If you don't even want to manage ZIPs or folders:
 
 ## How WhatsApp Ordering Works
 
-CatalogSmith does not force customers to register accounts or navigate cumbersome shopping carts.
+ContentSmith does not force customers to register accounts or navigate cumbersome shopping carts.
 Instead, each product card contains a prominent WhatsApp order action:
 
 1. Customer taps **Order on WhatsApp**.
