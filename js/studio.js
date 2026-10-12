@@ -1643,6 +1643,7 @@
           : (p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('data:') || p.image.startsWith('/'))
               ? p.image
               : (p.image ? `images/${p.id}.jpg` : ''))
+      }))
     };
 
     const cssContent = getStorefrontCSS();
