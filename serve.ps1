@@ -358,8 +358,12 @@ try {
                 continue
             }
             catch {
-                $response.StatusCode = 500
                 $errMsg = $_.ToString().Replace('"', '\"')
+                $status = 500
+                if ($errMsg -like "*HTTPS*") { $status = 400 }
+                elseif ($errMsg -like "*allowed*") { $status = 403 }
+                elseif ($errMsg -like "*5MB*") { $status = 413 }
+                $response.StatusCode = $status
                 $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""error"":""$errMsg""}")
                 $response.ContentType = "application/json; charset=utf-8"
                 $response.AddHeader("Access-Control-Allow-Origin", "*")

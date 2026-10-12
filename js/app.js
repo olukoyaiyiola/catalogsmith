@@ -1279,17 +1279,22 @@
         card.setAttribute('tabindex', '0');
         card.setAttribute('aria-label', `Select ${item.title}`);
 
-        const thumbSrc = item.thumbnailUrl || item.imageUrl;
+        const thumbSrc = item.thumb_url || item.thumbnailUrl || item.image_url || item.imageUrl;
+        const mainImgSrc = item.image_url || item.imageUrl || item.thumb_url || item.thumbnailUrl;
+        const sourceUrl = item.source_url || item.sourceUrl || '';
+        const publisher = item.provider || item.publisher || 'Web';
+        const dimensions = (item.width && item.height) ? `${item.width}×${item.height}` : (item.dimensions || '');
+        const attribution = item.attribution || '';
 
         card.innerHTML = `
           <img src="${thumbSrc}" class="img-search-item-thumb" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';">
           <div class="img-search-item-info">
             <div class="img-search-item-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
             <div class="img-search-item-source" style="display:flex; justify-content:space-between; align-items:center; gap:4px; margin-top:4px;">
-              <span>🌐 ${escapeHtml(item.publisher || 'Web')}</span>
-              <span style="font-size:0.6875rem; color:var(--text-dim);">${item.dimensions || ''}</span>
+              <span>🌐 ${escapeHtml(publisher)}</span>
+              <span style="font-size:0.6875rem; color:var(--text-dim);">${dimensions}</span>
             </div>
-            ${item.sourceUrl ? `<a href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer" class="img-search-source-link" onclick="event.stopPropagation();" style="display:inline-block; font-size:0.6875rem; color:var(--color-primary); text-decoration:none; margin-top:4px;">View source page ↗</a>` : ''}
+            ${sourceUrl ? `<a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="img-search-source-link" onclick="event.stopPropagation();" style="display:inline-block; font-size:0.6875rem; color:var(--color-primary); text-decoration:none; margin-top:4px;">View source page ↗</a>` : ''}
           </div>
         `;
 
@@ -1305,22 +1310,22 @@
           if (previewBar) {
             previewBar.style.display = 'flex';
             if (previewImg) {
-              previewImg.src = item.imageUrl || item.thumbnailUrl;
+              previewImg.src = mainImgSrc;
               previewImg.onerror = () => {
-                previewImg.src = item.thumbnailUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';
+                previewImg.src = thumbSrc || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80';
               };
             }
             if (previewTitle) previewTitle.textContent = item.title;
             if (previewMeta) {
-              previewMeta.textContent = `${item.dimensions ? item.dimensions + ' • ' : ''}${item.publisher || 'Web Image'}`;
+              previewMeta.textContent = `${dimensions ? dimensions + ' • ' : ''}${publisher}`;
             }
             if (previewSource) {
               let sourceHtml = '';
-              if (item.sourceUrl) {
-                sourceHtml += `<a href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:none;">Open source ↗</a> `;
+              if (sourceUrl) {
+                sourceHtml += `<a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:none;">Open source ↗</a> `;
               }
-              if (item.attribution) {
-                sourceHtml += `• ${escapeHtml(item.attribution)}`;
+              if (attribution) {
+                sourceHtml += `• ${escapeHtml(attribution)}`;
               }
               previewSource.innerHTML = sourceHtml;
             }
@@ -1413,7 +1418,7 @@
           return;
         }
 
-        const rawUrl = selectedSearchImageObj.imageUrl || selectedSearchImageObj.thumbnailUrl;
+        const rawUrl = selectedSearchImageObj.image_url || selectedSearchImageObj.imageUrl || selectedSearchImageObj.thumb_url || selectedSearchImageObj.thumbnailUrl;
         const originalText = btnApplySelectedImg.textContent;
         btnApplySelectedImg.textContent = 'Importing...';
         btnApplySelectedImg.disabled = true;
