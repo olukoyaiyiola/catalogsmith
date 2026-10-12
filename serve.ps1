@@ -192,6 +192,97 @@ try {
             }
         }
 
+        # Handle Local Image Upload API Endpoint
+        if ($rawPath -eq "api/upload-image") {
+            if ($request.HttpMethod -eq "OPTIONS") {
+                $response.StatusCode = 204
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.AddHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+                $response.AddHeader("Access-Control-Allow-Headers", "Content-Type")
+                $response.Close()
+                continue
+            }
+
+            if ($request.HttpMethod -eq "POST") {
+                try {
+                    $uploadsDir = Join-Path $PSScriptRoot "data\uploads"
+                    if (-not (Test-Path $uploadsDir)) {
+                        New-Item -ItemType Directory -Path $uploadsDir -Force | Out-Null
+                    }
+
+                    $contentType = $request.ContentType
+                    $fileExt = ".jpg"
+                    $fileBytes = $null
+
+                    if ($contentType -and $contentType.Contains("application/json")) {
+                        $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
+                        $body = $reader.ReadToEnd()
+                        $reader.Close()
+                        $json = $body | ConvertFrom-Json
+                        $dataUrl = if ($json.image) { $json.image } elseif ($json.dataUrl) { $json.dataUrl } else { $json.file }
+                        if ($dataUrl -and $dataUrl.Contains(",")) {
+                            $parts = $dataUrl.Split(",")
+                            if ($parts[0].Contains("png")) { $fileExt = ".png" }
+                            elseif ($parts[0].Contains("webp")) { $fileExt = ".webp" }
+                            $fileBytes = [Convert]::FromBase64String($parts[1])
+                        }
+                    } else {
+                        # Read raw binary payload
+                        $ms = New-Object System.IO.MemoryStream
+                        $request.InputStream.CopyTo($ms)
+                        $fileBytes = $ms.ToArray()
+                        $ms.Close()
+                        if ($contentType -and $contentType.Contains("png")) { $fileExt = ".png" }
+                        elseif ($contentType -and $contentType.Contains("webp")) { $fileExt = ".webp" }
+                    }
+
+                    if (-not $fileBytes -or $fileBytes.Length -eq 0) {
+                        $errBytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Empty upload payload"}')
+                        $response.StatusCode = 400
+                        $response.ContentType = "application/json; charset=utf-8"
+                        $response.AddHeader("Access-Control-Allow-Origin", "*")
+                        $response.ContentLength64 = $errBytes.Length
+                        $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                        $response.Close()
+                        continue
+                    }
+
+                    $fileName = "img_" + [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() + "_" + [System.IO.Path]::GetRandomFileName().Substring(0, 6) + $fileExt
+                    $savePath = Join-Path $uploadsDir $fileName
+                    [System.IO.File]::WriteAllBytes($savePath, $fileBytes)
+
+                    $publicUrl = "/data/uploads/" + $fileName
+                    $respObj = @{
+                        ok = $true
+                        url = $publicUrl
+                        provider = "local_server"
+                        id = $fileName
+                        bytes = $fileBytes.Length
+                    }
+                    $jsonStr = $respObj | ConvertTo-Json
+                    $respBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonStr)
+
+                    $response.StatusCode = 200
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $respBytes.Length
+                    $response.OutputStream.Write($respBytes, 0, $respBytes.Length)
+                    $response.Close()
+                    continue
+                } catch {
+                    $msg = $_.Exception.Message -replace '"', '\"'
+                    $errBytes = [System.Text.Encoding]::UTF8.GetBytes(("{""error"":""Upload failed: {0}""}" -f $msg))
+                    $response.StatusCode = 500
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $errBytes.Length
+                    $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                    $response.Close()
+                    continue
+                }
+            }
+        }
+
         # Handle Image Search API Endpoint locally
         if ($rawPath -eq "api/search-images") {
             $t0 = [DateTime]::UtcNow

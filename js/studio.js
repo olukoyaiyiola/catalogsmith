@@ -1207,18 +1207,32 @@
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     prod.image = dataUrl;
+    if (!Array.isArray(prod.images) || prod.images.length === 0) {
+      prod.images = [dataUrl];
+    } else {
+      prod.images[0] = dataUrl;
+    }
     prod.best_timestamp_sec = parseFloat(video.currentTime.toFixed(1));
 
-    // Update thumbnail in review UI
-    const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
-    if (thumbImg) {
-      thumbImg.src = dataUrl;
-      thumbImg.style.display = 'block';
-      const emptyDiv = document.getElementById(`thumb-empty-${prod.id}`);
-      if (emptyDiv) emptyDiv.style.display = 'none';
+    // Auto-upload to Cloud CDN if configured
+    if (window.CloudStorage && window.CloudStorage.isConfigured() && window.CloudStorage.getConfig().autoUpload) {
+      window.CloudStorage.uploadImage(dataUrl, `${prod.id}_frame_${prod.best_timestamp_sec}.jpg`)
+        .then(res => {
+          prod.image = res.url;
+          if (Array.isArray(prod.images) && prod.images.length > 0) {
+            prod.images[0] = res.url;
+          }
+          debouncedSaveState();
+          updateLivePreview();
+          const tImg = document.getElementById(`thumb-img-${prod.id}`);
+          if (tImg) tImg.src = res.url;
+        })
+        .catch(err => console.warn('Frame cloud upload deferred:', err));
     }
 
+    renderReviewList();
     debouncedSaveState();
+    updateLivePreview();
     showToast(`Captured photo for "${prod.name}" at ${prod.best_timestamp_sec}s!`);
   }
 
@@ -1413,9 +1427,13 @@
     const total = state.products.length;
     const flagged = state.products.filter(p => (p.confidence < 0.8) || (p.price && p.price.amount === null)).length;
     const noPrice = state.products.filter(p => !p.price || p.price.amount === null).length;
+    const soldOut = state.products.filter(p => p.in_stock === false || p.stock_status === 'sold_out').length;
 
     if (els.countAll) els.countAll.textContent = total;
     if (els.countFlagged) els.countFlagged.textContent = flagged;
+    if (els.countNoPrice) els.countNoPrice.textContent = noPrice;
+    const countSoldOutEl = document.getElementById('count-soldout');
+    if (countSoldOutEl) countSoldOutEl.textContent = soldOut;
     if (els.tabReviewLabel) els.tabReviewLabel.textContent = `Check products (${total})`;
     syncStep1DraftState();
 
@@ -1425,6 +1443,8 @@
       displayed = state.products.filter(p => (p.confidence < 0.8) || (!p.price || p.price.amount === null));
     } else if (state.filter === 'noprice') {
       displayed = state.products.filter(p => !p.price || p.price.amount === null);
+    } else if (state.filter === 'soldout') {
+      displayed = state.products.filter(p => p.in_stock === false || p.stock_status === 'sold_out');
     }
 
     container.innerHTML = '';
@@ -1439,10 +1459,21 @@
     }
 
     displayed.forEach(prod => {
+      // Ensure prod.images array exists & matches prod.image
+      if (!Array.isArray(prod.images) || prod.images.length === 0) {
+        prod.images = prod.image ? [prod.image] : [];
+      } else if (prod.images.length > 0 && !prod.image) {
+        prod.image = prod.images[0];
+      }
+      if (typeof prod.in_stock === 'undefined') {
+        prod.in_stock = true;
+      }
+      const isSoldOut = prod.in_stock === false || prod.stock_status === 'sold_out';
+
       const card = document.createElement('div');
       const isSelected = prod.id === state.selectedProductId;
       const isFlagged = (prod.confidence < 0.8) || (!prod.price || prod.price.amount === null);
-      card.className = `review-product-card ${isSelected ? 'selected' : ''} ${isFlagged ? 'flagged' : ''}`;
+      card.className = `review-product-card ${isSelected ? 'selected' : ''} ${isFlagged ? 'flagged' : ''} ${isSoldOut ? 'is-sold-out' : ''}`;
       card.id = `review-card-${prod.id}`;
 
       // Confidence badge styling
@@ -1475,6 +1506,21 @@
               <span>No Photo</span>
             </div>
           </div>
+
+          <!-- Multi-Image Gallery Strip -->
+          <div class="gallery-strip" id="gallery-strip-${prod.id}" title="Product gallery photos. Click any to make Cover.">
+            ${prod.images.map((imgUrl, gIdx) => `
+              <div class="gallery-thumb-item ${imgUrl === prod.image ? 'active' : ''}" data-idx="${gIdx}" title="${imgUrl === prod.image ? 'Primary Cover Photo' : 'Click to make Primary Cover'}">
+                <img src="${imgUrl}" class="gallery-thumb-img" alt="Photo ${gIdx + 1}">
+                ${imgUrl === prod.image ? '<span class="gallery-badge-cover">Cover</span>' : ''}
+                ${prod.images.length > 1 ? `<button type="button" class="gallery-btn-remove" data-idx="${gIdx}" title="Remove photo from gallery">✕</button>` : ''}
+              </div>
+            `).join('')}
+            <button type="button" class="gallery-btn-add" id="btn-add-gallery-${prod.id}" title="+ Add photo from camera or disk">
+              <span>+</span>
+            </button>
+          </div>
+
           <div class="thumb-action-grid">
             <button type="button" class="btn-thumb-action" id="btn-edit-${prod.id}" title="Edit brightness, contrast, crop & studio lighting">✂️ Edit</button>
             <button type="button" class="btn-thumb-action" id="btn-ai-${prod.id}" title="Generate clean studio photo with AI">🤖 AI</button>
@@ -1483,8 +1529,9 @@
             <button type="button" class="btn-thumb-action" id="btn-snap-${prod.id}" title="Capture current video frame">📸 Frame</button>
           </div>
           <input type="file" id="file-upload-${prod.id}" accept="image/*" style="display: none;">
+          <input type="file" id="file-gallery-upload-${prod.id}" accept="image/*" style="display: none;">
           <div style="font-size: 0.6875rem; text-align: center; color: var(--text-dim); font-family: var(--font-mono); margin-top: 4px;">
-            TS: ${prod.best_timestamp_sec}s
+            🖼️ ${prod.images.length} photo${prod.images.length === 1 ? '' : 's'} • TS: ${prod.best_timestamp_sec}s
           </div>
         </div>
 
@@ -1493,6 +1540,9 @@
           <div class="form-row-header">
             <input type="text" class="input-title" id="prod-name-${prod.id}" value="${escapeHtml(prod.name)}" placeholder="Product Title">
             <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="stock-toggle-btn ${isSoldOut ? 'sold-out' : 'in-stock'}" id="btn-stock-${prod.id}" title="Click to toggle In Stock vs Sold Out">
+                ${isSoldOut ? '🔴 Sold Out' : '🟢 In Stock'}
+              </button>
               <span class="badge-confidence ${confClass}">${confLabel}</span>
             </div>
           </div>
@@ -1600,6 +1650,112 @@
       openAiGenerator(prod.id);
     });
 
+    // Stock Status Toggle Button
+    const btnStock = document.getElementById(`btn-stock-${prod.id}`);
+    if (btnStock) {
+      btnStock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        prod.in_stock = (prod.in_stock === false || prod.stock_status === 'sold_out') ? true : false;
+        prod.stock_status = prod.in_stock ? 'in_stock' : 'sold_out';
+        const isSoldOut = !prod.in_stock;
+        btnStock.className = `stock-toggle-btn ${isSoldOut ? 'sold-out' : 'in-stock'}`;
+        btnStock.textContent = isSoldOut ? '🔴 Sold Out' : '🟢 In Stock';
+        if (card) card.classList.toggle('is-sold-out', isSoldOut);
+
+        const soldOutCount = state.products.filter(p => p.in_stock === false || p.stock_status === 'sold_out').length;
+        const countSoldOutEl = document.getElementById('count-soldout');
+        if (countSoldOutEl) countSoldOutEl.textContent = soldOutCount;
+
+        debouncedSaveState();
+        updateLivePreview();
+      });
+    }
+
+    // Multi-Image Gallery Strip Interactions
+    const galleryStrip = document.getElementById(`gallery-strip-${prod.id}`);
+    const btnAddGallery = document.getElementById(`btn-add-gallery-${prod.id}`);
+    const fileGalleryUpload = document.getElementById(`file-gallery-upload-${prod.id}`);
+
+    if (galleryStrip) {
+      galleryStrip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectThisProduct();
+
+        // Remove extra photo
+        const btnRemove = e.target.closest('.gallery-btn-remove');
+        if (btnRemove) {
+          const idx = parseInt(btnRemove.dataset.idx, 10);
+          if (!isNaN(idx) && Array.isArray(prod.images) && prod.images.length > 1) {
+            const wasCover = prod.images[idx] === prod.image;
+            prod.images.splice(idx, 1);
+            if (wasCover) {
+              prod.image = prod.images[0] || null;
+            }
+            renderReviewList();
+            debouncedSaveState();
+            updateLivePreview();
+            showToast(`Photo removed from "${prod.name}"`);
+          }
+          return;
+        }
+
+        // Set as primary cover photo
+        const thumbItem = e.target.closest('.gallery-thumb-item');
+        if (thumbItem) {
+          const idx = parseInt(thumbItem.dataset.idx, 10);
+          if (!isNaN(idx) && Array.isArray(prod.images) && prod.images[idx]) {
+            const chosen = prod.images[idx];
+            prod.images.splice(idx, 1);
+            prod.images.unshift(chosen);
+            prod.image = chosen;
+            renderReviewList();
+            debouncedSaveState();
+            updateLivePreview();
+            showToast(`Cover photo updated for "${prod.name}"`);
+          }
+        }
+      });
+    }
+
+    // Add photo to gallery
+    if (btnAddGallery && fileGalleryUpload) {
+      btnAddGallery.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectThisProduct();
+        fileGalleryUpload.click();
+      });
+
+      fileGalleryUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async ev => {
+          let finalUrl = ev.target.result;
+          if (window.CloudStorage && window.CloudStorage.isConfigured() && window.CloudStorage.getConfig().autoUpload) {
+            try {
+              showToast('Uploading gallery photo to cloud CDN...');
+              const res = await window.CloudStorage.uploadImage(finalUrl, `${prod.id}_g_${Date.now()}.jpg`);
+              finalUrl = res.url;
+            } catch (upErr) {
+              console.warn('Auto cloud upload deferred:', upErr);
+            }
+          }
+          if (!Array.isArray(prod.images)) {
+            prod.images = prod.image ? [prod.image] : [];
+          }
+          prod.images.push(finalUrl);
+          if (!prod.image) {
+            prod.image = finalUrl;
+          }
+          renderReviewList();
+          debouncedSaveState();
+          updateLivePreview();
+          showToast(`Added photo to "${prod.name}" (${prod.images.length} photos)`);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     if (btnUpload && fileUpload) {
       btnUpload.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1610,21 +1766,30 @@
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = ev => {
-          prod.image = ev.target.result;
+        reader.onload = async ev => {
+          let finalUrl = ev.target.result;
+          if (window.CloudStorage && window.CloudStorage.isConfigured() && window.CloudStorage.getConfig().autoUpload) {
+            try {
+              showToast('Uploading photo to cloud CDN...');
+              const res = await window.CloudStorage.uploadImage(finalUrl, `${prod.id}_cover_${Date.now()}.jpg`);
+              finalUrl = res.url;
+            } catch (upErr) {
+              console.warn('Auto cloud upload deferred:', upErr);
+            }
+          }
+          prod.image = finalUrl;
+          if (!Array.isArray(prod.images) || prod.images.length === 0) {
+            prod.images = [finalUrl];
+          } else {
+            prod.images[0] = finalUrl;
+          }
           prod.image_origin = 'own_upload';
           prod.image_source_url = '';
           prod.image_attribution = 'Vendor authentic photo';
           prod.image_license = 'Vendor owned';
           prod.image_provider = 'own_upload';
           prod.image_author = 'Vendor';
-          const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
-          if (thumbImg) {
-            thumbImg.src = prod.image;
-            thumbImg.style.display = 'block';
-          }
-          const emptyDiv = document.getElementById(`thumb-empty-${prod.id}`);
-          if (emptyDiv) emptyDiv.style.display = 'none';
+          renderReviewList();
           saveStateToLocalStorage();
           updateLivePreview();
           showToast(`Uploaded authentic photo for "${prod.name}"`);
@@ -1641,6 +1806,11 @@
         if (window.ContentSmithApp && typeof window.ContentSmithApp.openUniversalImageSearch === 'function') {
           window.ContentSmithApp.openUniversalImageSearch(prod.name || prod.category, prod.category, (chosenImg, meta) => {
             prod.image = chosenImg;
+            if (!Array.isArray(prod.images) || prod.images.length === 0) {
+              prod.images = [chosenImg];
+            } else {
+              prod.images[0] = chosenImg;
+            }
             if (meta) {
               prod.image_origin = meta.origin || (meta.provider === 'own_upload' ? 'own_upload' : 'stock_search');
               prod.image_source_url = meta.source_url || meta.sourceUrl || '';
@@ -1652,13 +1822,7 @@
               prod.imagePublisher = prod.image_provider;
               prod.imageAttribution = prod.image_attribution;
             }
-            const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
-            if (thumbImg) {
-              thumbImg.src = prod.image;
-              thumbImg.style.display = 'block';
-            }
-            const emptyDiv = document.getElementById(`thumb-empty-${prod.id}`);
-            if (emptyDiv) emptyDiv.style.display = 'none';
+            renderReviewList();
             saveStateToLocalStorage();
             updateLivePreview();
             showToast(`Photo updated for "${prod.name}"`);
@@ -1800,19 +1964,35 @@
       theme: source.theme || 'emerald',
       layout: source.layout || 'standard',
       order_button_text: source.order_button_text || 'Order on WhatsApp',
-      products: prods.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        description: p.description,
-        category: p.category,
-        best_timestamp_sec: p.best_timestamp_sec,
-        image: inlinedImages
-          ? (p.image || '')
-          : (p.image && (p.image.startsWith('http://') || p.image.startsWith('https://') || p.image.startsWith('data:') || p.image.startsWith('/'))
-              ? p.image
-              : (p.image ? `images/${p.id}.jpg` : ''))
-      }))
+      products: prods.map(p => {
+        const isSoldOut = p.in_stock === false || p.stock_status === 'sold_out';
+        const rawImages = (Array.isArray(p.images) && p.images.length > 0)
+          ? p.images
+          : (p.image ? [p.image] : []);
+        const mappedImages = rawImages.map((img, idx) => {
+          if (inlinedImages) return img || '';
+          if (img && (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('/'))) {
+            return img;
+          }
+          return `images/${p.id}_${idx}.jpg`;
+        });
+        const primaryImage = mappedImages.length > 0
+          ? mappedImages[0]
+          : (inlinedImages ? (p.image || '') : (p.image && (p.image.startsWith('http') || p.image.startsWith('data:') || p.image.startsWith('/')) ? p.image : (p.image ? `images/${p.id}.jpg` : '')));
+
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          description: p.description,
+          category: p.category,
+          best_timestamp_sec: p.best_timestamp_sec,
+          in_stock: !isSoldOut,
+          stock_status: isSoldOut ? 'sold_out' : 'in_stock',
+          image: primaryImage,
+          images: mappedImages
+        };
+      })
     };
 
     const cssContent = getStorefrontCSS();
@@ -1912,23 +2092,68 @@ ${cleanData.products.length === 0 ? `
         <p style="font-size: 0.875rem; color: var(--color-text-secondary); max-width: 320px; margin: 0 auto;">Add products in the workspace editor or generate starter suggestions to populate your live shop.</p>
       </div>
 ` : cleanData.products.map(p => {
+  const isSoldOut = p.in_stock === false || p.stock_status === 'sold_out';
   const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
   const formattedPrice = hasPrice ? formatPrice(p.price.amount, p.price.currency || defaultCurrency) : null;
-  const orderMsg = hasPrice
-    ? (source.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
+
+  let orderMsg = '';
+  if (isSoldOut) {
+    orderMsg = `Hello ${vendorName}! I saw that *${p.name}* is sold out in your catalog. Will you be restocking this item soon?`;
+  } else if (hasPrice) {
+    orderMsg = (source.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
         .replace(/{vendor_name}/g, vendorName)
         .replace(/{product_name}/g, p.name)
-        .replace(/{product_price}/g, formattedPrice)
-    : `Hello ${vendorName}! What is the price and availability for *${p.name}*? I saw it on your catalog.`;
+        .replace(/{product_price}/g, formattedPrice);
+  } else {
+    orderMsg = `Hello ${vendorName}! What is the price and availability for *${p.name}*? I saw it on your catalog.`;
+  }
 
   const orderUrl = buildWaUrl(vendorPhone, orderMsg);
-  const btnClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
-  const btnLabel = hasPrice ? (source.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
+  let btnClass = 'btn-order-wa';
+  let btnLabel = source.order_button_text || 'Order on WhatsApp';
 
-  return `      <article class="product-card" role="listitem" data-cat="${escapeHtml(p.category || '')}">
+  if (isSoldOut) {
+    btnClass = 'btn-order-wa btn-sold-out';
+    btnLabel = '💬 Inquire Restock on WhatsApp';
+  } else if (!hasPrice) {
+    btnClass = 'btn-order-wa btn-ask-wa';
+    btnLabel = 'Ask for Price on WhatsApp';
+  }
+
+  const prodImages = Array.isArray(p.images) && p.images.length > 0
+    ? p.images
+    : (p.image ? [p.image] : []);
+
+  let imageHtml = '';
+  if (prodImages.length > 1) {
+    imageHtml = `
+      <div class="product-carousel" id="carousel-${p.id}">
+        ${prodImages.map((src, idx) => `
+          <div class="carousel-slide ${idx === 0 ? 'active' : ''}" data-slide="${idx}">
+            <img src="${src}" alt="${escapeHtml(p.name)} - Photo ${idx + 1}" class="product-image" loading="${idx === 0 ? 'eager' : 'lazy'}" decoding="async">
+          </div>
+        `).join('')}
+        <button type="button" class="carousel-nav-btn prev" aria-label="Previous photo">❮</button>
+        <button type="button" class="carousel-nav-btn next" aria-label="Next photo">❯</button>
+        <div class="carousel-dots">
+          ${prodImages.map((_, idx) => `<button type="button" class="carousel-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="Slide ${idx + 1}"></button>`).join('')}
+        </div>
+      </div>
+    `;
+  } else if (prodImages.length === 1) {
+    imageHtml = `<img src="${prodImages[0]}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy" decoding="async">`;
+  } else {
+    imageHtml = `<div class="image-fallback"><span>No Photo</span></div>`;
+  }
+
+  const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">Sold Out</span>` : '';
+  const catBadge = p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : '';
+
+  return `      <article class="product-card ${isSoldOut ? 'is-sold-out' : ''}" role="listitem" data-cat="${escapeHtml(p.category || '')}" data-stock="${isSoldOut ? 'sold_out' : 'in_stock'}">
         <div class="product-image-wrap">
-          ${p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : ''}
-          ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy" decoding="async">` : `<div class="image-fallback"><span>No Photo</span></div>`}
+          ${catBadge}
+          ${soldOutBadge}
+          ${imageHtml}
         </div>
         <div class="product-body">
           <h2 class="product-title">${escapeHtml(p.name)}</h2>
@@ -1994,34 +2219,93 @@ ${cleanData.products.length === 0 ? `
         };
       }
 
-      // Category filter pills
+      // Category and Stock Filter Pills
       const catBar = document.getElementById('category-filter-bar');
       const cards = document.querySelectorAll('.product-card');
+      let activeCat = 'all';
+      let inStockOnly = false;
+
+      function updateCardVisibilities() {
+        cards.forEach(card => {
+          const cCat = card.getAttribute('data-cat') || '';
+          const cStock = card.getAttribute('data-stock') || 'in_stock';
+          const catMatches = (activeCat === 'all' || cCat === activeCat);
+          const stockMatches = !inStockOnly || cStock !== 'sold_out';
+          card.style.display = (catMatches && stockMatches) ? '' : 'none';
+        });
+      }
+
       if (catBar && data.products && data.products.length) {
         const cats = ['all'];
         data.products.forEach(p => {
           if (p.category && !cats.includes(p.category)) cats.push(p.category);
         });
-        if (cats.length > 2) {
+        const hasSoldOut = data.products.some(p => p.in_stock === false || p.stock_status === 'sold_out');
+
+        if (cats.length > 2 || hasSoldOut) {
           catBar.innerHTML = '';
           cats.forEach(c => {
             const btn = document.createElement('button');
-            btn.className = 'cat-pill' + (c === 'all' ? ' active' : '');
+            btn.className = 'cat-pill cat-pill-cat' + (c === activeCat ? ' active' : '');
             btn.textContent = c === 'all' ? 'All Products' : c;
             btn.onclick = () => {
-              catBar.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+              activeCat = c;
+              catBar.querySelectorAll('.cat-pill-cat').forEach(b => b.classList.remove('active'));
               btn.classList.add('active');
-              cards.forEach(card => {
-                const cardCat = card.getAttribute('data-cat') || '';
-                card.style.display = (c === 'all' || cardCat === c) ? '' : 'none';
-              });
+              updateCardVisibilities();
             };
             catBar.appendChild(btn);
           });
+
+          if (hasSoldOut) {
+            const stockBtn = document.createElement('button');
+            stockBtn.className = 'cat-pill';
+            stockBtn.textContent = '🟢 In Stock Only';
+            stockBtn.onclick = () => {
+              inStockOnly = !inStockOnly;
+              stockBtn.classList.toggle('active', inStockOnly);
+              updateCardVisibilities();
+            };
+            catBar.appendChild(stockBtn);
+          }
         } else {
           catBar.style.display = 'none';
         }
       }
+
+      // Interactive Carousels
+      cards.forEach(card => {
+        const carousel = card.querySelector('.product-carousel');
+        if (!carousel) return;
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        const dots = carousel.querySelectorAll('.carousel-dot');
+        const btnPrev = carousel.querySelector('.carousel-nav-btn.prev');
+        const btnNext = carousel.querySelector('.carousel-nav-btn.next');
+        const totalSlides = slides.length;
+        let current = 0;
+
+        function showSlide(idx) {
+          current = (idx + totalSlides) % totalSlides;
+          slides.forEach((s, i) => s.classList.toggle('active', i === current));
+          dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        }
+
+        if (btnPrev) btnPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); showSlide(current - 1); };
+        if (btnNext) btnNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); showSlide(current + 1); };
+        dots.forEach((d, i) => {
+          d.onclick = (e) => { e.preventDefault(); e.stopPropagation(); showSlide(i); };
+        });
+
+        let touchStartX = 0;
+        carousel.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        carousel.addEventListener('touchend', (e) => {
+          const diff = e.changedTouches[0].clientX - touchStartX;
+          if (Math.abs(diff) > 40) {
+            if (diff > 0) showSlide(current - 1);
+            else showSlide(current + 1);
+          }
+        }, { passive: true });
+      });
     })();
   </script>
 </body>
@@ -2056,7 +2340,23 @@ body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#181
 .cat-pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:var(--radius-full);background-color:var(--color-surface);border:1px solid var(--color-border);color:var(--color-text-secondary);font-size:0.8125rem;font-weight:600;white-space:nowrap;cursor:pointer;min-height:36px;transition:all 0.15s ease}
 .cat-pill.active{background-color:var(--color-wa);color:#fff;border-color:var(--color-wa)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-family:var(--font-family);background-color:var(--color-bg);color:var(--color-text-primary);line-height:1.5}body{min-height:100vh;display:flex;flex-direction:column;padding-bottom:96px;background-color:var(--color-bg);color:var(--color-text-primary)}.store-header{position:sticky;top:0;z-index:40;background-color:var(--color-surface);border-bottom:1px solid var(--color-border);padding:12px 16px}.header-container{max-width:840px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.vendor-brand{display:flex;align-items:center;gap:10px;min-width:0}.vendor-avatar{width:40px;height:40px;border-radius:var(--radius-full);background:linear-gradient(135deg,#128C7E,#25D366);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0}.vendor-info{min-width:0}.store-name{font-size:1.125rem;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.verified-badge{color:#10b981;display:inline-flex}.store-tagline{font-size:0.8125rem;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.header-contact-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 14px;background-color:var(--color-wa);color:#ffffff;border:none;border-radius:var(--radius-full);font-size:0.875rem;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}.store-intro{max-width:840px;margin:12px auto 8px auto;padding:0 16px;width:100%}.catalog-stats-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background-color:var(--color-surface);border-radius:var(--radius-md);font-size:0.8125rem;color:var(--color-text-secondary);border:1px solid var(--color-border)}.stats-count{font-weight:600;color:var(--color-text-primary)}.main-content{max-width:840px;margin:0 auto;padding:12px 16px;width:100%;flex:1}.product-grid{display:grid;grid-template-columns:1fr;gap:16px}@media(min-width:560px){.product-grid{grid-template-columns:repeat(2,1fr);gap:18px}}body.layout-compact .product-grid{grid-template-columns:repeat(2,1fr);gap:12px}body.layout-compact .product-title{font-size:0.9375rem}body.layout-compact .product-desc{font-size:0.75rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}body.layout-compact .product-price{font-size:1.0625rem}body.layout-compact .btn-order-wa{font-size:0.8125rem;padding:8px 10px;min-height:40px}.product-card{background-color:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;flex-direction:column}.product-image-wrap{position:relative;width:100%;aspect-ratio:4/3;background-color:rgba(0,0,0,0.05);overflow:hidden}.product-image{width:100%;height:100%;object-fit:cover;display:block}.product-category-tag{position:absolute;top:10px;left:10px;background-color:rgba(15,23,42,0.75);color:#ffffff;font-size:0.6875rem;font-weight:600;text-transform:uppercase;padding:3px 8px;border-radius:var(--radius-full)}.image-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:0.8125rem;background:rgba(0,0,0,0.04)}.product-body{padding:14px;display:flex;flex-direction:column;flex:1}.product-title{font-size:1.0625rem;font-weight:600;line-height:1.35;margin-bottom:6px}.product-desc{font-size:0.875rem;color:var(--color-text-secondary);line-height:1.45;margin-bottom:12px;flex:1}.product-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}.product-price{font-size:1.25rem;font-weight:800;color:var(--color-price)}.price-ask{display:inline-flex;align-items:center;font-size:0.9375rem;font-weight:700;color:var(--color-ask-price);background-color:var(--color-ask-price-bg);padding:3px 10px;border-radius:6px}.btn-order-wa{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:var(--tap-target);padding:12px 18px;background-color:var(--color-wa);color:#ffffff;border:none;border-radius:var(--radius-md);font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer}.btn-ask-wa{background-color:#3b82f6}.sticky-wa-fab{position:fixed;bottom:20px;right:20px;z-index:50;display:flex;align-items:center;gap:8px;padding:12px 18px;min-height:var(--tap-target);background-color:var(--color-wa);color:#ffffff;border-radius:var(--radius-full);box-shadow:0 6px 16px rgba(37,211,102,0.35);text-decoration:none;font-weight:700;font-size:0.9375rem}.store-footer{margin-top:auto;border-top:1px solid var(--color-border);padding:24px 16px;text-align:center;font-size:0.8125rem;color:var(--color-text-muted)}.icon{width:20px;height:20px;display:inline-block;vertical-align:middle;fill:currentColor}
-@media print{@page{size:A4 portrait;margin:12mm 10mm}html,body{background-color:#fff!important;color:#0f172a!important;padding-bottom:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.store-header{position:static!important;border-bottom:2px solid #047857!important;padding:8px 0 12px 0!important;box-shadow:none!important}.live-theme-bar,.category-filter-bar,.sticky-wa-fab,.header-contact-btn{display:none!important}.product-grid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:14px!important}.product-card{page-break-inside:avoid!important;break-inside:avoid!important;border:1px solid #e2e8f0!important;box-shadow:none!important;border-radius:8px!important}.product-image-wrap{aspect-ratio:4/3!important;max-height:180px!important}.product-image{object-fit:cover!important}.btn-order-wa{background-color:#f8fafc!important;color:#047857!important;border:1px solid #cbd5e1!important;font-size:0.75rem!important;padding:6px 10px!important;min-height:32px!important;box-shadow:none!important}.store-footer{border-top:1px solid #e2e8f0!important;padding:12px 0!important;font-size:0.75rem!important}}`;
+@media print{@page{size:A4 portrait;margin:12mm 10mm}html,body{background-color:#fff!important;color:#0f172a!important;padding-bottom:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.store-header{position:static!important;border-bottom:2px solid #047857!important;padding:8px 0 12px 0!important;box-shadow:none!important}.live-theme-bar,.category-filter-bar,.sticky-wa-fab,.header-contact-btn{display:none!important}.product-grid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:14px!important}.product-card{page-break-inside:avoid!important;break-inside:avoid!important;border:1px solid #e2e8f0!important;box-shadow:none!important;border-radius:8px!important}.product-image-wrap{aspect-ratio:4/3!important;max-height:180px!important}.product-image{object-fit:cover!important}.btn-order-wa{background-color:#f8fafc!important;color:#047857!important;border:1px solid #cbd5e1!important;font-size:0.75rem!important;padding:6px 10px!important;min-height:32px!important;box-shadow:none!important}.store-footer{border-top:1px solid #e2e8f0!important;padding:12px 0!important;font-size:0.75rem!important}}
+.product-carousel{position:relative;width:100%;height:100%;overflow:hidden}
+.carousel-slide{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;transition:opacity 0.25s ease-in-out}
+.carousel-slide.active{opacity:1;pointer-events:auto}
+.carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.carousel-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:var(--radius-full);background-color:rgba(15,23,42,0.65);backdrop-filter:blur(4px);color:#ffffff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;opacity:0.85;transition:opacity 0.15s ease,transform 0.15s ease;user-select:none}
+.carousel-nav-btn:hover{opacity:1;transform:translateY(-50%) scale(1.05)}
+.carousel-nav-btn.prev{left:8px}
+.carousel-nav-btn.next{right:8px}
+.carousel-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;z-index:11;padding:3px 6px;background-color:rgba(15,23,42,0.5);backdrop-filter:blur(4px);border-radius:var(--radius-full)}
+.carousel-dot{width:6px;height:6px;border-radius:var(--radius-full);background-color:rgba(255,255,255,0.5);border:none;padding:0;cursor:pointer;transition:all 0.2s ease}
+.carousel-dot.active{background-color:#ffffff;width:14px}
+.badge-sold-out{position:absolute;top:10px;right:10px;background:rgba(225,29,72,0.95);backdrop-filter:blur(4px);color:#ffffff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;padding:4px 10px;border-radius:var(--radius-full);z-index:15;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.product-card.is-sold-out{opacity:0.88}
+.product-card.is-sold-out .product-image{filter:grayscale(25%)}
+.btn-order-wa.btn-sold-out{background-color:rgba(225,29,72,0.1);color:#e11d48;border:1.5px solid rgba(225,29,72,0.35)}
+.btn-order-wa.btn-sold-out:hover{background-color:#e11d48;color:#ffffff;border-color:#e11d48}`;
   }
 
   // Update Live Phone Simulator
@@ -2125,7 +2425,15 @@ body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#181
           description: p.description,
           category: p.category,
           best_timestamp_sec: p.best_timestamp_sec,
-          confidence: p.confidence
+          confidence: p.confidence,
+          in_stock: p.in_stock !== false && p.stock_status !== 'sold_out',
+          stock_status: (p.in_stock === false || p.stock_status === 'sold_out') ? 'sold_out' : 'in_stock',
+          images: Array.isArray(p.images) && p.images.length > 0
+            ? p.images.map((img, idx) => {
+                if (img && (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/'))) return img;
+                return `images/${p.id}_${idx}.jpg`;
+              })
+            : (p.image ? [p.image.startsWith('http') ? p.image : `images/${p.id}.jpg`] : [])
         }))
       };
       zip.file('products.json', JSON.stringify(catalogData, null, 2));
@@ -2136,6 +2444,14 @@ body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#181
         if (p.image && p.image.startsWith('data:image')) {
           const blob = dataUrlToBlob(p.image);
           imgFolder.file(`${p.id}.jpg`, blob);
+        }
+        if (Array.isArray(p.images)) {
+          p.images.forEach((img, idx) => {
+            if (img && img.startsWith('data:image')) {
+              const blob = dataUrlToBlob(img);
+              imgFolder.file(`${p.id}_${idx}.jpg`, blob);
+            }
+          });
         }
       }
 
@@ -2403,6 +2719,265 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     if (els.btnRunFrameSampling) {
       els.btnRunFrameSampling.addEventListener('click', runFallbackFrameSampling);
     }
+  }
+
+  // Cloud Storage Settings & Migration Controller
+  function bindCloudStorageEvents() {
+    const modal = document.getElementById('cloud-storage-modal');
+    const btnOpenHeader = document.getElementById('btn-open-cloud-storage');
+    const btnOpenStep3 = document.getElementById('btn-step3-cloud-config');
+    const btnClose = document.getElementById('btn-close-cloud-storage');
+    const btnCancel = document.getElementById('btn-cancel-cloud-storage');
+    const btnSave = document.getElementById('btn-save-cloud-storage');
+    const btnTest = document.getElementById('btn-test-cloud-storage');
+    const testStatus = document.getElementById('cloud-storage-test-status');
+    const providerBtns = document.querySelectorAll('.cloud-provider-btn');
+    const panels = {
+      cloudinary: document.getElementById('panel-provider-cloudinary'),
+      supabase: document.getElementById('panel-provider-supabase'),
+      serverless: document.getElementById('panel-provider-serverless')
+    };
+
+    const inputCloudinaryName = document.getElementById('cfg-cloudinary-cloud-name');
+    const inputCloudinaryPreset = document.getElementById('cfg-cloudinary-preset');
+    const inputCloudinaryFolder = document.getElementById('cfg-cloudinary-folder');
+
+    const inputSupabaseUrl = document.getElementById('cfg-supabase-url');
+    const inputSupabaseKey = document.getElementById('cfg-supabase-anon-key');
+    const inputSupabaseBucket = document.getElementById('cfg-supabase-bucket');
+
+    const checkAutoUpload = document.getElementById('cfg-auto-upload-toggle');
+
+    const badgeStep3 = document.getElementById('step3-cloud-badge');
+    const countBase64El = document.getElementById('cloud-base64-count');
+    const sizeBase64El = document.getElementById('cloud-base64-size');
+
+    const progressWrap = document.getElementById('cloud-migration-progress-wrap');
+    const progressBar = document.getElementById('cloud-migration-progress-bar');
+    const progressStatus = document.getElementById('cloud-migration-status-text');
+    const progressPercent = document.getElementById('cloud-migration-percent-text');
+    const btnRunMigration = document.getElementById('btn-run-cloud-migration');
+
+    let activeProvider = 'cloudinary';
+
+    function updateBadge() {
+      if (!badgeStep3 || !window.CloudStorage) return;
+      const cfg = window.CloudStorage.getConfig();
+      const isReady = window.CloudStorage.isConfigured(cfg);
+      if (isReady) {
+        const pName = cfg.provider === 'cloudinary' ? '⚡ Cloudinary CDN' : (cfg.provider === 'supabase' ? '🗄️ Supabase CDN' : '🌐 Serverless CDN');
+        badgeStep3.textContent = pName;
+        badgeStep3.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+        badgeStep3.style.color = '#10b981';
+        badgeStep3.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      } else {
+        badgeStep3.textContent = 'Local Storage';
+        badgeStep3.style.backgroundColor = 'var(--bg-card)';
+        badgeStep3.style.color = 'var(--text-muted)';
+        badgeStep3.style.borderColor = 'var(--border-color)';
+      }
+    }
+
+    function updateMigrationStats() {
+      if (!countBase64El || !sizeBase64El) return;
+      let b64Count = 0;
+      let b64Chars = 0;
+      state.products.forEach(p => {
+        if (p.image && p.image.startsWith('data:image')) {
+          b64Count++;
+          b64Chars += p.image.length;
+        }
+        if (Array.isArray(p.images)) {
+          p.images.forEach((img, idx) => {
+            if (img && img.startsWith('data:image') && !(idx === 0 && img === p.image)) {
+              b64Count++;
+              b64Chars += img.length;
+            }
+          });
+        }
+      });
+
+      countBase64El.textContent = b64Count;
+      const approxKb = Math.round((b64Chars * 0.75) / 1024);
+      if (approxKb > 1024) {
+        sizeBase64El.textContent = (approxKb / 1024).toFixed(1) + ' MB';
+      } else {
+        sizeBase64El.textContent = approxKb + ' KB';
+      }
+
+      if (btnRunMigration) {
+        if (b64Count === 0) {
+          btnRunMigration.disabled = true;
+          btnRunMigration.textContent = '✓ All Catalog Photos on Cloud CDN';
+          btnRunMigration.style.opacity = '0.6';
+        } else {
+          btnRunMigration.disabled = false;
+          btnRunMigration.textContent = `🚀 Migrate ${b64Count} Local Photo${b64Count === 1 ? '' : 's'} to Cloud CDN`;
+          btnRunMigration.style.opacity = '1';
+        }
+      }
+    }
+
+    function setProvider(provider) {
+      activeProvider = provider;
+      providerBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.provider === provider);
+      });
+      Object.keys(panels).forEach(pKey => {
+        if (panels[pKey]) {
+          panels[pKey].style.display = pKey === provider ? 'block' : 'none';
+        }
+      });
+      if (testStatus) {
+        testStatus.textContent = '';
+        testStatus.className = '';
+      }
+    }
+
+    function openModal() {
+      if (!modal || !window.CloudStorage) return;
+      const cfg = window.CloudStorage.getConfig();
+      activeProvider = cfg.provider || 'cloudinary';
+      setProvider(activeProvider);
+
+      if (inputCloudinaryName) inputCloudinaryName.value = cfg.cloudinary.cloudName || '';
+      if (inputCloudinaryPreset) inputCloudinaryPreset.value = cfg.cloudinary.uploadPreset || '';
+      if (inputCloudinaryFolder) inputCloudinaryFolder.value = cfg.cloudinary.folder || 'catalogsmith';
+
+      if (inputSupabaseUrl) inputSupabaseUrl.value = cfg.supabase.url || '';
+      if (inputSupabaseKey) inputSupabaseKey.value = cfg.supabase.anonKey || '';
+      if (inputSupabaseBucket) inputSupabaseBucket.value = cfg.supabase.bucket || 'catalog-images';
+
+      if (checkAutoUpload) checkAutoUpload.checked = !!cfg.autoUpload;
+
+      if (testStatus) testStatus.textContent = '';
+      if (progressWrap) progressWrap.style.display = 'none';
+
+      updateMigrationStats();
+      modal.classList.add('open');
+    }
+
+    function closeModal() {
+      if (modal) modal.classList.remove('open');
+    }
+
+    function getFormConfig() {
+      return {
+        provider: activeProvider,
+        autoUpload: checkAutoUpload ? checkAutoUpload.checked : false,
+        cloudinary: {
+          cloudName: inputCloudinaryName ? inputCloudinaryName.value.trim() : '',
+          uploadPreset: inputCloudinaryPreset ? inputCloudinaryPreset.value.trim() : '',
+          folder: inputCloudinaryFolder ? inputCloudinaryFolder.value.trim() : 'catalogsmith'
+        },
+        supabase: {
+          url: inputSupabaseUrl ? inputSupabaseUrl.value.trim() : '',
+          anonKey: inputSupabaseKey ? inputSupabaseKey.value.trim() : '',
+          bucket: inputSupabaseBucket ? inputSupabaseBucket.value.trim() : 'catalog-images'
+        }
+      };
+    }
+
+    if (btnOpenHeader) btnOpenHeader.addEventListener('click', openModal);
+    if (btnOpenStep3) btnOpenStep3.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    providerBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setProvider(btn.dataset.provider);
+      });
+    });
+
+    if (btnTest) {
+      btnTest.addEventListener('click', async () => {
+        const cfg = getFormConfig();
+        if (testStatus) {
+          testStatus.textContent = '⏳ Testing connection...';
+          testStatus.style.color = 'var(--text-muted)';
+        }
+        btnTest.disabled = true;
+
+        try {
+          const result = await window.CloudStorage.testConnection(cfg);
+          if (testStatus) {
+            testStatus.textContent = `✓ Connected! (${result.provider})`;
+            testStatus.style.color = '#10b981';
+          }
+          showToast('Cloud Storage connection successful!');
+        } catch (err) {
+          if (testStatus) {
+            testStatus.textContent = `❌ ${err.message}`;
+            testStatus.style.color = '#ef4444';
+          }
+          showToast(`Connection test failed: ${err.message}`);
+        } finally {
+          btnTest.disabled = false;
+        }
+      });
+    }
+
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        const cfg = getFormConfig();
+        window.CloudStorage.saveConfig(cfg);
+        updateBadge();
+        showToast('Cloud storage settings saved!');
+        closeModal();
+      });
+    }
+
+    if (btnRunMigration) {
+      btnRunMigration.addEventListener('click', async () => {
+        const cfg = getFormConfig();
+        window.CloudStorage.saveConfig(cfg);
+        updateBadge();
+
+        if (!window.CloudStorage.isConfigured(cfg)) {
+          showToast('Please configure cloud credentials first');
+          return;
+        }
+
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressStatus) progressStatus.textContent = 'Starting migration...';
+        if (progressPercent) progressPercent.textContent = '0%';
+        btnRunMigration.disabled = true;
+
+        try {
+          const result = await window.CloudStorage.migrateProducts(state.products, (prog) => {
+            if (progressBar) progressBar.style.width = `${prog.percent}%`;
+            if (progressPercent) progressPercent.textContent = `${prog.percent}%`;
+            if (progressStatus) progressStatus.textContent = `Uploading ${prog.current}/${prog.total}: ${prog.item}`;
+          });
+
+          if (progressBar) progressBar.style.width = '100%';
+          if (progressPercent) progressPercent.textContent = '100%';
+          if (progressStatus) progressStatus.textContent = `Done! Migrated ${result.count} images (~${result.savedKb} KB saved).`;
+
+          saveStateToLocalStorage();
+          renderReviewList();
+          updateLivePreview();
+          updateMigrationStats();
+          showToast(`Successfully migrated ${result.count} photos to Cloud CDN!`);
+        } catch (err) {
+          console.error('Migration error:', err);
+          if (progressStatus) progressStatus.textContent = `Error: ${err.message}`;
+          showToast(`Migration interrupted: ${err.message}`);
+        } finally {
+          btnRunMigration.disabled = false;
+        }
+      });
+    }
+
+    // Initialize badge
+    updateBadge();
   }
 
   // Fallback Frame Sampling Logic
@@ -3354,6 +3929,7 @@ Return pure JSON only.`;
     setupVideoHandlers();
     bindSettingsInputs();
     setupModals();
+    bindCloudStorageEvents();
     setupAutomationHandlers();
     bindPhotoEditorEvents();
     bindAiGeneratorEvents();

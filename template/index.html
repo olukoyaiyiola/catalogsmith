@@ -280,6 +280,21 @@
               };
               catBar.appendChild(pill);
             });
+
+            // Stock Filter Pill
+            const hasSoldOutItems = products.some(p => p.in_stock === false || p.stock_status === 'sold_out');
+            if (hasSoldOutItems) {
+              const stockPill = document.createElement('button');
+              stockPill.className = `cat-pill ${filterInStockOnly ? 'active' : ''}`;
+              stockPill.id = 'pill-filter-instock';
+              stockPill.textContent = '🟢 In Stock Only';
+              stockPill.onclick = function() {
+                filterInStockOnly = !filterInStockOnly;
+                stockPill.classList.toggle('active', filterInStockOnly);
+                renderProductsGrid();
+              };
+              catBar.appendChild(stockPill);
+            }
           } else {
             catBar.style.display = 'none';
           }
@@ -288,11 +303,16 @@
         // Render Products
         const grid = document.getElementById('product-grid');
         const emptyState = document.getElementById('empty-state');
+        let filterInStockOnly = false;
 
         function renderProductsGrid() {
-          const displayed = selectedCategory === 'all' 
+          let displayed = selectedCategory === 'all' 
             ? products 
             : products.filter(p => p.category === selectedCategory);
+
+          if (filterInStockOnly) {
+            displayed = displayed.filter(p => p.in_stock !== false && p.stock_status !== 'sold_out');
+          }
 
           if (!displayed.length) {
             if (grid) grid.innerHTML = '';
@@ -305,82 +325,161 @@
 
           grid.innerHTML = '';
 
-          displayed.forEach(function(product) {
-          const card = document.createElement('article');
-          card.className = 'product-card';
-          card.setAttribute('role', 'listitem');
+          displayed.forEach(function(product, pIndex) {
+            const card = document.createElement('article');
+            const isSoldOut = product.in_stock === false || product.stock_status === 'sold_out';
+            card.className = `product-card ${isSoldOut ? 'is-sold-out' : ''}`;
+            card.setAttribute('role', 'listitem');
 
-          const hasPrice = product.price && product.price.amount !== null && !isNaN(product.price.amount);
-          const currency = (product.price && product.price.currency) || defaultCurrency;
-          const formattedPrice = hasPrice ? formatPrice(product.price.amount, currency) : null;
+            const hasPrice = product.price && product.price.amount !== null && !isNaN(product.price.amount);
+            const currency = (product.price && product.price.currency) || defaultCurrency;
+            const formattedPrice = hasPrice ? formatPrice(product.price.amount, currency) : null;
 
-          // Build tailored WhatsApp message
-          let orderMessage = '';
-          if (hasPrice) {
-            orderMessage = (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?')
-              .replace(/{vendor_name}/g, vendorName)
-              .replace(/{product_name}/g, product.name)
-              .replace(/{product_price}/g, formattedPrice);
-          } else {
-            orderMessage = `Hello ${vendorName}! What is the price and availability for *${product.name}*? I saw it on your catalog.`;
+            // Build tailored WhatsApp message
+            let orderMessage = '';
+            if (isSoldOut) {
+              orderMessage = `Hello ${vendorName}! I saw that *${product.name}* is sold out in your catalog. Will you be restocking this item soon?`;
+            } else if (hasPrice) {
+              orderMessage = (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?')
+                .replace(/{vendor_name}/g, vendorName)
+                .replace(/{product_name}/g, product.name)
+                .replace(/{product_price}/g, formattedPrice);
+            } else {
+              orderMessage = `Hello ${vendorName}! What is the price and availability for *${product.name}*? I saw it on your catalog.`;
+            }
+
+            const orderUrl = buildWhatsAppUrl(vendorPhone, orderMessage);
+
+            // Images & Multi-Image Carousel
+            const prodImages = Array.isArray(product.images) && product.images.length > 0
+              ? product.images
+              : (product.image ? [product.image] : (product.id ? [`images/${product.id}.jpg`] : []));
+
+            let imageHtml = '';
+            if (prodImages.length > 1) {
+              const slidesHtml = prodImages.map((src, idx) => `
+                <div class="carousel-slide ${idx === 0 ? 'active' : ''}" data-slide="${idx}">
+                  <img src="${src}" alt="${escapeHtml(product.name)} - Photo ${idx + 1}" class="product-image" loading="${idx === 0 ? 'eager' : 'lazy'}" decoding="async" />
+                </div>
+              `).join('');
+
+              const dotsHtml = prodImages.map((_, idx) => `
+                <button type="button" class="carousel-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="Slide ${idx + 1}"></button>
+              `).join('');
+
+              imageHtml = `
+                <div class="product-carousel" id="carousel-${product.id || pIndex}">
+                  ${slidesHtml}
+                  <button type="button" class="carousel-nav-btn prev" aria-label="Previous photo">❮</button>
+                  <button type="button" class="carousel-nav-btn next" aria-label="Next photo">❯</button>
+                  <div class="carousel-dots">${dotsHtml}</div>
+                </div>
+              `;
+            } else if (prodImages.length === 1) {
+              imageHtml = `
+                <img src="${prodImages[0]}" 
+                     alt="${escapeHtml(product.name)}" 
+                     class="product-image" 
+                     loading="lazy" 
+                     decoding="async"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-fallback\\'><span>Photo coming soon</span></div>';" />
+              `;
+            } else {
+              imageHtml = `
+                <div class="image-fallback">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                  </svg>
+                  <span>Product Image</span>
+                </div>
+              `;
+            }
+
+            const categoryBadge = product.category ? `<span class="product-category-tag">${escapeHtml(product.category)}</span>` : '';
+            const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">Sold Out</span>` : '';
+
+            const priceHtml = hasPrice ? `
+              <span class="product-price">${formattedPrice}</span>
+            ` : `
+              <span class="price-ask">Ask for price</span>
+            `;
+
+            let buttonClass = 'btn-order-wa';
+            let buttonLabel = 'Order on WhatsApp';
+
+            if (isSoldOut) {
+              buttonClass = 'btn-order-wa btn-sold-out';
+              buttonLabel = '💬 Inquire Restock on WhatsApp';
+            } else if (!hasPrice) {
+              buttonClass = 'btn-order-wa btn-ask-wa';
+              buttonLabel = 'Ask for Price on WhatsApp';
+            } else {
+              buttonClass = 'btn-order-wa';
+              buttonLabel = data.order_button_text || 'Order on WhatsApp';
+            }
+
+            card.innerHTML = `
+              <div class="product-image-wrap">
+                ${categoryBadge}
+                ${soldOutBadge}
+                ${imageHtml}
+              </div>
+              <div class="product-body">
+                <h2 class="product-title">${escapeHtml(product.name)}</h2>
+                <p class="product-desc">${escapeHtml(product.description || '')}</p>
+                <div class="product-price-row">
+                  ${priceHtml}
+                </div>
+                <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${buttonClass}" aria-label="${buttonLabel} for ${escapeHtml(product.name)}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+                  </svg>
+                  <span>${buttonLabel}</span>
+                </a>
+              </div>
+            `;
+
+            grid.appendChild(card);
+
+            if (prodImages.length > 1) {
+              bindCarouselHandlers(card, prodImages.length);
+            }
+          });
+        }
+
+        function bindCarouselHandlers(cardEl, totalSlides) {
+          const carousel = cardEl.querySelector('.product-carousel');
+          if (!carousel) return;
+          let current = 0;
+          const slides = carousel.querySelectorAll('.carousel-slide');
+          const dots = carousel.querySelectorAll('.carousel-dot');
+          const btnPrev = carousel.querySelector('.carousel-nav-btn.prev');
+          const btnNext = carousel.querySelector('.carousel-nav-btn.next');
+
+          function showSlide(idx) {
+            current = (idx + totalSlides) % totalSlides;
+            slides.forEach((s, i) => s.classList.toggle('active', i === current));
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
           }
 
-          const orderUrl = buildWhatsAppUrl(vendorPhone, orderMessage);
+          if (btnPrev) btnPrev.onclick = function(e) { e.preventDefault(); e.stopPropagation(); showSlide(current - 1); };
+          if (btnNext) btnNext.onclick = function(e) { e.preventDefault(); e.stopPropagation(); showSlide(current + 1); };
+          dots.forEach((d, i) => {
+            d.onclick = function(e) { e.preventDefault(); e.stopPropagation(); showSlide(i); };
+          });
 
-          const imageSrc = product.image || (product.id ? `images/${product.id}.jpg` : '');
-
-          const imageHtml = imageSrc ? `
-            <img src="${imageSrc}" 
-                 alt="${escapeHtml(product.name)}" 
-                 class="product-image" 
-                 loading="lazy" 
-                 decoding="async"
-                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-fallback\\'><span>Photo coming soon</span></div>';" />
-          ` : `
-            <div class="image-fallback">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <span>Product Image</span>
-            </div>
-          `;
-
-          const categoryBadge = product.category ? `<span class="product-category-tag">${escapeHtml(product.category)}</span>` : '';
-
-          const priceHtml = hasPrice ? `
-            <span class="product-price">${formattedPrice}</span>
-          ` : `
-            <span class="price-ask">Ask for price</span>
-          `;
-
-          const buttonClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
-          const buttonLabel = hasPrice ? (data.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
-
-          card.innerHTML = `
-            <div class="product-image-wrap">
-              ${categoryBadge}
-              ${imageHtml}
-            </div>
-            <div class="product-body">
-              <h2 class="product-title">${escapeHtml(product.name)}</h2>
-              <p class="product-desc">${escapeHtml(product.description || '')}</p>
-              <div class="product-price-row">
-                ${priceHtml}
-              </div>
-              <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${buttonClass}" aria-label="${buttonLabel} for ${escapeHtml(product.name)}">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
-                </svg>
-                <span>${buttonLabel}</span>
-              </a>
-            </div>
-          `;
-
-          grid.appendChild(card);
-        });
-      }
+          let touchStartX = 0;
+          carousel.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+          carousel.addEventListener('touchend', function(e) {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - touchStartX;
+            if (Math.abs(diff) > 40) {
+              if (diff > 0) showSlide(current - 1);
+              else showSlide(current + 1);
+            }
+          }, { passive: true });
+        }
 
       // Initial grid render
       renderProductsGrid();

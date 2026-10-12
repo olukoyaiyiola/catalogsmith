@@ -1954,4 +1954,196 @@ video#studioVideo {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   Cloud Storage Modal & Controls
+   ========================================================================== */
+.cloud-provider-btn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cloud-provider-btn:hover {
+  border-color: var(--color-primary);
+  background-color: var(--bg-card-subtle);
+}
+
+.cloud-provider-btn.active {
+  border-color: var(--color-primary);
+  background-color: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+/* ==========================================================================
+   Multi-Image Gallery Strip in Product Review Cards
+   ========================================================================== */
+.gallery-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  margin-top: 6px;
+  scrollbar-width: thin;
+}
+
+.gallery-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.gallery-strip::-webkit-scrollbar-thumb {
+  background: var(--border-highlight);
+  border-radius: 4px;
+}
+
+.gallery-thumb-item {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1.5px solid var(--border-color);
+  flex-shrink: 0;
+  cursor: pointer;
+  background-color: #000;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.gallery-thumb-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+}
+
+.gallery-thumb-item.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.gallery-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-badge-cover {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  background: rgba(16, 185, 129, 0.95);
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.gallery-btn-remove {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  font-size: 0.5625rem;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.gallery-thumb-item:hover .gallery-btn-remove {
+  opacity: 1;
+}
+
+.gallery-btn-add {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border-highlight);
+  background: var(--bg-card-subtle);
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.gallery-btn-add:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.badge-gallery-count {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Inventory / Stock Toggle Controls
+   ========================================================================== */
+.stock-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  min-height: 28px;
+}
+
+.stock-toggle-btn.in-stock {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.stock-toggle-btn.in-stock:hover {
+  background-color: rgba(16, 185, 129, 0.25);
+}
+
+.stock-toggle-btn.sold-out {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.stock-toggle-btn.sold-out:hover {
+  background-color: rgba(239, 68, 68, 0.25);
+}
+
+.review-product-card.is-sold-out {
+  border-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(15, 23, 42, 0.75);
+}
+
+.review-product-card.is-sold-out .review-thumb-wrap {
+  opacity: 0.85;
+}
+
+
 

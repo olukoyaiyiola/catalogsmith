@@ -246,6 +246,7 @@
           <span id="workspace-editing-badge" class="badge-tag" style="display: none; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem;">
             Editing: <strong id="workspace-editing-name" style="margin-left: 4px;">Store</strong>
           </span>
+          <button class="btn-secondary btn-sm" id="btn-open-cloud-storage" title="Connect Cloudinary or Supabase Storage for CDN images">☁️ Cloud Storage</button>
           <button class="btn-secondary btn-sm" id="btn-workspace-to-admin" title="Manage all stores">📋 All Catalogs</button>
           <button class="btn-primary btn-sm" id="btn-workspace-share-header" style="background: #25d366; border-color: #25d366; color: #fff; font-weight: 700;">📲 Share Store</button>
           <button type="button" class="btn-icon-subtle" id="btn-desktop-tools-gear" title="Settings & Tools" style="font-size: 1.1rem; padding: 6px 10px;">⚙️</button>
@@ -568,6 +569,7 @@
               <button class="filter-btn active" data-filter="all" id="filter-all">All (<span id="count-all">0</span>)</button>
               <button class="filter-btn" data-filter="flagged" id="filter-flagged">⚠️ Needs Review (<span id="count-flagged">0</span>)</button>
               <button class="filter-btn" data-filter="noprice" id="filter-noprice">❓ Missing Price (<span id="count-noprice">0</span>)</button>
+              <button class="filter-btn" data-filter="soldout" id="filter-soldout">🔴 Sold Out (<span id="count-soldout">0</span>)</button>
             </div>
           </div>
 
@@ -755,7 +757,25 @@
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+          <!-- Cloud Storage Integration Card in Step 3 -->
+          <div style="margin-top: 18px; padding: 16px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                  <span>☁️ Cloud Storage & Media CDN</span>
+                  <span id="step3-cloud-badge" class="badge-tag" style="font-size: 0.6875rem;">Local Storage</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                  Host photos on Cloudinary or Supabase Storage for fast public storefront delivery and zero local storage limits.
+                </div>
+              </div>
+              <button type="button" class="btn-secondary btn-sm" id="btn-step3-cloud-config" style="padding: 8px 14px; font-weight: 600;">
+                Configure & Migrate &rarr;
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 14px;">
             <button class="btn-secondary" id="btn-back-step-2">&larr; Back to Review</button>
             <button class="btn-primary" id="btn-goto-step-4">Preview Live Storefront &rarr;</button>
           </div>
@@ -2040,6 +2060,134 @@
     </div>
   </div>
 
+  <!-- MODAL: Cloud Storage Configuration & Migration -->
+  <div class="modal-overlay" id="cloud-storage-modal">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.125rem; font-weight: 700;">
+          <span>☁️ Cloud Storage & Media CDN</span>
+        </h3>
+        <button type="button" class="btn-icon-subtle" id="btn-close-cloud-storage">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 16px; font-size: 0.8125rem; color: var(--text-main); line-height: 1.5;">
+          <strong>Lightning-Fast Shared Storefronts:</strong> Connect your free Cloudinary or Supabase Storage account so product photos upload directly to a global CDN. This eliminates phone memory limits and keeps your catalog data lightweight!
+        </div>
+
+        <!-- Provider Tabs -->
+        <div style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 8px;">Select Cloud Provider</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;">
+            <button type="button" class="btn-secondary cloud-provider-btn active" data-provider="cloudinary" id="btn-provider-cloudinary" style="padding: 10px; font-size: 0.8125rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700;">⚡ Cloudinary</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Unsigned preset (Recommended)</span>
+            </button>
+            <button type="button" class="btn-secondary cloud-provider-btn" data-provider="supabase" id="btn-provider-supabase" style="padding: 10px; font-size: 0.8125rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700;">🗄️ Supabase Storage</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Public storage bucket</span>
+            </button>
+            <button type="button" class="btn-secondary cloud-provider-btn" data-provider="serverless" id="btn-provider-serverless" style="padding: 10px; font-size: 0.8125rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700;">🌐 Built-in Serverless</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Vercel Blob / Local</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cloudinary Settings Panel -->
+        <div id="panel-provider-cloudinary" class="cloud-panel">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-cloudinary-cloud-name">Cloudinary Cloud Name *</label>
+            <input type="text" class="form-input" id="cfg-cloudinary-cloud-name" placeholder="e.g. dxyz123abc">
+            <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Found on your Cloudinary dashboard overview.</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-cloudinary-preset">Unsigned Upload Preset *</label>
+            <input type="text" class="form-input" id="cfg-cloudinary-preset" placeholder="e.g. catalogsmith_unsigned">
+            <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">In Cloudinary Console &rarr; Settings &rarr; Upload &rarr; Upload Presets: click <em>Add Upload Preset</em> and set Signing Mode to <strong>Unsigned</strong>.</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-cloudinary-folder">Folder (Optional)</label>
+            <input type="text" class="form-input" id="cfg-cloudinary-folder" placeholder="catalogsmith" value="catalogsmith">
+          </div>
+        </div>
+
+        <!-- Supabase Settings Panel -->
+        <div id="panel-provider-supabase" class="cloud-panel" style="display: none;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-supabase-url">Supabase Project URL *</label>
+            <input type="text" class="form-input" id="cfg-supabase-url" placeholder="https://xyzcompany.supabase.co">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-supabase-anon-key">Supabase Anon Public API Key *</label>
+            <input type="password" class="form-input" id="cfg-supabase-anon-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="cfg-supabase-bucket">Public Bucket Name *</label>
+            <input type="text" class="form-input" id="cfg-supabase-bucket" placeholder="catalog-images" value="catalog-images">
+            <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Ensure the bucket in Supabase Storage has 'Public' toggle turned on.</span>
+          </div>
+        </div>
+
+        <!-- Serverless Settings Panel -->
+        <div id="panel-provider-serverless" class="cloud-panel" style="display: none;">
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; font-size: 0.8125rem; color: var(--text-muted);">
+            Uses the active server environment (Vercel Blob with <code>BLOB_READ_WRITE_TOKEN</code>, or the local development server). Zero client setup required.
+          </div>
+        </div>
+
+        <!-- Connection Test & Auto-upload -->
+        <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-secondary" id="btn-test-cloud-storage" style="padding: 8px 16px; font-size: 0.8125rem; min-height: 40px;">
+              🔍 Test Connection
+            </button>
+            <span id="cloud-storage-test-status" style="font-size: 0.75rem; font-weight: 600;"></span>
+          </div>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; cursor: pointer; color: var(--text-main);">
+            <input type="checkbox" id="cfg-auto-upload-toggle">
+            <span>Auto-upload new photos to Cloud</span>
+          </label>
+        </div>
+
+        <!-- 1-Click Migration Card -->
+        <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">⚡ Migrate Local Photos to Cloud</h4>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">
+                Scan current catalog products and upload any base64 images to your CDN.
+              </p>
+            </div>
+            <div style="font-size: 0.8125rem; text-align: right;">
+              <span id="cloud-stats-badge" style="background: var(--bg-card); border: 1px solid var(--border-highlight); padding: 4px 10px; border-radius: var(--radius-sm); font-family: var(--font-mono);">
+                <strong id="cloud-base64-count">0</strong> local photos (<span id="cloud-base64-size">0 KB</span>)
+              </span>
+            </div>
+          </div>
+
+          <div id="cloud-migration-progress-wrap" style="display: none; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+              <span id="cloud-migration-status-text">Uploading images...</span>
+              <span id="cloud-migration-percent-text">0%</span>
+            </div>
+            <div style="height: 6px; background: var(--bg-card); border-radius: 999px; overflow: hidden; border: 1px solid var(--border-color);">
+              <div id="cloud-migration-progress-bar" style="height: 100%; width: 0%; background: var(--color-primary); transition: width 0.2s ease;"></div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-primary" id="btn-run-cloud-migration" style="width: 100%; min-height: 48px; font-weight: 700; font-size: 0.875rem;">
+            🚀 Migrate All Local Photos to Cloud CDN
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border-color);">
+        <button type="button" class="btn-secondary" id="btn-cancel-cloud-storage">Close</button>
+        <button type="button" class="btn-primary" id="btn-save-cloud-storage" style="font-weight: 700;">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notifications Container -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -2049,6 +2197,7 @@
   <script src="js/fixtures.js"></script>
   <script src="js/qrcode.min.js"></script>
   <script src="js/catalogs-manager.js"></script>
+  <script src="js/cloud-storage.js"></script>
 
   <!-- Studio Main Logic Script -->
   <script src="js/studio.js"></script>
