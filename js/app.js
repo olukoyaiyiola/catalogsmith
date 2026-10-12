@@ -17,12 +17,27 @@
   function initApp() {
     const landingView = document.getElementById('landing-view');
     const workspaceView = document.getElementById('workspace-view');
+    const adminView = document.getElementById('admin-view');
+    const storefrontView = document.getElementById('storefront-view');
 
     // Modals
     const guidedModal = document.getElementById('guided-flow-modal');
     const picturesModal = document.getElementById('pictures-flow-modal');
     const dropshipModal = document.getElementById('dropship-flow-modal');
     const imgSearchModal = document.getElementById('image-search-modal');
+    const shareModal = document.getElementById('share-catalog-modal');
+    const createCatalogModal = document.getElementById('create-catalog-modal');
+
+    // Safe HTML Escaper Helper
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     // -------------------------------------------------------------
     // Helper: Create High-Resolution Self-Contained Product Vectors
@@ -56,7 +71,7 @@
   <!-- Bottom Details Plaque -->
   <rect x="30" y="320" width="540" height="95" rx="14" fill="rgba(15, 23, 42, 0.72)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
   <text x="50" y="355" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="20" fill="#ffffff">${title.replace(/&/g, '&amp;').slice(0, 38)}</text>
-  <text x="50" y="385" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="14" fill="#10b981">🏷️ ${category.replace(/&/g, '&amp;')} • VERIFIED CATALOG SHOT</text>
+  <text x="50" y="385" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="14" fill="#10b981">🏷️ ${category.replace(/&/g, '&amp;')} • Product Illustration</text>
 </svg>`.trim();
       return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
     }
@@ -354,10 +369,17 @@
     }
 
     // -------------------------------------------------------------
-    // View Switching Logic
+    // Multi-View Controller & Routing Logic
     // -------------------------------------------------------------
-    function showLanding() {
+    function hideAllViews() {
+      if (landingView) landingView.style.display = 'none';
       if (workspaceView) workspaceView.style.display = 'none';
+      if (adminView) adminView.style.display = 'none';
+      if (storefrontView) storefrontView.style.display = 'none';
+    }
+
+    function showLanding() {
+      hideAllViews();
       if (landingView) {
         landingView.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -365,11 +387,19 @@
       populateExampleStorefront();
     }
 
-    function showWorkspace(targetStep = 2) {
-      if (landingView) landingView.style.display = 'none';
+    function showWorkspace(targetStep = 2, catalogId = null) {
+      hideAllViews();
       if (workspaceView) {
         workspaceView.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      if (catalogId && window.CatalogStore && window.CatalogSmithStudio) {
+        const cat = window.CatalogStore.get(catalogId);
+        if (cat) {
+          window.CatalogSmithStudio.loadCatalog(cat);
+          window.CatalogStore.setActiveId(cat.id);
+        }
       }
 
       if (window.CatalogSmithStudio) {
@@ -379,8 +409,557 @@
         if (typeof window.CatalogSmithStudio.updateLivePreview === 'function') {
           window.CatalogSmithStudio.updateLivePreview();
         }
+        if (typeof window.CatalogSmithStudio.updateStep4ShareBanner === 'function') {
+          window.CatalogSmithStudio.updateStep4ShareBanner();
+        }
       }
     }
+
+    function showAdmin() {
+      hideAllViews();
+      if (adminView) {
+        adminView.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      renderAdminDashboard();
+    }
+
+    let activeStorefrontData = null;
+    function showStorefront(catalogId) {
+      hideAllViews();
+      if (storefrontView) {
+        storefrontView.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      let catalog = null;
+      if (window.CatalogStore) {
+        catalog = window.CatalogStore.get(catalogId);
+        if (!catalog) {
+          const resolved = window.CatalogStore.resolveCatalogFromUrl();
+          if (resolved && resolved.catalog) {
+            catalog = resolved.catalog;
+          }
+        }
+      }
+
+      if (!catalog && window.CATALOGSMITH_FIXTURES && window.CATALOGSMITH_FIXTURES.whatsapp) {
+        catalog = window.CATALOGSMITH_FIXTURES.whatsapp.data;
+      }
+
+      activeStorefrontData = catalog;
+      renderStorefrontView(catalog);
+    }
+
+    // -------------------------------------------------------------
+    // Admin Dashboard: Multi-Store Grid & CRUD Handlers
+    // -------------------------------------------------------------
+    function renderAdminDashboard() {
+      if (!window.CatalogStore) return;
+      const catalogs = window.CatalogStore.list();
+
+      // Metrics
+      const totalCatalogsEl = document.getElementById('metric-total-catalogs');
+      const totalProdsEl = document.getElementById('metric-total-products');
+      if (totalCatalogsEl) totalCatalogsEl.textContent = catalogs.length;
+      if (totalProdsEl) {
+        const prodSum = catalogs.reduce((sum, c) => sum + ((c.products && c.products.length) || 0), 0);
+        totalProdsEl.textContent = prodSum;
+      }
+
+      const grid = document.getElementById('admin-catalogs-grid');
+      if (!grid) return;
+
+      if (catalogs.length === 0) {
+        grid.innerHTML = `
+          <div class="admin-empty-state">
+            <div class="admin-empty-icon">🏪</div>
+            <h3>No catalogs created yet</h3>
+            <p>Create your first product catalog to generate a live shareable storefront.</p>
+            <button class="btn-primary" id="btn-empty-create-store" style="font-weight: 700;">➕ Create Your First Catalog</button>
+          </div>
+        `;
+        const btnEmptyCreate = document.getElementById('btn-empty-create-store');
+        if (btnEmptyCreate && createCatalogModal) {
+          btnEmptyCreate.onclick = () => createCatalogModal.classList.add('open');
+        }
+        return;
+      }
+
+      grid.innerHTML = '';
+      catalogs.forEach(cat => {
+        const prodCount = (cat.products || []).length;
+        const sharableUrl = window.CatalogStore.getSharableUrl(cat, false);
+        const card = document.createElement('div');
+        card.className = 'admin-catalog-card';
+        card.setAttribute('data-id', cat.id);
+        card.setAttribute('data-search', `${cat.name} ${cat.category || ''} ${cat.phone || ''} ${cat.tagline || ''}`.toLowerCase());
+
+        card.innerHTML = `
+          <div class="admin-card-top">
+            <div class="admin-card-avatar">${(cat.name || 'S').trim().charAt(0).toUpperCase()}</div>
+            <div class="admin-card-info">
+              <div class="admin-card-title">
+                <span>${escapeHtml(cat.name)}</span>
+                <span title="Verified" style="color: #10b981;">✓</span>
+              </div>
+              <div class="admin-card-tagline">${escapeHtml(cat.tagline || 'Direct WhatsApp ordering')}</div>
+            </div>
+          </div>
+          <div class="admin-card-body">
+            <div class="admin-card-pills">
+              <span class="admin-pill pill-products">🛍️ ${prodCount} Products</span>
+              <span class="admin-pill">${escapeHtml(cat.category || 'General')}</span>
+              <span class="admin-pill pill-phone">📞 ${escapeHtml(cat.phone || 'No phone')}</span>
+              <span class="admin-pill">🎨 ${escapeHtml(cat.theme || 'emerald')}</span>
+            </div>
+            <div class="admin-url-box">
+              <span class="admin-url-text" title="${sharableUrl}">${sharableUrl}</span>
+              <button class="admin-btn-copy-mini" data-copy-url="${sharableUrl}" title="Copy store link">📋 Copy</button>
+            </div>
+          </div>
+          <div class="admin-card-actions">
+            <div class="admin-btn-group-left">
+              <button class="btn-primary btn-sm btn-action-edit" data-id="${cat.id}" style="padding: 6px 12px; font-weight: 700;">
+                ✏️ Edit
+              </button>
+              <button class="btn-secondary btn-sm btn-action-view" data-id="${cat.id}" style="padding: 6px 10px;">
+                👁️ View Live
+              </button>
+              <button class="btn-secondary btn-sm btn-action-share" data-id="${cat.id}" style="padding: 6px 10px; color: #15803d; font-weight: 700;">
+                📲 Share
+              </button>
+            </div>
+            <div class="admin-btn-group-right">
+              <button class="btn-icon-subtle btn-action-clone" data-id="${cat.id}" title="Duplicate catalog" style="padding: 6px;">
+                📋
+              </button>
+              <button class="btn-icon-subtle btn-action-del" data-id="${cat.id}" title="Delete catalog" style="color: var(--color-danger); padding: 6px;">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Bind card buttons
+      grid.querySelectorAll('.btn-action-edit').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          showWorkspace(2, id);
+        };
+      });
+
+      grid.querySelectorAll('.btn-action-view').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          const cat = window.CatalogStore.get(id);
+          const url = window.CatalogStore.getSharableUrl(cat, false);
+          window.open(url, '_blank');
+        };
+      });
+
+      grid.querySelectorAll('.btn-action-share').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          const cat = window.CatalogStore.get(id);
+          window.CatalogStore.openShareModal(cat);
+        };
+      });
+
+      grid.querySelectorAll('.btn-action-clone').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          const clone = window.CatalogStore.duplicate(id);
+          if (clone) {
+            renderAdminDashboard();
+            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+              window.CatalogSmithStudio.showToast(`📋 Duplicated "${clone.name}"!`);
+            }
+          }
+        };
+      });
+
+      grid.querySelectorAll('.btn-action-del').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          const cat = window.CatalogStore.get(id);
+          if (confirm(`Are you sure you want to delete "${cat ? cat.name : 'this catalog'}"?`)) {
+            window.CatalogStore.delete(id);
+            renderAdminDashboard();
+            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+              window.CatalogSmithStudio.showToast(`🗑️ Deleted catalog`);
+            }
+          }
+        };
+      });
+
+      grid.querySelectorAll('[data-copy-url]').forEach(btn => {
+        btn.onclick = () => {
+          const u = btn.getAttribute('data-copy-url');
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(u).then(() => {
+              btn.textContent = '✅ Copied!';
+              setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+            });
+          }
+        };
+      });
+    }
+
+    // -------------------------------------------------------------
+    // Customer Storefront View Renderer
+    // -------------------------------------------------------------
+    function renderStorefrontView(data) {
+      if (!data) return;
+
+      const vendorName = data.name || data.vendor_name || 'Online Store';
+      const vendorPhone = data.phone || data.vendor_phone || '+2348035550192';
+      const tagline = data.tagline || 'Fast orders directly on WhatsApp';
+      const products = Array.isArray(data.products) ? data.products : [];
+      const defaultCurrency = data.currency || data.currency_default || 'NGN';
+      const theme = data.theme || 'emerald';
+      const layout = data.layout || 'standard';
+
+      document.title = `${vendorName} - Online Storefront`;
+
+      if (storefrontView) {
+        storefrontView.className = `theme-${theme}${layout === 'compact' ? ' layout-compact' : ''}`;
+      }
+
+      const nameEl = document.getElementById('sf-store-name-text');
+      const tagEl = document.getElementById('sf-store-tagline-text');
+      const avatarEl = document.getElementById('sf-vendor-avatar');
+      const countEl = document.getElementById('sf-product-count');
+      const contactLink = document.getElementById('sf-header-contact-link');
+      const stickyBtn = document.getElementById('sf-sticky-wa-btn');
+
+      if (nameEl) nameEl.textContent = vendorName;
+      if (tagEl) tagEl.textContent = tagline;
+      if (avatarEl) avatarEl.textContent = vendorName.trim().charAt(0).toUpperCase() || 'S';
+      if (countEl) countEl.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
+
+      const generalMsg = `Hello ${vendorName}! I am viewing your catalog and would like to make an inquiry.`;
+      const cleanPhone = String(vendorPhone).replace(/[^0-9]/g, '');
+      const generalWaUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(generalMsg)}` : `https://wa.me/?text=${encodeURIComponent(generalMsg)}`;
+
+      if (contactLink) contactLink.href = generalWaUrl;
+      if (stickyBtn) stickyBtn.href = generalWaUrl;
+
+      // Theme & Layout controls
+      const themeSel = document.getElementById('sf-theme-select');
+      const laySel = document.getElementById('sf-layout-select');
+      if (themeSel) {
+        themeSel.value = theme;
+        themeSel.onchange = () => {
+          data.theme = themeSel.value;
+          if (storefrontView) {
+            storefrontView.className = `theme-${themeSel.value}${laySel && laySel.value === 'compact' ? ' layout-compact' : ''}`;
+          }
+        };
+      }
+      if (laySel) {
+        laySel.value = layout;
+        laySel.onchange = () => {
+          data.layout = laySel.value;
+          if (storefrontView) {
+            storefrontView.className = `theme-${themeSel ? themeSel.value : theme}${laySel.value === 'compact' ? ' layout-compact' : ''}`;
+          }
+        };
+      }
+
+      // PDF Catalog button
+      const pdfBtn = document.getElementById('sf-btn-download-pdf');
+      if (pdfBtn) {
+        pdfBtn.onclick = () => {
+          if (window.CatalogSmithPDF && window.CatalogSmithPDF.downloadCatalogPDF) {
+            window.CatalogSmithPDF.downloadCatalogPDF(data);
+          } else {
+            window.print();
+          }
+        };
+      }
+
+      // Share button
+      const shareBtn = document.getElementById('sf-btn-share-catalog');
+      if (shareBtn) {
+        shareBtn.onclick = () => {
+          if (window.CatalogStore) window.CatalogStore.openShareModal(data);
+        };
+      }
+
+      // Owner Bar actions
+      const btnEditOwner = document.getElementById('btn-storefront-edit-studio');
+      if (btnEditOwner) {
+        btnEditOwner.onclick = () => showWorkspace(2, data.id);
+      }
+      const btnAdminOwner = document.getElementById('btn-storefront-manage-admin');
+      if (btnAdminOwner) {
+        btnAdminOwner.onclick = () => showAdmin();
+      }
+      const btnShareTop = document.getElementById('btn-storefront-share-top');
+      if (btnShareTop) {
+        btnShareTop.onclick = () => {
+          if (window.CatalogStore) window.CatalogStore.openShareModal(data);
+        };
+      }
+      const footerAdmin = document.getElementById('sf-footer-admin-link');
+      if (footerAdmin) {
+        footerAdmin.onclick = (e) => {
+          e.preventDefault();
+          showAdmin();
+        };
+      }
+
+      // Category filter pills & Product cards
+      const catBar = document.getElementById('sf-category-filter-bar');
+      const grid = document.getElementById('sf-product-grid');
+      const emptyState = document.getElementById('sf-empty-state');
+
+      if (!grid) return;
+
+      if (products.length === 0) {
+        grid.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        if (catBar) catBar.style.display = 'none';
+        return;
+      }
+
+      if (emptyState) emptyState.style.display = 'none';
+
+      let selectedCat = 'all';
+      const categories = ['all'];
+      products.forEach(p => {
+        if (p.category && !categories.includes(p.category)) {
+          categories.push(p.category);
+        }
+      });
+
+      if (catBar) {
+        if (categories.length > 2) {
+          catBar.style.display = 'flex';
+          catBar.innerHTML = '';
+          categories.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'cat-pill' + (c === 'all' ? ' active' : '');
+            btn.textContent = c === 'all' ? 'All Products' : c;
+            btn.onclick = () => {
+              catBar.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              selectedCat = c;
+              const cards = grid.querySelectorAll('.product-card');
+              cards.forEach(card => {
+                const cardCat = card.getAttribute('data-cat') || '';
+                card.style.display = (selectedCat === 'all' || cardCat === selectedCat) ? '' : 'none';
+              });
+            };
+            catBar.appendChild(btn);
+          });
+        } else {
+          catBar.style.display = 'none';
+        }
+      }
+
+      grid.innerHTML = '';
+      products.forEach(p => {
+        const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
+        const formattedPrice = hasPrice ? (window.CatalogSmithStudio ? window.CatalogSmithStudio.formatPrice(p.price.amount, p.price.currency || defaultCurrency) : `₦${Number(p.price.amount).toLocaleString()}`) : null;
+
+        const orderMsg = hasPrice
+          ? (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
+              .replace(/{vendor_name}/g, vendorName)
+              .replace(/{product_name}/g, p.name)
+              .replace(/{product_price}/g, formattedPrice)
+          : `Hello ${vendorName}! What is the price and availability for *${p.name}*? I saw it on your catalog.`;
+
+        const orderUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(orderMsg)}` : `https://wa.me/?text=${encodeURIComponent(orderMsg)}`;
+        const btnClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
+        const btnLabel = hasPrice ? (data.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
+
+        const card = document.createElement('article');
+        card.className = 'product-card';
+        card.setAttribute('data-cat', p.category || '');
+        card.innerHTML = `
+          <div class="product-image-wrap">
+            ${p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : ''}
+            ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy">` : `<div class="image-fallback"><span>No Photo</span></div>`}
+          </div>
+          <div class="product-body">
+            <h2 class="product-title">${escapeHtml(p.name)}</h2>
+            <p class="product-desc">${escapeHtml(p.description || '')}</p>
+            <div class="product-price-row">
+              ${hasPrice ? `<span class="product-price">${formattedPrice}</span>` : `<span class="price-ask">Ask for price</span>`}
+            </div>
+            <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${btnClass}">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+              </svg>
+              <span>${btnLabel}</span>
+            </a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // Top & Admin Navigation Event Listeners
+    // -------------------------------------------------------------
+    const navBtnAdmin = document.getElementById('nav-btn-admin');
+    if (navBtnAdmin) navBtnAdmin.addEventListener('click', showAdmin);
+
+    const btnAdminToLanding = document.getElementById('btn-admin-to-landing');
+    if (btnAdminToLanding) btnAdminToLanding.addEventListener('click', showLanding);
+
+    const btnAdminToStudio = document.getElementById('btn-admin-to-studio');
+    if (btnAdminToStudio) btnAdminToStudio.addEventListener('click', () => showWorkspace(1));
+
+    // Admin Create Store Modals
+    const btnAdminCreate = document.getElementById('btn-admin-create-store');
+    const btnAdminCreateTop = document.getElementById('btn-admin-create-store-top');
+    const btnCloseCreateCat = document.getElementById('btn-close-create-catalog');
+    const btnCancelCreateCat = document.getElementById('btn-cancel-create-catalog');
+    const formCreateCat = document.getElementById('form-create-catalog');
+
+    function openCreateCatalogModal() {
+      if (createCatalogModal) createCatalogModal.classList.add('open');
+    }
+    function closeCreateCatalogModal() {
+      if (createCatalogModal) createCatalogModal.classList.remove('open');
+    }
+
+    if (btnAdminCreate) btnAdminCreate.addEventListener('click', openCreateCatalogModal);
+    if (btnAdminCreateTop) btnAdminCreateTop.addEventListener('click', openCreateCatalogModal);
+    if (btnCloseCreateCat) btnCloseCreateCat.addEventListener('click', closeCreateCatalogModal);
+    if (btnCancelCreateCat) btnCancelCreateCat.addEventListener('click', closeCreateCatalogModal);
+
+    if (formCreateCat) {
+      formCreateCat.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('create-store-name');
+        const phoneInput = document.getElementById('create-store-phone');
+        const catInput = document.getElementById('create-store-category');
+        const tagInput = document.getElementById('create-store-tagline');
+        const themeInput = document.getElementById('create-store-theme');
+        const currInput = document.getElementById('create-store-currency');
+        const starterRadio = document.querySelector('input[name="create-store-starter"]:checked');
+
+        const storeName = nameInput ? nameInput.value.trim() : '';
+        if (!storeName) {
+          alert('Please enter a store name');
+          return;
+        }
+
+        const category = catInput ? catInput.value : 'General';
+        const starterChoice = starterRadio ? starterRadio.value : 'starter';
+
+        let starterProducts = [];
+        if (starterChoice === 'starter') {
+          starterProducts = generateCategoryStarterProducts(category).slice(0, 6).map((p, idx) => ({
+            id: 'p' + (idx + 1),
+            name: p.name,
+            price: { amount: p.price, currency: currInput ? currInput.value : 'NGN', source: 'catalog_template' },
+            description: p.description,
+            category: p.category || category,
+            best_timestamp_sec: 0,
+            confidence: 0.95,
+            image: p.image || null
+          }));
+        }
+
+        if (window.CatalogStore) {
+          const created = window.CatalogStore.create({
+            name: storeName,
+            phone: phoneInput ? phoneInput.value.trim() : '+2348035550192',
+            category: category,
+            tagline: tagInput && tagInput.value.trim() ? tagInput.value.trim() : `Verified ${category} store • Fast WhatsApp delivery`,
+            theme: themeInput ? themeInput.value : 'emerald',
+            currency: currInput ? currInput.value : 'NGN',
+            products: starterProducts
+          });
+
+          closeCreateCatalogModal();
+          formCreateCat.reset();
+          renderAdminDashboard();
+
+          if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+            window.CatalogSmithStudio.showToast(`🎉 Created store "${created.name}"!`);
+          }
+
+          // Open in Studio editor to add/edit items
+          showWorkspace(2, created.id);
+        }
+      });
+    }
+
+    // Admin Search Filter
+    const adminSearchInput = document.getElementById('admin-search-input');
+    if (adminSearchInput) {
+      adminSearchInput.addEventListener('input', () => {
+        const query = adminSearchInput.value.trim().toLowerCase();
+        const cards = document.querySelectorAll('#admin-catalogs-grid .admin-catalog-card');
+        cards.forEach(c => {
+          const searchData = c.getAttribute('data-search') || '';
+          c.style.display = (!query || searchData.includes(query)) ? '' : 'none';
+        });
+      });
+    }
+
+    // Admin JSON Import & Backup
+    const btnBackupJson = document.getElementById('btn-admin-backup-json');
+    if (btnBackupJson) {
+      btnBackupJson.addEventListener('click', () => {
+        if (!window.CatalogStore) return;
+        const json = window.CatalogStore.exportAllJson();
+        const blob = new Blob([json], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `catalogsmith-stores-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+          window.CatalogSmithStudio.showToast('📤 Exported all stores to JSON backup file!');
+        }
+      });
+    }
+
+    const btnImportTrigger = document.getElementById('btn-admin-import-json');
+    const importFileInput = document.getElementById('admin-import-file-input');
+    if (btnImportTrigger && importFileInput) {
+      btnImportTrigger.addEventListener('click', () => importFileInput.click());
+      importFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (window.CatalogStore) {
+            const res = window.CatalogStore.importJson(ev.target.result);
+            if (res.success) {
+              renderAdminDashboard();
+              if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+                window.CatalogSmithStudio.showToast(`📥 Successfully imported ${res.count} stores!`);
+              }
+            } else {
+              alert('Import failed: ' + res.error);
+            }
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // Share Modal Close Button
+    const btnCloseShareModal = document.getElementById('btn-close-share-modal');
+    if (btnCloseShareModal && shareModal) {
+      btnCloseShareModal.addEventListener('click', () => shareModal.classList.remove('open'));
+    }
+
+    // Listen for catalog changes
+    window.addEventListener('catalogstore:change', () => {
+      if (adminView && adminView.style.display !== 'none') {
+        renderAdminDashboard();
+      }
+    });
 
     // Header Back to Home
     const btnBackToLanding = document.getElementById('btn-back-to-landing');
@@ -481,16 +1060,43 @@
       }
     });
 
-    // -------------------------------------------------------------
-    // ROUTE D: Dropshipping Planning Flow
-    // -------------------------------------------------------------
-    bindCardActivation('card-opt-dropship', 'btn-opt-dropship', () => {
-      if (dropshipModal) {
-        dropshipModal.classList.add('open');
-      } else {
-        showWorkspace(2);
-      }
-    });
+    // Wire Step 1 'Other ways to start' alternate route buttons
+    const btnStartWithPictures = document.getElementById('btn-start-with-pictures');
+    if (btnStartWithPictures) {
+      btnStartWithPictures.addEventListener('click', () => {
+        if (picturesModal) picturesModal.classList.add('open');
+        else showWorkspace(2);
+      });
+    }
+
+    const btnStartGuided = document.getElementById('btn-start-guided');
+    if (btnStartGuided) {
+      btnStartGuided.addEventListener('click', () => {
+        if (guidedModal) {
+          resetWizard();
+          guidedModal.classList.add('open');
+        } else {
+          showWorkspace(2);
+        }
+      });
+    }
+
+    const btnStartDropship = document.getElementById('btn-start-dropship');
+    if (btnStartDropship) {
+      btnStartDropship.addEventListener('click', () => {
+        if (dropshipModal) dropshipModal.classList.add('open');
+        else showWorkspace(2);
+      });
+    }
+
+    // Dev-only horizontal scroll validator
+    window.checkNoHorizontalScroll = function() {
+      const docWidth = document.documentElement.scrollWidth;
+      const winWidth = window.innerWidth;
+      const passed = docWidth <= winWidth;
+      console.log(`[Scroll Check] Viewport: ${winWidth}px, Doc scrollWidth: ${docWidth}px => ${passed ? 'PASS (No horizontal scroll)' : 'FAIL (Horizontal overflow!)'}`);
+      return { passed, docWidth, winWidth };
+    };
 
     // -------------------------------------------------------------
     // -------------------------------------------------------------
@@ -551,87 +1157,104 @@
       let webResults = [];
       let providerName = '';
 
-      // 1. Try serverless backend endpoint /api/search-images
+      // 1. Query serverless backend endpoint /api/search-images with Openverse, Pexels, Pixabay, Unsplash
+      let suggestions = [];
       try {
-        const apiUrl = `/api/search-images?q=${encodeURIComponent(cleanQuery)}&limit=12`;
+        const apiUrl = `/api/search-images?q=${encodeURIComponent(cleanQuery)}&limit=12&commercial_only=1&debug=1`;
         const resp = await fetch(apiUrl, { method: 'GET' });
         if (resp.ok) {
           const data = await resp.json();
-          if (data && Array.isArray(data.results) && data.results.length > 0) {
+          if (data && Array.isArray(data.results)) {
             webResults = data.results;
-            providerName = data.provider === 'bing' ? 'Bing Images' : (data.provider === 'unsplash' ? 'Unsplash' : 'Wikimedia Commons');
+            suggestions = data.suggestions || [];
+            const provMap = {
+              'openverse': 'Openverse (Commercial Creative Commons & Public Domain)',
+              'pexels': 'Pexels (Free Commercial Use)',
+              'pixabay': 'Pixabay (Free Commercial Use)',
+              'unsplash': 'Unsplash (Free Commercial Use)',
+              'wikimedia': 'Wikimedia Commons'
+            };
+            providerName = provMap[data.primary_provider] || data.primary_provider || 'Free Web Photos';
           }
         }
       } catch (err) {
-        console.warn('API endpoint search unreachable, trying direct web fallback:', err);
+        console.warn('API endpoint search unreachable:', err);
       }
 
-      // 2. Direct client-side Wikimedia Commons fallback if API endpoint was empty or offline
+      // If results are 0, display an honest, helpful empty state (never fake pseudo-illustrations!)
       if (webResults.length === 0) {
-        try {
-          const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*`;
-          const wikiResp = await fetch(wikiUrl);
-          if (wikiResp.ok) {
-            const wikiData = await wikiResp.json();
-            if (wikiData.query && wikiData.query.pages) {
-              const pages = Object.values(wikiData.query.pages);
-              webResults = pages
-                .filter(p => p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url)
-                .map(p => {
-                  const info = p.imageinfo[0];
-                  const meta = info.extmetadata || {};
-                  const title = (p.title || cleanQuery).replace(/^File:/i, '').replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-                  const license = (meta.LicenseShortName && meta.LicenseShortName.value) || 'Creative Commons';
-                  const author = (meta.Artist && meta.Artist.value) ? meta.Artist.value.replace(/<[^>]*>?/gm, '') : 'Wikimedia Commons';
-                  return {
-                    id: String(p.pageid),
-                    title: title.slice(0, 70),
-                    imageUrl: info.url,
-                    thumbnailUrl: info.thumburl || info.url,
-                    sourceUrl: info.descriptionurl || info.url,
-                    publisher: 'Wikimedia Commons',
-                    dimensions: `${info.width || 0} × ${info.height || 0}`,
-                    attribution: `${author} (${license})`
-                  };
-                });
-              if (webResults.length > 0) {
-                providerName = 'Wikimedia Commons Web';
-              }
-            }
-          }
-        } catch (wikiErr) {
-          console.warn('Direct web image search fallback error:', wikiErr);
-        }
-      }
-
-      // 3. Fallback: If web search genuinely returns 0 results, show helpful message and local verified matches
-      if (webResults.length === 0) {
-        const qLower = cleanQuery.toLowerCase();
-        let fallbackCurated = CURATED_PRODUCT_IMAGES.filter(item => {
-          return item.title.toLowerCase().includes(qLower) || item.category.toLowerCase().includes(qLower) || (tag && item.tag === tag);
-        });
-        if (fallbackCurated.length === 0) {
-          fallbackCurated = CURATED_PRODUCT_IMAGES.slice(0, 6);
-        }
-
         if (statusDiv) {
-          statusDiv.innerHTML = `<span style="color: #b45309;">⚠️ No direct web images found for "${escapeHtml(cleanQuery)}". Choose from verified catalogue suggestions below, or try another search term:</span>`;
+          statusDiv.innerHTML = `<span style="color: var(--color-warning);">⚠️ No free commercial photos found for "<strong>${escapeHtml(cleanQuery)}</strong>".</span>`;
         }
 
-        renderSearchResults(fallbackCurated.map(c => ({
-          id: c.id,
-          title: c.title,
-          imageUrl: c.url,
-          thumbnailUrl: c.url,
-          sourceUrl: 'https://catalogsmith.local',
-          publisher: 'CatalogSmith Verified Asset',
-          dimensions: '800 × 600',
-          attribution: 'Verified Catalog Asset'
-        })), 'Verified Catalogue Suggestions');
+        const suggestionPills = (suggestions.length > 0 ? suggestions : ['handbag', 'dress', 'shoes', 'phone case', 'perfume'])
+          .map(s => `<button type="button" class="img-search-tag suggest-pill" data-query="${escapeHtml(s)}" style="padding: 6px 12px; font-size: 0.8125rem;">🔍 Try "${escapeHtml(s)}"</button>`)
+          .join('');
+
+        resultsContainer.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-size: 2.2rem; margin-bottom: 12px;">📷</div>
+            <strong style="color: var(--text-main); font-size: 1.0625rem; display: block; margin-bottom: 6px;">No photos found for "${escapeHtml(cleanQuery)}"</strong>
+            <p style="color: var(--text-muted); font-size: 0.875rem; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">
+              Stock photo libraries may not have an exact match for specific local items. Try a simpler generic keyword, or take an authentic photo with your phone camera.
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px;">
+              ${suggestionPills}
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid var(--border-color);">
+              <label class="btn-primary" style="min-height: 48px; padding: 12px 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <span>📷 Take a Photo</span>
+                <input type="file" accept="image/*" capture="environment" style="display: none;" id="input-empty-camera">
+              </label>
+              <label class="btn-secondary" style="min-height: 48px; padding: 12px 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <span>📁 Upload from Gallery</span>
+                <input type="file" accept="image/*" style="display: none;" id="input-empty-gallery">
+              </label>
+            </div>
+          </div>
+        `;
+
+        // Wire suggestion pills
+        resultsContainer.querySelectorAll('.suggest-pill').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const queryInput = document.getElementById('img-search-query');
+            if (queryInput) queryInput.value = btn.dataset.query;
+            runImageSearch(btn.dataset.query);
+          });
+        });
+
+        // Wire direct photo upload inputs from empty state
+        const handleDirectFile = (file) => {
+          if (!file || !file.type.startsWith('image/')) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            if (typeof activeImageSearchCallback === 'function') {
+              activeImageSearchCallback(dataUrl, {
+                provider: 'own_upload',
+                author: 'Vendor',
+                license: 'All rights reserved by vendor',
+                source_url: '',
+                attribution: 'Vendor authentic photo'
+              });
+            }
+            if (imgSearchModal) imgSearchModal.classList.remove('open');
+            if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+              window.CatalogSmithStudio.showToast('Applied authentic photo!');
+            }
+          };
+          reader.readAsDataURL(file);
+        };
+
+        const camInput = document.getElementById('input-empty-camera');
+        if (camInput) camInput.addEventListener('change', e => { if (e.target.files[0]) handleDirectFile(e.target.files[0]); });
+        const galInput = document.getElementById('input-empty-gallery');
+        if (galInput) galInput.addEventListener('change', e => { if (e.target.files[0]) handleDirectFile(e.target.files[0]); });
+
         return;
       }
 
-      renderSearchResults(webResults, providerName || 'Web Provider');
+      renderSearchResults(webResults, providerName || 'Free Web Photos');
     }
 
     function renderSearchResults(items, providerLabel = 'Web Results') {
@@ -739,10 +1362,48 @@
       });
     });
 
-    // Apply selected image action
+    // Modal Top Actions: Vendor's own authentic photo handlers
+    const handleModalAuthenticFile = (file) => {
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const dataUrl = ev.target.result;
+        if (typeof activeImageSearchCallback === 'function') {
+          activeImageSearchCallback(dataUrl, {
+            origin: 'own_upload',
+            provider: 'own_upload',
+            author: 'Vendor',
+            license: 'Vendor owned',
+            source_url: '',
+            attribution: 'Vendor authentic photo'
+          });
+        }
+        if (imgSearchModal) imgSearchModal.classList.remove('open');
+        if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
+          window.CatalogSmithStudio.showToast('Authentic vendor photo applied!');
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const modalInputCamera = document.getElementById('modal-input-camera');
+    if (modalInputCamera) {
+      modalInputCamera.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) handleModalAuthenticFile(e.target.files[0]);
+      });
+    }
+
+    const modalInputGallery = document.getElementById('modal-input-gallery');
+    if (modalInputGallery) {
+      modalInputGallery.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) handleModalAuthenticFile(e.target.files[0]);
+      });
+    }
+
+    // Apply selected image action (with SSRF-safe /api/import-image anti-hotlinking copy)
     const btnApplySelectedImg = document.getElementById('btn-apply-selected-img');
     if (btnApplySelectedImg) {
-      btnApplySelectedImg.addEventListener('click', () => {
+      btnApplySelectedImg.addEventListener('click', async () => {
         if (!selectedSearchImageObj) {
           if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
             window.CatalogSmithStudio.showToast('Please select a photo from the results first.', 'warning');
@@ -752,14 +1413,60 @@
           return;
         }
 
-        const chosenUrl = selectedSearchImageObj.imageUrl || selectedSearchImageObj.thumbnailUrl;
+        const rawUrl = selectedSearchImageObj.imageUrl || selectedSearchImageObj.thumbnailUrl;
+        const originalText = btnApplySelectedImg.textContent;
+        btnApplySelectedImg.textContent = 'Importing...';
+        btnApplySelectedImg.disabled = true;
+
+        let finalUrl = rawUrl;
+        let isBlobStored = false;
+
+        // Anti-hotlinking: fetch and store copy via /api/import-image
+        try {
+          const resp = await fetch('/api/import-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: rawUrl,
+              meta: {
+                provider: selectedSearchImageObj.provider,
+                author: selectedSearchImageObj.author,
+                license: selectedSearchImageObj.license,
+                attribution: selectedSearchImageObj.attribution
+              }
+            })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.stored_url) {
+              finalUrl = data.stored_url;
+              isBlobStored = !!data.is_blob;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn('Image import proxy call failed, keeping direct URL with attribution:', fetchErr);
+        } finally {
+          btnApplySelectedImg.textContent = originalText;
+          btnApplySelectedImg.disabled = false;
+        }
+
+        const provenanceMeta = {
+          origin: 'stock_search',
+          provider: selectedSearchImageObj.provider || 'stock_search',
+          source_url: selectedSearchImageObj.sourceUrl || selectedSearchImageObj.source_url || rawUrl,
+          author: selectedSearchImageObj.author || 'Stock Contributor',
+          license: selectedSearchImageObj.license || 'Free Commercial License',
+          attribution: selectedSearchImageObj.attribution || (selectedSearchImageObj.author ? `Photo by ${selectedSearchImageObj.author} via ${selectedSearchImageObj.provider}` : ''),
+          is_blob: isBlobStored
+        };
+
         if (typeof activeImageSearchCallback === 'function') {
-          activeImageSearchCallback(chosenUrl, selectedSearchImageObj);
+          activeImageSearchCallback(finalUrl, provenanceMeta);
         }
 
         if (imgSearchModal) imgSearchModal.classList.remove('open');
         if (window.CatalogSmithStudio && window.CatalogSmithStudio.showToast) {
-          window.CatalogSmithStudio.showToast('Photo updated from web search!');
+          window.CatalogSmithStudio.showToast('Stock photo imported with commercial license.');
         }
       });
     }
@@ -1665,7 +2372,7 @@
     }
 
     // Modal background click and Escape key dismissal
-    [guidedModal, picturesModal, dropshipModal, imgSearchModal].forEach(modal => {
+    [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal].forEach(modal => {
       if (modal) {
         modal.addEventListener('click', (e) => {
           if (e.target === modal) {
@@ -1677,7 +2384,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        [guidedModal, picturesModal, dropshipModal, imgSearchModal].forEach(modal => {
+        [guidedModal, picturesModal, dropshipModal, imgSearchModal, shareModal, createCatalogModal].forEach(modal => {
           if (modal && modal.classList.contains('open')) {
             modal.classList.remove('open');
           }
@@ -1687,5 +2394,33 @@
 
     // Populate Initial Example Storefront
     populateExampleStorefront();
+
+    // Expose Global App API
+    window.CatalogSmithApp = {
+      showLanding,
+      showWorkspace,
+      showAdmin,
+      showStorefront,
+      renderAdminDashboard
+    };
+
+    // Auto-route based on URL parameters (?store=..., ?catalog=..., ?view=admin)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const storeParam = urlParams.get('store') || urlParams.get('catalog');
+      const viewParam = urlParams.get('view');
+
+      if (storeParam) {
+        showStorefront(storeParam);
+      } else if (viewParam === 'admin' || window.location.hash === '#admin') {
+        showAdmin();
+      } else if (viewParam === 'studio' || viewParam === 'workspace') {
+        showWorkspace(1);
+      } else {
+        showLanding();
+      }
+    } catch (_) {
+      showLanding();
+    }
   }
 })();

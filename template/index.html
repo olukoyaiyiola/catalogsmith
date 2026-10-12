@@ -244,6 +244,10 @@
               } catch (err) {}
             }
 
+            // Fallback: Copy link and open WhatsApp
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              try { await navigator.clipboard.writeText(shareUrl); } catch(_) {}
+            }
             const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
             window.open(waUrl, '_blank');
           };

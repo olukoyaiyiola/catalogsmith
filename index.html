@@ -7,9 +7,8 @@
   <meta name="description" content="Turn vendor product videos into live mobile-first WhatsApp storefronts. Phone-first, git-free, free tier only.">
   <link rel="stylesheet" href="css/studio.css">
   <link rel="stylesheet" href="css/app.css">
-  <script src="js/jszip.min.js"></script>
-  <script src="js/fixtures.js"></script>
-  <script src="js/pdf-catalog.js"></script>
+  <link rel="stylesheet" href="template/storefront.css">
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
 
@@ -32,6 +31,7 @@
         <nav class="site-nav">
           <a href="#how-it-works">How It Works</a>
           <a href="#example-section">Example Shop</a>
+          <button class="btn-secondary btn-sm" id="nav-btn-admin" style="font-weight: 700;">📋 My Catalogs</button>
           <button class="btn-primary btn-sm" id="nav-btn-create-store">Create my store</button>
         </nav>
       </div>
@@ -52,7 +52,7 @@
           </div>
           <div style="display: flex; align-items: center; gap: 16px; margin-top: 24px; font-size: 0.8125rem; color: var(--text-muted); flex-wrap: wrap;">
             <span>✓ 100% Free Tier</span>
-            <span>✓ Zero Server Hosting</span>
+            <span>✓ Instant Shareable Storefronts</span>
             <span>✓ WhatsApp-First Ordering</span>
           </div>
         </div>
@@ -159,7 +159,7 @@
     <!-- Footer -->
     <footer class="site-footer">
       <div class="section-inner">
-        <p>© CatalogSmith. Zero server infrastructure • Built phone-first for Nigerian & emerging market merchants.</p>
+        <p>© CatalogSmith. Built phone-first for Nigerian & emerging market merchants • Shareable catalogues with zero setup.</p>
       </div>
     </footer>
   </div>
@@ -169,8 +169,41 @@
        ================================================ -->
   <div id="workspace-view" style="display: none;">
     <!-- Top Navigation & Header -->
-    <header class="app-header">
-      <div class="header-inner">
+    <header class="app-header" id="studio-app-header">
+      <!-- Mobile Bar (< 768px) -->
+      <div class="mobile-header-bar">
+        <div class="mobile-header-left">
+          <button type="button" class="header-icon-btn" id="btn-mobile-header-back" title="Return to home / all stores" aria-label="Go back">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+        </div>
+        <div class="mobile-header-title-wrap">
+          <span class="mobile-header-title" id="mobile-shop-title">New catalogue</span>
+          <span class="mobile-header-status" id="mobile-header-step-text">Step 1 of 4: Add products</span>
+        </div>
+        <div class="mobile-header-right">
+          <button type="button" class="header-icon-btn" id="btn-open-tools-sheet" title="Settings & Tools" aria-label="Open settings and tools">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Step Progress Dots (< 768px) -->
+      <div class="mobile-step-progress" aria-label="Workflow progress">
+        <button type="button" class="progress-dot active" data-step="1" title="Step 1: Add products" aria-label="Go to step 1"></button>
+        <button type="button" class="progress-dot" data-step="2" title="Step 2: Check products" aria-label="Go to step 2"></button>
+        <button type="button" class="progress-dot" data-step="3" title="Step 3: Make it yours" aria-label="Go to step 3"></button>
+        <button type="button" class="progress-dot" data-step="4" title="Step 4: Publish & share" aria-label="Go to step 4"></button>
+      </div>
+
+      <!-- Desktop Header Row (>= 768px) -->
+      <div class="desktop-header-row">
         <div class="brand-wrapper" style="display: flex; align-items: center; gap: 12px;">
           <button class="back-to-home" id="btn-back-to-landing" title="Return to home page">
             ← Back to Home
@@ -193,160 +226,239 @@
         <nav class="stepper-nav" aria-label="Workflow Steps">
           <button class="step-tab active" data-step="1" id="tab-step-1">
             <span class="step-number">1</span>
-            <span>Input & Video</span>
+            <span>Add products</span>
           </button>
           <button class="step-tab" data-step="2" id="tab-step-2">
             <span class="step-number">2</span>
-            <span id="tab-review-label">Products (0)</span>
+            <span id="tab-review-label">Check products (0)</span>
           </button>
           <button class="step-tab" data-step="3" id="tab-step-3">
             <span class="step-number">3</span>
-            <span>Store Design</span>
+            <span>Make it yours</span>
           </button>
           <button class="step-tab" data-step="4" id="tab-step-4">
             <span class="step-number">4</span>
-            <span>Publish & Export</span>
+            <span>Publish & share</span>
           </button>
         </nav>
+
+        <div class="desktop-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span id="workspace-editing-badge" class="badge-tag" style="display: none; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem;">
+            Editing: <strong id="workspace-editing-name" style="margin-left: 4px;">Store</strong>
+          </span>
+          <button class="btn-secondary btn-sm" id="btn-workspace-to-admin" title="Manage all stores">📋 All Catalogs</button>
+          <button class="btn-primary btn-sm" id="btn-workspace-share-header" style="background: #25d366; border-color: #25d366; color: #fff; font-weight: 700;">📲 Share Store</button>
+          <button type="button" class="btn-icon-subtle" id="btn-desktop-tools-gear" title="Settings & Tools" style="font-size: 1.1rem; padding: 6px 10px;">⚙️</button>
+        </div>
       </div>
     </header>
 
   <!-- Main Application Body -->
   <main class="main-wrapper">
 
-    <!-- STEP 1: Video File & Product Extraction -->
+    <!-- STEP 1: Add Products (Phone-First Reworked IA) -->
     <section class="step-pane active" id="pane-step-1">
-      <div class="studio-card">
-        <div class="card-header-row">
-          <div>
-            <h2 class="card-title">
-              <span>Step 1: Upload Video & Extract Products</span>
-            </h2>
-            <p class="card-desc">Select your vendor video to auto-extract products with Gemini AI in seconds. No code or server required.</p>
+      <div class="step1-container">
+        
+        <!-- Hero Block (when no video is loaded yet) -->
+        <div class="step1-hero" id="step1-hero-block">
+          <h2 class="step1-title">Add your products</h2>
+          <p class="step1-subtitle">Record or choose a video of your shop, stock or WhatsApp chat. We'll find the products for you.</p>
+
+          <div class="step1-primary-action">
+            <input type="file" id="video-input" accept="video/*,.mp4,.mov,.webm,.m4v,.mkv" style="display: none;">
+            
+            <button type="button" class="btn-primary step1-btn-choose" id="btn-select-video">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              <span>Choose or record a video</span>
+            </button>
+            
+            <p class="desktop-drop-hint" id="desktop-drop-hint">or drag and drop a video file here</p>
           </div>
         </div>
 
-        <!-- 1. Primary Action: Clean Video Dropzone -->
-        <div class="dropzone-box" id="video-dropzone" role="button" tabindex="0" aria-label="Tap or drag to select vendor video" style="cursor: pointer;">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <div>
-            <strong style="color: var(--text-main); font-size: 1.0625rem;">Tap or drag to select vendor video</strong>
-            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px;" id="video-file-info">
-              Supports .mp4, .mov, .webm (WhatsApp chats, walkthroughs, or shelf footage)
-            </p>
-          </div>
-          <button type="button" class="btn-secondary" id="btn-select-video" style="padding: 8px 18px; font-weight: 600; font-size: 0.875rem; border-radius: var(--radius-md); margin-top: 4px; pointer-events: auto;">
-            📁 Choose Video File
-          </button>
-          <input type="file" id="video-input" accept="video/*,.mp4,.mov,.webm,.m4v,.mkv" style="display: none;">
-        </div>
-
-        <!-- Quick Sample Helper Strip (Clean & Compact) -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Demos:</span>
-            <button class="sample-chip" data-sample="whatsapp">📱 WhatsApp Chat</button>
-            <button class="sample-chip" data-sample="walkthrough">🎙️ Walkthrough</button>
-            <button class="sample-chip" data-sample="shelf">🛍️ Shelf Display</button>
-          </div>
-          <button class="btn-icon-subtle" id="btn-generate-demo-video" title="Generate animated test video stream in browser">
-            ✨ Generate Test Video
-          </button>
-        </div>
-
-        <!-- 2. Extraction Action Card -->
-        <div class="automation-card" id="auto-extract-card" style="margin-top: 20px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-            <div>
-              <strong style="color: #fff; font-size: 1.0625rem; display: flex; align-items: center; gap: 8px;">
-                <span>⚡ 1-Click Automated Extraction</span>
-                <span class="badge-tag" style="background-color: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Beta Active</span>
-              </strong>
-              <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 3px;">
-                Gemini AI visually scans your video, identifies individual products & prices, and captures high-res photos automatically.
-              </p>
+        <!-- Video Chosen Block (replaces hero once a video is selected) -->
+        <div class="step1-video-chosen" id="step1-video-chosen" style="display: none;">
+          <div class="chosen-video-card">
+            <div class="chosen-video-preview">
+              <video id="step1-video-thumb" playsinline preload="metadata" muted></video>
+              <div class="chosen-video-badge" id="chosen-video-duration">0:00</div>
+            </div>
+            <div class="chosen-video-info">
+              <strong class="chosen-video-name" id="chosen-video-name">video.mp4</strong>
+              <div class="chosen-video-meta" id="chosen-video-meta">0.0 MB</div>
+              <button type="button" class="btn-text-subtle" id="btn-change-video">Change video</button>
             </div>
           </div>
 
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
-            <button class="btn-primary" id="btn-auto-extract-gemini" style="flex: 2; min-width: 240px; padding: 13px;">
-              <span>🚀 Auto-Extract Catalog with Gemini</span>
+          <div class="extraction-actions">
+            <button type="button" class="btn-primary step1-btn-extract" id="btn-auto-extract-gemini">
+              <span>Find my products</span>
             </button>
-            <button class="btn-secondary" id="btn-smart-local-scan" style="flex: 1; min-width: 190px;" title="Scans video automatically in-browser without requiring an API key">
-              <span>⚡ Smart Local Scan</span>
+            
+            <button type="button" class="btn-text-secondary" id="btn-smart-local-scan">
+              <span>Quick scan (no AI)</span>
             </button>
+            <p class="quick-scan-hint">Finds photo candidates only; you type names and prices.</p>
           </div>
 
-          <!-- Progress pipeline bar -->
-          <div id="auto-progress-container" style="display: none; margin-top: 14px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--text-main); font-weight: 600;">
+          <!-- Real Progress & Status -->
+          <div id="auto-progress-container" class="step1-progress-box" style="display: none;">
+            <div class="progress-status-row">
               <span id="auto-progress-status">Analyzing video...</span>
               <span id="auto-progress-percent">0%</span>
             </div>
             <div class="progress-pipeline">
               <div class="progress-pipeline-fill" id="auto-progress-fill"></div>
             </div>
+            <button type="button" class="btn-text-cancel" id="btn-cancel-extraction">Cancel</button>
           </div>
         </div>
 
-        <!-- 3. Progressive Disclosure: Advanced Settings & Manual Tools -->
-        <details class="ia-drawer" id="advanced-tools-drawer">
-          <summary class="ia-drawer-summary">
-            <span>⚙️ Advanced Settings & Manual JSON Tools</span>
-            <span style="font-size: 0.75rem; color: var(--color-accent);">Configure / Import &darr;</span>
-          </summary>
-          <div class="ia-drawer-content">
-            <!-- API Key & Model Override -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="form-label" for="gemini-api-key">Custom Gemini API Key & Model (Optional)</label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--color-accent); text-decoration: none;">Get Free Key &rarr;</a>
+        <!-- No Video? / Try a demo row -->
+        <div class="step1-section-row">
+          <details class="step1-disclosure" id="demo-disclosure">
+            <summary class="step1-disclosure-summary">
+              <span>No video? Try a demo</span>
+              <span class="disclosure-arrow">▾</span>
+            </summary>
+            <div class="step1-disclosure-body">
+              <div class="demo-chips-grid">
+                <button type="button" class="sample-chip" data-sample="whatsapp">📱 WhatsApp Chat</button>
+                <button type="button" class="sample-chip" data-sample="walkthrough">🎙️ Walkthrough</button>
+                <button type="button" class="sample-chip" data-sample="shelf">🛍️ Shelf Display</button>
               </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <input type="password" id="gemini-api-key" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Paste Gemini API key (e.g. AIzaSy...)">
-                <button class="btn-icon-subtle" id="btn-toggle-key-vis" title="Toggle Key Visibility">👁️</button>
-                <select id="gemini-model-select" class="form-select" style="flex: 1; min-width: 150px;">
-                  <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Recommended)</option>
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                </select>
-              </div>
-              <div style="margin-top: 6px;">
-                <label style="font-size: 0.75rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                  <input type="checkbox" id="check-remember-key">
-                  <span>Remember on this device (optional local storage)</span>
-                </label>
-              </div>
+              <button type="button" class="btn-secondary btn-generate-test" id="btn-generate-demo-video">
+                ✨ Generate Test Video in Browser
+              </button>
             </div>
+          </details>
+        </div>
 
-            <!-- Manual JSON Paste -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="form-label" for="json-input">Manual JSON Import (Google AI Studio)</label>
-                <button class="btn-icon-subtle" id="btn-clear-json" title="Clear text">Clear</button>
-              </div>
-              <textarea id="json-input" class="form-textarea" style="height: 120px; font-family: var(--font-mono); font-size: 0.8125rem;" placeholder='Paste AI Studio JSON output here...'></textarea>
-              <div style="margin-top: 8px; display: flex; gap: 8px;">
-                <button class="btn-secondary" id="btn-upload-json-file">📂 Upload JSON File</button>
-                <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
-                <button class="btn-secondary" id="btn-parse-json" style="flex: 1;">Load JSON Products &rarr;</button>
-              </div>
-            </div>
+        <!-- Other ways to start -->
+        <div class="step1-other-starts" id="step1-other-starts">
+          <h3 class="other-starts-title">Other ways to start</h3>
+          <ul class="other-starts-list">
+            <li class="other-start-item" id="other-start-draft" style="display: none;">
+              <button type="button" class="other-start-btn highlight" id="btn-continue-saved-draft">
+                <div class="other-start-icon">📦</div>
+                <div class="other-start-text">
+                  <strong id="saved-draft-title">Continue with my saved products</strong>
+                  <span id="saved-draft-desc">Jump straight to review and editing</span>
+                </div>
+                <span class="other-start-arrow">→</span>
+              </button>
+            </li>
+            <li class="other-start-item">
+              <button type="button" class="other-start-btn" id="btn-start-with-pictures">
+                <div class="other-start-icon">📸</div>
+                <div class="other-start-text">
+                  <strong>Use pictures or a list</strong>
+                  <span>Add product photos or type items manually</span>
+                </div>
+                <span class="other-start-arrow">→</span>
+              </button>
+            </li>
+            <li class="other-start-item">
+              <button type="button" class="other-start-btn" id="btn-start-guided">
+                <div class="other-start-icon">🧭</div>
+                <div class="other-start-text">
+                  <strong>Answer a few questions</strong>
+                  <span>Step-by-step store setup assistant</span>
+                </div>
+                <span class="other-start-arrow">→</span>
+              </button>
+            </li>
+            <li class="other-start-item">
+              <button type="button" class="other-start-btn" id="btn-start-dropship">
+                <div class="other-start-icon">🚀</div>
+                <div class="other-start-text">
+                  <strong>Dropshipping plan</strong>
+                  <span>Explore fast-moving product concepts</span>
+                </div>
+                <span class="other-start-arrow">→</span>
+              </button>
+            </li>
+          </ul>
+        </div>
 
-            <!-- Developer Reference Actions -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--border-color);">
-              <button class="btn-icon-subtle" id="btn-open-prompts">📖 View AI Studio Prompts & Schema</button>
-              <button class="btn-icon-subtle" id="btn-open-fallback">🎞️ Fallback Frame Extractor</button>
-            </div>
+        <!-- Sticky Bottom Bar on Step 1 (shown if products exist in draft) -->
+        <div class="step1-sticky-footer" id="step1-sticky-footer" style="display: none;">
+          <div class="sticky-footer-inner">
+            <span class="sticky-footer-info" id="step1-footer-product-count">0 products in catalogue</span>
+            <button type="button" class="btn-primary" id="btn-step1-continue">Continue to Check Products →</button>
           </div>
-        </details>
+        </div>
 
       </div>
     </section>
+
+    <!-- Settings & Tools Sheet (Drawer / Modal) -->
+    <div class="tools-sheet-backdrop" id="tools-sheet-backdrop" style="display: none;">
+      <div class="tools-sheet" id="tools-sheet" role="dialog" aria-modal="true" aria-labelledby="tools-sheet-title">
+        <div class="tools-sheet-header">
+          <h3 id="tools-sheet-title">Settings & AI Tools</h3>
+          <button type="button" class="header-icon-btn" id="btn-close-tools-sheet" aria-label="Close settings" style="font-size: 1.25rem;">✕</button>
+        </div>
+        <div class="tools-sheet-body">
+          <!-- AI Provider Section -->
+          <div class="sheet-section">
+            <h4 class="sheet-section-title">AI Video Extraction</h4>
+            <p class="sheet-section-desc">Video frames are analyzed locally and sent to Gemini to find products. Video never leaves your phone.</p>
+            
+            <div class="form-group" style="margin-top: 10px;">
+              <label class="form-label" for="gemini-model-select">Model</label>
+              <select id="gemini-model-select" class="form-select">
+                <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Recommended)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label class="form-label" for="gemini-api-key">Custom Gemini API Key (Optional)</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="sheet-link">Get Free Key &rarr;</a>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <input type="password" id="gemini-api-key" class="form-input" placeholder="Paste Gemini API key (starts with AIzaSy...)" autocomplete="off">
+                <button type="button" class="btn-icon-subtle" id="btn-toggle-key-vis" title="Toggle Key Visibility" style="min-width: 48px; min-height: 48px;">👁️</button>
+              </div>
+              <label class="sheet-checkbox-label" style="margin-top: 6px;">
+                <input type="checkbox" id="check-remember-key">
+                <span>Remember on this device (optional local storage)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Manual JSON Import / Export -->
+          <div class="sheet-section" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+            <h4 class="sheet-section-title">Manual JSON Tools</h4>
+            <p class="sheet-section-desc">Paste or load product JSON directly from backups or Google AI Studio.</p>
+            
+            <textarea id="json-input" class="form-textarea" style="height: 100px; font-family: var(--font-mono); font-size: 0.8125rem; margin-top: 8px;" placeholder="Paste catalog JSON here..."></textarea>
+            
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-secondary" id="btn-upload-json-file" style="min-height: 48px;">📂 Upload File</button>
+              <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
+              <button type="button" class="btn-primary" id="btn-parse-json" style="flex: 1; min-height: 48px;">Load JSON →</button>
+              <button type="button" class="btn-icon-subtle" id="btn-clear-json" style="min-height: 48px; padding: 0 12px;">Clear</button>
+            </div>
+          </div>
+
+          <!-- Reference links -->
+          <div class="sheet-section" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-secondary" id="btn-open-prompts" style="min-height: 48px; flex: 1;">📖 AI Studio Prompts</button>
+              <button type="button" class="btn-secondary" id="btn-open-fallback" style="min-height: 48px; flex: 1;">🎞️ Fallback Frame Extractor</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
     <!-- STEP 2: Review Table & Interactive Frame Grabber -->
@@ -577,6 +689,36 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 18px;">
+              <!-- 0. Instant Live Sharable URL Banner -->
+              <div class="live-share-hero-banner" id="step4-live-share-banner">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                  <div class="live-share-hero-title">
+                    <span>⚡ Instant Sharable Catalog URL</span>
+                    <span class="badge-tag" style="background:#25d366;color:#fff;border-color:#25d366;">1-Tap Live</span>
+                  </div>
+                  <button class="btn-secondary btn-sm" id="btn-step4-preview-live" style="background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.3);cursor:pointer;">
+                    👁️ Open Live Storefront ↗
+                  </button>
+                </div>
+                <p class="live-share-hero-desc">
+                  Each store has an instant sharable URL. Customers can open it directly on WhatsApp, Instagram, or phone browser to view products and order with 1 tap.
+                </p>
+                <div class="live-share-url-container">
+                  <input type="text" readonly id="step4-share-url-input" class="live-share-url-input" value="Loading sharable URL...">
+                  <button class="btn-primary" id="btn-step4-copy-url" style="padding: 8px 16px; font-weight: 700; white-space: nowrap;">
+                    <span>📋 Copy Link</span>
+                  </button>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button class="btn-primary" id="btn-step4-share-wa" style="background: #25d366; border-color: #25d366; flex: 1; min-height: 42px; font-weight: 700;">
+                    <span>💬 Share to WhatsApp</span>
+                  </button>
+                  <button class="btn-secondary" id="btn-step4-open-share-modal" style="flex: 1; min-height: 42px; font-weight: 700;">
+                    <span>📲 QR Code & Share Options</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- Export 1: ZIP Bundle -->
               <div style="padding: 18px; background-color: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-highlight);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -724,6 +866,198 @@
 
   </main>
   </div> <!-- /#workspace-view -->
+
+
+  <!-- ================================================
+       VIEW 3: ADMIN MULTI-STORE & CATALOG CRUD DASHBOARD
+       ================================================ -->
+  <div id="admin-view" style="display: none;">
+    <header class="admin-header">
+      <div class="admin-header-inner">
+        <div class="admin-brand">
+          <div class="admin-brand-icon">👑</div>
+          <div class="admin-title-wrap">
+            <h1>CatalogSmith Admin</h1>
+            <span class="admin-tagline">Manage, edit, and share multiple vendor catalogs</span>
+          </div>
+        </div>
+        <div class="admin-nav-actions">
+          <button class="btn-secondary btn-sm" id="btn-admin-to-landing">← Back to Home</button>
+          <button class="btn-secondary btn-sm" id="btn-admin-to-studio">🛠️ Open Studio Editor</button>
+          <button class="btn-primary btn-sm" id="btn-admin-create-store-top" style="font-weight: 700;">➕ Create New Catalog</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <!-- KPI Stats Banner -->
+      <section class="admin-metrics-grid" aria-label="Catalog Overview Statistics">
+        <div class="admin-metric-card">
+          <div class="admin-metric-icon">🏪</div>
+          <div>
+            <div class="admin-metric-val" id="metric-total-catalogs">0</div>
+            <div class="admin-metric-label">Active Catalogs</div>
+          </div>
+        </div>
+        <div class="admin-metric-card">
+          <div class="admin-metric-icon">📦</div>
+          <div>
+            <div class="admin-metric-val" id="metric-total-products">0</div>
+            <div class="admin-metric-label">Total Products</div>
+          </div>
+        </div>
+        <div class="admin-metric-card">
+          <div class="admin-metric-icon">💬</div>
+          <div>
+            <div class="admin-metric-val" id="metric-wa-ready">100%</div>
+            <div class="admin-metric-label">WhatsApp Ready</div>
+          </div>
+        </div>
+        <div class="admin-metric-card">
+          <div class="admin-metric-icon">⚡</div>
+          <div>
+            <div class="admin-metric-val" id="metric-active-themes">6</div>
+            <div class="admin-metric-label">Live Themes</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Management Toolbar -->
+      <section class="admin-toolbar" aria-label="Catalog Controls">
+        <div class="admin-search-wrap">
+          <span class="admin-search-icon">🔍</span>
+          <input type="text" id="admin-search-input" class="admin-search-input" placeholder="Search catalogs by name, category, or phone...">
+        </div>
+        <div class="admin-toolbar-actions">
+          <button class="btn-secondary btn-sm" id="btn-admin-import-json" title="Import stores from JSON file">
+            📥 Import JSON
+          </button>
+          <input type="file" id="admin-import-file-input" accept=".json" style="display: none;">
+          <button class="btn-secondary btn-sm" id="btn-admin-backup-json" title="Export all stores as JSON backup">
+            📤 Backup All Stores
+          </button>
+          <button class="btn-primary btn-sm" id="btn-admin-create-store" style="font-weight: 700;">
+            <span>➕ Create New Catalog</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Catalogs Grid -->
+      <section class="admin-grid" id="admin-catalogs-grid" aria-label="List of Stores">
+        <!-- Rendered dynamically by JavaScript -->
+      </section>
+    </main>
+  </div> <!-- /#admin-view -->
+
+
+  <!-- ================================================
+       VIEW 4: LIVE CUSTOMER STOREFRONT VIEW
+       ================================================ -->
+  <div id="storefront-view" style="display: none;">
+    <!-- Store Owner Mode Banner (shown when viewing on admin device) -->
+    <div class="owner-top-bar" id="storefront-owner-bar" style="display: flex;">
+      <div class="owner-bar-left">
+        <span>⚡ Store Owner Mode</span>
+        <span style="opacity: 0.7; font-weight: normal;">• You are viewing your public storefront</span>
+      </div>
+      <div class="owner-bar-actions">
+        <button class="owner-bar-btn" id="btn-storefront-edit-studio">✏️ Edit in Studio</button>
+        <button class="owner-bar-btn" id="btn-storefront-manage-admin">📋 All Catalogs</button>
+        <button class="owner-bar-btn" id="btn-storefront-share-top" style="background: #25d366; border-color: #25d366;">📲 Share Store</button>
+      </div>
+    </div>
+
+    <!-- Customer Sticky Header -->
+    <header class="store-header" role="banner">
+      <div class="header-container">
+        <div class="vendor-brand">
+          <div class="vendor-avatar" id="sf-vendor-avatar" aria-hidden="true">S</div>
+          <div class="vendor-info">
+            <h1 class="store-name" id="sf-store-name-title">
+              <span id="sf-store-name-text">Store Name</span>
+              <span class="verified-badge" title="Direct Vendor Verified">
+                <svg class="icon" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </h1>
+            <p class="store-tagline" id="sf-store-tagline-text">Fast orders directly on WhatsApp</p>
+          </div>
+        </div>
+
+        <a id="sf-header-contact-link" href="#" target="_blank" rel="noopener noreferrer" class="header-contact-btn" aria-label="Chat with vendor on WhatsApp">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+          </svg>
+          <span>Message Store</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Storefront Bar: Theme Selector & Actions -->
+    <section class="live-theme-bar" aria-label="Storefront Styling">
+      <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="live-theme-selector">
+          <span>🎨 Style:</span>
+          <select id="sf-theme-select" class="live-theme-select" aria-label="Select theme">
+            <option value="emerald">🌿 Emerald</option>
+            <option value="luxury-gold">👑 Royal Gold</option>
+            <option value="sunset">🌅 Sunset</option>
+            <option value="tech-blue">⚡ Cyber Blue</option>
+            <option value="blush">🌸 Blush Rose</option>
+            <option value="minimal">🖋️ Minimalist</option>
+          </select>
+        </div>
+        <div class="live-theme-selector">
+          <span>📐 Grid:</span>
+          <select id="sf-layout-select" class="live-theme-select" aria-label="Select layout">
+            <option value="standard">Standard (1 Col)</option>
+            <option value="compact">Compact (2 Col)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
+        <button id="sf-btn-download-pdf" class="live-action-btn" title="Save lookbook as PDF">
+          📄 PDF Catalog
+        </button>
+        <button id="sf-btn-share-catalog" class="live-action-btn" title="Share store with customers">
+          📲 Share
+        </button>
+      </div>
+    </section>
+
+    <!-- Category Filter Pills Bar -->
+    <nav class="category-filter-bar" id="sf-category-filter-bar" aria-label="Categories"></nav>
+
+    <!-- Store Stats -->
+    <section class="store-intro" aria-label="Catalog Overview">
+      <div class="catalog-stats-bar">
+        <span>Catalog: <strong class="stats-count" id="sf-product-count">0 items</strong></span>
+        <span>Direct WhatsApp Checkout</span>
+      </div>
+    </section>
+
+    <!-- Main Products Grid -->
+    <main class="main-content">
+      <div class="product-grid" id="sf-product-grid" role="list"></div>
+      <div class="empty-catalog" id="sf-empty-state" style="display: none;">
+        <h3>No products found</h3>
+        <p>This storefront currently has no listed products.</p>
+      </div>
+    </main>
+
+    <!-- Sticky Bottom WhatsApp Floating Button -->
+    <a href="#" target="_blank" rel="noopener noreferrer" class="sticky-wa-fab" id="sf-sticky-wa-btn">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+      </svg>
+      <span>Chat with Vendor</span>
+    </a>
+
+    <footer class="store-footer">
+      <p>Powered by CatalogSmith &bull; Mobile-First Video Storefront &bull; <a href="#" id="sf-footer-admin-link" style="color: inherit; text-decoration: underline; cursor: pointer;">Admin</a></p>
+    </footer>
+  </div> <!-- /#storefront-view -->
 
 
   <!-- MODAL: Gemini AI Studio Prompts & JSON Schema -->
@@ -1256,55 +1590,243 @@
     </div>
   </div>
 
-  <!-- MODAL: Universal Product Image Search -->
+  <!-- MODAL: Universal Product Photo Selector (Phase I IA: Own Photo First, Stock Search Second) -->
   <div class="modal-overlay" id="image-search-modal">
     <div class="modal-content img-search-dialog">
       <div class="modal-header">
         <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-          <span>🔍 Search Product Images</span>
+          <span>📸 Choose Product Photo</span>
         </h3>
         <button class="btn-icon-subtle" id="btn-close-img-search">✕</button>
       </div>
-      <div class="modal-body">
-        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 12px;">
-          Search clean, verified e-commerce product photos. Select a photo to preview, then confirm to apply it to your product.
-        </p>
-
-        <div class="img-search-bar-wrap">
-          <input type="text" class="img-search-input" id="img-search-query" placeholder="Search product (e.g. Boubou Gown, Handbag, Perfume, Sneakers)...">
-          <button class="btn-primary" id="btn-run-img-search" style="padding: 10px 18px;">Search</button>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- SECTION 1: Vendor's Own Photo (First & Highest Trust) -->
+        <div class="modal-photo-own-section" style="background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+            <strong style="font-size: 0.9375rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+              <span>⭐ Your Own Photo</span>
+            </strong>
+            <span class="badge-tag" style="background: rgba(16,185,129,0.12); color: #059669; font-size: 0.6875rem; font-weight: 700; border-color: rgba(16,185,129,0.3);">
+              Best for WhatsApp Trust
+            </span>
+          </div>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 12px 0; line-height: 1.4;">
+            Authentic photos of your real stock perform best. WhatsApp buyers want to see the exact product they will receive.
+          </p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <label class="btn-primary" style="flex: 1; min-height: 48px; min-width: 140px; padding: 12px 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.875rem; border-radius: var(--radius-md);">
+              <span>📷 Take Photo</span>
+              <input type="file" accept="image/*" capture="environment" style="display: none;" id="modal-input-camera">
+            </label>
+            <label class="btn-secondary" style="flex: 1; min-height: 48px; min-width: 140px; padding: 12px 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 0.875rem; border-radius: var(--radius-md);">
+              <span>📁 Upload from Gallery</span>
+              <input type="file" accept="image/*" style="display: none;" id="modal-input-gallery">
+            </label>
+          </div>
         </div>
 
-        <div class="img-search-quick-tags" id="img-search-tags">
-          <button type="button" class="img-search-tag" data-tag="fashion">👗 Fashion</button>
-          <button type="button" class="img-search-tag" data-tag="beauty">💄 Beauty & Skincare</button>
-          <button type="button" class="img-search-tag" data-tag="shoes">👠 Shoes & Heels</button>
-          <button type="button" class="img-search-tag" data-tag="bags">👜 Handbags</button>
-          <button type="button" class="img-search-tag" data-tag="jewelry">✨ Jewelry</button>
-          <button type="button" class="img-search-tag" data-tag="gadgets">📱 Tech & Gadgets</button>
-          <button type="button" class="img-search-tag" data-tag="food">🍲 Food & Provisions</button>
-        </div>
+        <!-- SECTION 2: Free Commercial Stock Search (Second, with disclaimer) -->
+        <div class="modal-photo-stock-section" style="border-top: 1px solid var(--border-color); padding-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+            <strong style="font-size: 0.9375rem; color: var(--text-main);">🔍 Search Free Stock Photos</strong>
+            <span style="font-size: 0.75rem; color: var(--color-warning); font-weight: 600; background: rgba(245,158,11,0.1); padding: 3px 8px; border-radius: var(--radius-sm); border: 1px solid rgba(245,158,11,0.25);">
+              ⚠️ May not show exact product
+            </span>
+          </div>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 10px 0;">
+            Free commercial photos to illustrate your listing until you have time to take real pictures.
+          </p>
 
-        <div id="img-search-status" style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 8px; display: none;"></div>
+          <div class="img-search-bar-wrap">
+            <input type="text" class="img-search-input" id="img-search-query" placeholder="Search product (e.g. Boubou Gown, Handbag, Perfume, Sneakers)...">
+            <button class="btn-primary" id="btn-run-img-search" style="min-height: 48px; padding: 10px 18px;">Search</button>
+          </div>
 
-        <div class="img-search-grid" id="img-search-results">
-          <!-- Dynamic results -->
-        </div>
+          <div class="img-search-quick-tags" id="img-search-tags">
+            <button type="button" class="img-search-tag" data-tag="fashion">👗 Fashion</button>
+            <button type="button" class="img-search-tag" data-tag="beauty">💄 Beauty & Skincare</button>
+            <button type="button" class="img-search-tag" data-tag="shoes">👠 Shoes & Heels</button>
+            <button type="button" class="img-search-tag" data-tag="bags">👜 Handbags</button>
+            <button type="button" class="img-search-tag" data-tag="jewelry">✨ Jewelry</button>
+            <button type="button" class="img-search-tag" data-tag="gadgets">📱 Tech & Gadgets</button>
+            <button type="button" class="img-search-tag" data-tag="food">🍲 Food & Provisions</button>
+          </div>
 
-        <div class="img-search-preview-bar" id="img-search-preview-bar" style="display: none;">
-          <div style="display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;">
-            <img id="img-search-selected-preview" src="" alt="Selected Photo Preview" style="width: 68px; height: 68px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color); flex-shrink: 0; background: #f8fafc;">
-            <div style="min-width: 0; flex: 1;">
-              <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="img-search-selected-title">Selected Photo</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="img-search-selected-meta">Representative product photo from web search</div>
-              <div style="font-size: 0.6875rem; color: var(--text-dim); margin-top: 2px;" id="img-search-selected-source"></div>
+          <div id="img-search-status" style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 8px; display: none;"></div>
+
+          <div class="img-search-grid" id="img-search-results">
+            <!-- Dynamic results -->
+          </div>
+
+          <div class="img-search-preview-bar" id="img-search-preview-bar" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;">
+              <img id="img-search-selected-preview" src="" alt="Selected Photo Preview" style="width: 68px; height: 68px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color); flex-shrink: 0; background: #f8fafc;">
+              <div style="min-width: 0; flex: 1;">
+                <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="img-search-selected-title">Selected Photo</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="img-search-selected-meta">Representative product photo from web search</div>
+                <div style="font-size: 0.6875rem; color: var(--text-dim); margin-top: 2px;" id="img-search-selected-source"></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+              <button type="button" class="btn-secondary" id="btn-cancel-select-img" style="min-height: 44px; padding: 8px 14px; font-size: 0.8125rem;">Cancel</button>
+              <button type="button" class="btn-primary" id="btn-apply-selected-img" style="min-height: 44px; padding: 8px 18px; font-weight: 700; font-size: 0.8125rem;">Use This Photo</button>
             </div>
           </div>
-          <div style="display: flex; gap: 8px; flex-shrink: 0;">
-            <button type="button" class="btn-secondary" id="btn-cancel-select-img" style="padding: 8px 14px; font-size: 0.8125rem;">Cancel</button>
-            <button type="button" class="btn-primary" id="btn-apply-selected-img" style="padding: 8px 18px; font-weight: 700; font-size: 0.8125rem;">Use This Photo</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Share Catalog & QR Code -->
+  <div class="modal-overlay" id="share-catalog-modal">
+    <div class="modal-content share-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>📲 Share Product Catalog</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-share-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="share-store-card">
+          <div class="share-store-avatar" id="share-modal-avatar">S</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);" id="share-modal-store-name">Store Name</div>
+            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;" id="share-modal-store-tag">Fast WhatsApp ordering</div>
+          </div>
+          <span class="badge-tag" id="share-modal-count-badge" style="background: rgba(5,150,105,0.1); color: #059669; border-color: rgba(5,150,105,0.3);">0 Products</span>
+        </div>
+
+        <label style="font-size: 0.8125rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">
+          Public Sharable Storefront Link:
+        </label>
+        <div class="share-url-input-wrap">
+          <input type="text" readonly id="share-modal-url-input" class="share-url-input" value="">
+          <button class="btn-primary" id="btn-share-modal-copy" style="padding: 10px 18px; font-weight: 700; white-space: nowrap;">
+            <span>📋 Copy Link</span>
+          </button>
+        </div>
+
+        <div class="share-action-grid">
+          <a href="#" target="_blank" class="btn-share-wa-big" id="btn-share-modal-wa">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+            </svg>
+            <span>💬 Send to WhatsApp Chat or Status</span>
+          </a>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" id="btn-share-modal-native" style="flex: 1; padding: 10px 14px;">
+              <span>📱 Share via Mobile Apps</span>
+            </button>
+            <button class="btn-secondary" id="btn-share-modal-open-live" style="flex: 1; padding: 10px 14px;">
+              <span>👁️ Open Live Storefront ↗</span>
+            </button>
           </div>
         </div>
+
+        <!-- Scannable QR Code Section -->
+        <div class="share-qr-section">
+          <div class="share-qr-box" id="share-modal-qr-box"></div>
+          <div class="share-qr-info">
+            <h4>Scannable QR Code</h4>
+            <p>Customers can scan this directly from your phone screen or printed flyers to view your catalog.</p>
+            <button class="btn-secondary btn-sm" id="btn-share-modal-download-qr">
+              💾 Download QR Image (.png)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Create New Catalog -->
+  <div class="modal-overlay" id="create-catalog-modal">
+    <div class="modal-content create-catalog-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.125rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>➕ Create New Product Catalog</span>
+        </h3>
+        <button class="btn-icon-subtle" id="btn-close-create-catalog">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-create-catalog" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="create-store-name">Store Name *</label>
+            <input type="text" id="create-store-name" class="form-input" placeholder="e.g. Amaka Fabrics & Couture, Deji Tech Hub..." required>
+          </div>
+
+          <div class="form-group-row two-col">
+            <div class="form-group">
+              <label class="form-label" for="create-store-phone">WhatsApp Phone *</label>
+              <input type="tel" id="create-store-phone" class="form-input" placeholder="+2348035550192" value="+23480" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="create-store-category">Category</label>
+              <select id="create-store-category" class="form-select">
+                <option value="Fashion & Dresses">👗 Fashion & Dresses</option>
+                <option value="Tech & Gadgets">📱 Tech & Gadgets</option>
+                <option value="Beauty & Skincare">💄 Beauty & Skincare</option>
+                <option value="Shoes & Handbags">👠 Shoes & Handbags</option>
+                <option value="Food & Provisions">🍲 Food & Provisions</option>
+                <option value="Jewelry & Accessories">✨ Jewelry & Accessories</option>
+                <option value="General">🛍️ General Merchant</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="create-store-tagline">Tagline</label>
+            <input type="text" id="create-store-tagline" class="form-input" placeholder="e.g. Direct orders on WhatsApp • Nationwide delivery">
+          </div>
+
+          <div class="form-group-row two-col">
+            <div class="form-group">
+              <label class="form-label" for="create-store-theme">Store Theme</label>
+              <select id="create-store-theme" class="form-select">
+                <option value="emerald">🌿 Emerald (WhatsApp Green)</option>
+                <option value="luxury-gold">👑 Royal Obsidian Gold</option>
+                <option value="sunset">🌅 Sunset Terracotta</option>
+                <option value="tech-blue">⚡ Cyber Blue</option>
+                <option value="blush">🌸 Blush Rose</option>
+                <option value="minimal">🖋️ Minimalist</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="create-store-currency">Currency</label>
+              <select id="create-store-currency" class="form-select">
+                <option value="NGN">₦ Nigerian Naira (NGN)</option>
+                <option value="USD">$ US Dollar (USD)</option>
+                <option value="GHS">₵ Ghanaian Cedi (GHS)</option>
+                <option value="KES">KSh Kenyan Shilling (KES)</option>
+                <option value="GBP">£ British Pound (GBP)</option>
+                <option value="EUR">€ Euro (EUR)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Starting Catalog Content</label>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; cursor: pointer; padding: 8px 12px; background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: 8px;">
+                <input type="radio" name="create-store-starter" value="starter" checked>
+                <span><strong>🌟 AI Starter Suggestions</strong> (Seed with 4-6 products matching your category)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; cursor: pointer; padding: 8px 12px; background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: 8px;">
+                <input type="radio" name="create-store-starter" value="empty">
+                <span><strong>📄 Blank Store</strong> (Add products manually or extract from video)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-secondary" id="btn-cancel-create-catalog">Cancel</button>
+            <button type="submit" class="btn-primary" id="btn-submit-create-catalog" style="padding: 10px 22px; font-weight: 700;">
+              Create Catalog & Edit →
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1316,6 +1838,8 @@
   <script src="js/jszip.min.js"></script>
   <script src="js/pdf-catalog.js"></script>
   <script src="js/fixtures.js"></script>
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/catalogs-manager.js"></script>
 
   <!-- Studio Main Logic Script -->
   <script src="js/studio.js"></script>

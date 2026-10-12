@@ -7,14 +7,15 @@
 
 ## 1. Executive Summary & Core Philosophy
 
-**CatalogSmith** is a **phone-first, zero-infrastructure, Git-free video-to-storefront generator**. It empowers non-technical, mobile-native merchants (e.g. WhatsApp, Instagram, TikTok vendors, and open-market stall owners) to convert raw product showcase videos into high-converting, mobile-optimized digital storefronts.
+**CatalogSmith** is a **phone-first video-to-storefront generator with built-in hosted persistence and instant shareable links**. It empowers mobile-native merchants (e.g. WhatsApp, Instagram, TikTok vendors, and marketplace stall owners in Nigeria and emerging markets) to convert raw product showcase videos into high-converting, mobile-optimized digital storefronts and structured marketplace export feeds.
 
 ### Core Architectural Tenets:
-1. **Zero Server Backend**: 100% client-side execution in standard web browsers. No Node.js runtime, no Python servers, no backend databases, and no FFmpeg binaries required.
-2. **Git-Free Deployment**: Output is exported as a standalone static ZIP bundle, single-file HTML, or A4 PDF lookbook deployed in under 60 seconds to Netlify Drop, Cloudflare Pages, or Vercel.
+1. **Built-in Hosting & Durability**: Fast offline draft editing in `localStorage`, backed by serverless hosting (`/api/publish`, `/api/catalogue`), direct-to-Blob photo storage, and Neon Postgres persistence for durable, instant shareable storefront links.
+2. **Static Front End, Zero Bundler**: 100% vanilla HTML, CSS, and JavaScript. No build step, no bundler (no Vite/Webpack), no frontend framework. Plain Node serverless functions in `/api/`.
 3. **WhatsApp-First Commerce**: No shopping carts, payment gateways, or complicated checkouts. Every product card generates pre-filled WhatsApp order chats (`wa.me`) tailored to emerging-market vendor workflows.
-4. **Resilient Data & Null-Price Handling**: Automatically accommodates real-world unpriced items ("Ask for price on WhatsApp"), ambiguous video segments, and varying video qualities.
-5. **Low-Bandwidth & Mobile Optimization**: Strictly designed for 360px–414px mobile viewports, large 48px touch targets, compressed images, and zero Cumulative Layout Shift (CLS = 0).
+4. **Resilient Data & Null-Price Handling**: Automatically accommodates real-world unpriced items ("Ask for price on WhatsApp"), ambiguous video segments, and varying video qualities. Never invent prices (`price.amount = null`).
+5. **Low-Bandwidth & Phone-First Optimization**: Strictly verified for 360px and 414px mobile viewports, large 48px touch targets, compressed images, and zero Cumulative Layout Shift (CLS = 0). Zero horizontal scrolling.
+6. **Commercial Image Provenance & Anti-Hotlinking**: Full tracking of `image_origin` (`own_video_frame`, `own_upload`, `stock_search`, `placeholder_art`). Stock search images imported via `/api/import-image` (no hotlinking) and excluded from partner marketplace exports by default.
 
 ---
 
@@ -25,13 +26,22 @@ catalogsmith/
 ├── index.html                   # Dual-view application: Landing page + Store workspace
 ├── css/
 │   ├── app.css                  # Light-theme emerald design system & landing page styles
-│   └── studio.css               # Studio layout, modals, scrubber & photo editor
+│   ├── studio.css               # Studio layout, modals, scrubber & photo editor
+│   └── admin.css                # Multi-store admin & share modal styles
 ├── js/
 │   ├── app.js                   # Application coordinator: Landing ↔ Workspace, creation flows & wizards
-│   ├── studio.js                # Core Studio application logic (~2,700 lines)
-│   ├── pdf-catalog.js           # Zero-backend PDF generator & printable lookbook (~850 lines)
+│   ├── studio.js                # Core Studio application logic
+│   ├── pdf-catalog.js           # Zero-backend PDF generator & printable lookbook
 │   ├── jszip.min.js             # Vendored JSZip v3.10.1 for client-side ZIP compilation
 │   └── fixtures.js              # Pre-loaded sample datasets for 5 real-world scenarios
+├── api/
+│   ├── search-images.js         # Multi-provider stock search (Openverse, Pexels, Pixabay, Unsplash)
+│   └── import-image.js          # SSRF-safe anti-hotlink image import proxy (Blob / local copy)
+├── docs/
+│   ├── IMAGE_SEARCH.md          # Provider evaluations, terms, Bing retirement & benchmarks
+│   ├── AI_STUDIO_GUIDE.md       # Step-by-step phone-first Google AI Studio guide
+│   ├── DEPLOYMENT_GUIDE.md      # Drag-and-drop deployment guide
+│   └── TESTING_REPORT.md        # Architectural test matrix across scenarios
 ├── template/
 │   ├── index.html               # Production customer storefront template
 │   └── storefront.css           # Storefront stylesheet (6 theme presets, mobile grid layouts)
@@ -45,11 +55,8 @@ catalogsmith/
 │   ├── shelf-display.json       # Scenario 3: Boutique display racks & price tags
 │   ├── social-reel.json         # Scenario 4: Vertical tech reel & unboxing
 │   └── market-stall.json        # Scenario 5: Open-air bazaar stall provisions
-├── docs/
-│   ├── AI_STUDIO_GUIDE.md       # Step-by-step phone-first Google AI Studio guide
-│   ├── DEPLOYMENT_GUIDE.md      # Drag-and-drop Netlify Drop / Cloudflare Pages / Vercel guide
-│   └── TESTING_REPORT.md        # Architectural test matrix across all 5 fixture scenarios
-├── vercel.json                  # Pre-configured static routing for Vercel
+├── serve.ps1                    # Local dev server with full /api/ endpoint simulation
+├── vercel.json                  # Pre-configured routing for Vercel functions
 ├── APPROACH.md                  # This master reference document
 └── README.md                    # Project overview & quickstart
 ```

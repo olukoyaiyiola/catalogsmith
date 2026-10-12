@@ -802,41 +802,29 @@
 
   // Share Catalog via Web Share or WhatsApp
   async function shareCatalog(data) {
-    const vendorName = data.vendor_name || 'Vendor Catalog';
-    const products = Array.isArray(data.products) ? data.products : [];
-    const shareText = `🛍️ *${vendorName} - Product Catalog*\n${data.tagline || 'Direct orders via WhatsApp'}\n\nBrowse ${products.length} verified products and order directly on WhatsApp!\nPhone: ${data.vendor_phone || 'Direct Chat'}`;
-
-    // Try sharing generated PDF file natively on mobile
-    if (navigator.canShare) {
-      try {
-        const pdfBlob = await generateCatalogPDFBlob(data);
-        const pdfFile = new File([pdfBlob], `${vendorName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-catalog.pdf`, { type: 'application/pdf' });
-        if (navigator.canShare({ files: [pdfFile] })) {
-          await navigator.share({
-            files: [pdfFile],
-            title: `${vendorName} Catalog`,
-            text: shareText
-          });
-          return;
-        }
-      } catch (e) {
-        // Fall back to link share
-      }
+    if (window.CatalogStore && window.CatalogStore.openShareModal) {
+      window.CatalogStore.openShareModal(data);
+      return;
     }
+
+    const vendorName = data.name || data.vendor_name || 'Vendor Catalog';
+    const products = Array.isArray(data.products) ? data.products : [];
+    const shareUrl = window.CatalogStore ? window.CatalogStore.getSharableUrl(data) : window.location.href;
+    const shareText = `🛍️ *${vendorName} - Product Catalog*\n${data.tagline || 'Direct orders via WhatsApp'}\n\nBrowse ${products.length} verified products and order directly on WhatsApp!\nPhone: ${data.vendor_phone || data.phone || 'Direct Chat'}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${vendorName} - Product Catalog`,
           text: shareText,
-          url: window.location.href
+          url: shareUrl
         });
         return;
       } catch (e) {}
     }
 
     // Fallback: Open WhatsApp directly
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + window.location.href)}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
     window.open(waUrl, '_blank');
   }
 

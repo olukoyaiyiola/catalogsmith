@@ -42,17 +42,268 @@ try {
             $rawPath = "index.html"
         }
 
+        # Handle Catalogs API Endpoint locally
+        if ($rawPath -eq "api/catalogs") {
+            $dataDir = Join-Path $PSScriptRoot "data"
+            $dataFile = Join-Path $dataDir "catalogs.json"
+            if (-not (Test-Path $dataDir)) {
+                New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+            }
+            if (-not (Test-Path $dataFile)) {
+                Set-Content -Path $dataFile -Value "[]" -Encoding UTF8
+            }
+
+            if ($request.HttpMethod -eq "OPTIONS") {
+                $response.StatusCode = 204
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.AddHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+                $response.AddHeader("Access-Control-Allow-Headers", "Content-Type")
+                $response.Close()
+                continue
+            }
+
+            if ($request.HttpMethod -eq "GET") {
+                $content = Get-Content -Path $dataFile -Raw -Encoding UTF8
+                if ([string]::IsNullOrWhiteSpace($content)) { $content = "[]" }
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+                $response.StatusCode = 200
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.ContentLength64 = $bytes.Length
+                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $response.Close()
+                continue
+            }
+
+            if ($request.HttpMethod -eq "POST") {
+                $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
+                $body = $reader.ReadToEnd()
+                $reader.Close()
+
+                try {
+                    $postedCatalog = $body | ConvertFrom-Json
+                    $existingRaw = Get-Content -Path $dataFile -Raw -Encoding UTF8
+                    $existing = if ([string]::IsNullOrWhiteSpace($existingRaw)) { @() } else { $existingRaw | ConvertFrom-Json }
+                    if ($existing -isnot [System.Array]) { $existing = @($existing) }
+
+                    $updated = @()
+                    $found = $false
+                    foreach ($item in $existing) {
+                        if ($item.id -eq $postedCatalog.id) {
+                            $updated += $postedCatalog
+                            $found = $true
+                        } else {
+                            $updated += $item
+                        }
+                    }
+                    if (-not $found) {
+                        $updated += $postedCatalog
+                    }
+
+                    $jsonStr = $updated | ConvertTo-Json -Depth 10
+                    Set-Content -Path $dataFile -Value $jsonStr -Encoding UTF8
+
+                    $respBytes = [System.Text.Encoding]::UTF8.GetBytes('{"success":true}')
+                    $response.StatusCode = 200
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $respBytes.Length
+                    $response.OutputStream.Write($respBytes, 0, $respBytes.Length)
+                    $response.Close()
+                    continue
+                } catch {
+                    $msg = $_.Exception.Message -replace '"', '\"'
+                    $errBytes = [System.Text.Encoding]::UTF8.GetBytes(("{""error"":""Failed to save catalog: {0}""}" -f $msg))
+                    $response.StatusCode = 500
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $errBytes.Length
+                    $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                    $response.Close()
+                    continue
+                }
+            }
+
+            if ($request.HttpMethod -eq "DELETE") {
+                $delId = $request.QueryString["id"]
+                if (-not [string]::IsNullOrWhiteSpace($delId)) {
+                    $existingRaw = Get-Content -Path $dataFile -Raw -Encoding UTF8
+                    $existing = if ([string]::IsNullOrWhiteSpace($existingRaw)) { @() } else { $existingRaw | ConvertFrom-Json }
+                    if ($existing -isnot [System.Array]) { $existing = @($existing) }
+                    $updated = @($existing | Where-Object { $_.id -ne $delId })
+                    $jsonStr = $updated | ConvertTo-Json -Depth 10
+                    Set-Content -Path $dataFile -Value $jsonStr -Encoding UTF8
+                }
+                $respBytes = [System.Text.Encoding]::UTF8.GetBytes('{"success":true}')
+                $response.StatusCode = 200
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.ContentLength64 = $respBytes.Length
+                $response.OutputStream.Write($respBytes, 0, $respBytes.Length)
+                $response.Close()
+                continue
+            }
+        }
+
         # Handle Image Search API Endpoint locally
         if ($rawPath -eq "api/search-images") {
+            $t0 = [DateTime]::UtcNow
             $query = $request.QueryString["q"]
             if ([string]::IsNullOrWhiteSpace($query)) {
                 $query = $request.QueryString["query"]
             }
+            $isDebug = ($request.QueryString["debug"] -eq "1" -or $request.QueryString["debug"] -eq "true")
 
             if ([string]::IsNullOrWhiteSpace($query)) {
                 $response.StatusCode = 400
-                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Missing query parameter q"}')
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Missing query parameter q","results":[]}')
                 $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.ContentLength64 = $bytes.Length
+                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $response.Close()
+                continue
+            }
+
+            # Clean query
+            $cleanQ = $query.Trim()
+            $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '(?i)\b\d+(k|thousand|naira|usd)\b', '')
+            $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '(?i)\b(size\s*\d+|xl|xxl|small|medium|large)\b', '')
+            $cleanQ = [System.Text.RegularExpressions.Regex]::Replace($cleanQ, '\s+', ' ').Trim()
+            if ([string]::IsNullOrWhiteSpace($cleanQ)) { $cleanQ = $query.Trim() }
+
+            $results = @()
+            $primaryProvider = "none"
+            $diagnostics = @()
+
+            # 1. Try Openverse API (Commercial Creative Commons & Public Domain)
+            $ovStart = [DateTime]::UtcNow
+            try {
+                $ovEscaped = [uri]::EscapeDataString($cleanQ)
+                $ovUrl = "https://api.openverse.org/v1/images/?q=$ovEscaped&license_type=commercial&page_size=12"
+                $ovRes = Invoke-RestMethod -Uri $ovUrl -Headers @{ "User-Agent" = "CatalogSmithLocal/1.0" } -TimeoutSec 5
+                $ovMs = ([DateTime]::UtcNow - $ovStart).TotalMilliseconds
+                $ovItems = @($ovRes.results)
+                $diagnostics += @{ provider = "openverse"; configured = $true; status = "ok"; result_count = $ovItems.Count; duration_ms = [int]$ovMs }
+
+                if ($ovItems.Count -gt 0) {
+                    $primaryProvider = "openverse"
+                    foreach ($item in $ovItems) {
+                        $auth = if ($item.creator) { $item.creator } else { "Openverse Creator" }
+                        $lic = if ($item.license) { $item.license.ToUpper() } else { "CC" }
+                        $results += @{
+                            id = ("ov_" + $item.id)
+                            thumb_url = if ($item.thumbnail) { $item.thumbnail } else { $item.url }
+                            image_url = $item.url
+                            source_url = if ($item.foreign_landing_url) { $item.foreign_landing_url } else { $item.url }
+                            provider = "openverse"
+                            title = if ($item.title) { $item.title } else { $cleanQ }
+                            author = $auth
+                            license = $lic
+                            license_url = if ($item.license_url) { $item.license_url } else { "https://creativecommons.org/" }
+                            commercial_ok = $true
+                            width = if ($item.width) { $item.width } else { 0 }
+                            height = if ($item.height) { $item.height } else { 0 }
+                            attribution = ($auth + " • " + $lic + " via Openverse")
+                        }
+                    }
+                }
+            } catch {
+                $ovMs = ([DateTime]::UtcNow - $ovStart).TotalMilliseconds
+                $diagnostics += @{ provider = "openverse"; configured = $true; status = "error"; error = $_.Exception.Message; result_count = 0; duration_ms = [int]$ovMs }
+            }
+
+            # 2. Fallback to Wikimedia Commons if Openverse returned 0 results
+            if ($results.Count -eq 0) {
+                $wmStart = [DateTime]::UtcNow
+                try {
+                    $wmEscaped = [uri]::EscapeDataString($cleanQ)
+                    $wikiUrl = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=$wmEscaped&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*"
+                    $wikiRes = Invoke-RestMethod -Uri $wikiUrl -Headers @{ "User-Agent" = "CatalogSmithLocal/1.0" } -TimeoutSec 5
+                    $wmMs = ([DateTime]::UtcNow - $wmStart).TotalMilliseconds
+                    $wmCount = 0
+
+                    if ($wikiRes.query -and $wikiRes.query.pages) {
+                        $primaryProvider = "wikimedia"
+                        foreach ($prop in $wikiRes.query.pages.PSObject.Properties) {
+                            $p = $prop.Value
+                            if ($p.imageinfo -and $p.imageinfo.Count -gt 0) {
+                                $info = $p.imageinfo[0]
+                                $meta = $info.extmetadata
+                                $cleanTitle = $p.title -replace '^File:', '' -replace '\.[^.]+$', '' -replace '[-_]', ' '
+                                $lic = if ($meta -and $meta.LicenseShortName) { $meta.LicenseShortName.value } else { 'Creative Commons' }
+                                $auth = if ($meta -and $meta.Artist) { ($meta.Artist.value -replace '<[^>]+>', '') } else { 'Wikimedia Commons' }
+
+                                $results += @{
+                                    id = ("wm_" + $p.pageid)
+                                    thumb_url = if ($info.thumburl) { $info.thumburl } else { $info.url }
+                                    image_url = $info.url
+                                    source_url = if ($info.descriptionurl) { $info.descriptionurl } else { $info.url }
+                                    provider = "wikimedia"
+                                    title = $cleanTitle.Substring(0, [Math]::Min(70, $cleanTitle.Length))
+                                    author = $auth
+                                    license = $lic
+                                    license_url = "https://commons.wikimedia.org/"
+                                    commercial_ok = (-not ($lic.ToLower().Contains("noncommercial")))
+                                    width = if ($info.width) { $info.width } else { 0 }
+                                    height = if ($info.height) { $info.height } else { 0 }
+                                    attribution = ($auth + " (" + $lic + ") via Wikimedia Commons")
+                                }
+                                $wmCount++
+                            }
+                        }
+                    }
+                    $diagnostics += @{ provider = "wikimedia"; configured = $true; status = "ok"; result_count = $wmCount; duration_ms = [int]$wmMs }
+                } catch {
+                    $wmMs = ([DateTime]::UtcNow - $wmStart).TotalMilliseconds
+                    $diagnostics += @{ provider = "wikimedia"; configured = $true; status = "error"; error = $_.Exception.Message; result_count = 0; duration_ms = [int]$wmMs }
+                }
+            }
+
+            $totalMs = ([DateTime]::UtcNow - $t0).TotalMilliseconds
+            $jsonObj = @{
+                query = $cleanQ
+                original_query = $query
+                total = $results.Count
+                commercial_only = $true
+                primary_provider = $primaryProvider
+                results = $results
+            }
+            if ($isDebug) {
+                $jsonObj["debug"] = @{
+                    total_time_ms = [int]$totalMs
+                    diagnostics = $diagnostics
+                }
+            }
+
+            $jsonStr = $jsonObj | ConvertTo-Json -Depth 5
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonStr)
+            $response.StatusCode = 200
+            $response.ContentType = "application/json; charset=utf-8"
+            $response.AddHeader("Access-Control-Allow-Origin", "*")
+            $response.ContentLength64 = $bytes.Length
+            $response.OutputStream.Write($bytes, 0, $bytes.Length)
+            $response.Close()
+            continue
+        }
+
+        # Handle Image Import API Endpoint locally
+        if ($rawPath -eq "api/import-image") {
+            $targetUrl = $request.QueryString["url"]
+            if ([string]::IsNullOrWhiteSpace($targetUrl) -and $request.HasEntityBody) {
+                try {
+                    $reader = New-Object System.IO.StreamReader($request.InputStream, $request.ContentEncoding)
+                    $bodyRaw = $reader.ReadToEnd()
+                    $parsedBody = $bodyRaw | ConvertFrom-Json
+                    $targetUrl = $parsedBody.url
+                } catch {}
+            }
+
+            if ([string]::IsNullOrWhiteSpace($targetUrl)) {
+                $response.StatusCode = 400
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Missing required url parameter"}')
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
                 $response.ContentLength64 = $bytes.Length
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
                 $response.Close()
@@ -60,41 +311,43 @@ try {
             }
 
             try {
-                $cleanQ = [uri]::EscapeDataString($query.Trim())
-                $wikiUrl = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=$cleanQ&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=400&format=json&origin=*"
-                $wikiRes = Invoke-RestMethod -Uri $wikiUrl -Headers @{"User-Agent"="CatalogSmithLocalDev/1.0"}
-                $results = @()
-                if ($wikiRes.query -and $wikiRes.query.pages) {
-                    foreach ($prop in $wikiRes.query.pages.PSObject.Properties) {
-                        $p = $prop.Value
-                        if ($p.imageinfo -and $p.imageinfo.Count -gt 0) {
-                            $info = $p.imageinfo[0]
-                            $meta = $info.extmetadata
-                            $cleanTitle = $p.title -replace '^File:', '' -replace '\.[^.]+$', '' -replace '[-_]', ' '
-                            $lic = if ($meta -and $meta.LicenseShortName) { $meta.LicenseShortName.value } else { 'Creative Commons' }
-                            $auth = if ($meta -and $meta.Artist) { ($meta.Artist.value -replace '<[^>]+>', '') } else { 'Wikimedia Commons' }
-
-                            $results += @{
-                                id = $p.pageid.ToString()
-                                title = $cleanTitle.Substring(0, [Math]::Min(70, $cleanTitle.Length))
-                                imageUrl = $info.url
-                                thumbnailUrl = if ($info.thumburl) { $info.thumburl } else { $info.url }
-                                sourceUrl = if ($info.descriptionurl) { $info.descriptionurl } else { $info.url }
-                                publisher = 'Wikimedia Commons'
-                                dimensions = ($info.width.ToString() + ' × ' + $info.height.ToString())
-                                attribution = ($auth + ' (' + $lic + ')')
-                            }
-                        }
+                $uri = [System.Uri]$targetUrl
+                if ($uri.Scheme -ne "https") {
+                    throw "Only HTTPS image URLs are supported."
+                }
+                $allowedSuffixes = @('openverse.org', 'wp.com', 'wordpress.org', 'wikimedia.org', 'pexels.com', 'pixabay.com', 'unsplash.com', 'staticflickr.com', 'flickr.com')
+                $hostLower = $uri.Host.ToLowerInvariant()
+                $isAllowed = $false
+                foreach ($suf in $allowedSuffixes) {
+                    if ($hostLower -eq $suf -or $hostLower.EndsWith(".$suf")) {
+                        $isAllowed = $true
+                        break
                     }
                 }
-
-                $jsonObj = @{
-                    provider = "wikimedia"
-                    query = $query
-                    total = $results.Count
-                    results = $results
+                if (-not $isAllowed) {
+                    throw "Host $hostLower is not in the allowed commercial providers list."
                 }
-                $jsonStr = $jsonObj | ConvertTo-Json -Depth 4
+
+                $wc = New-Object System.Net.WebClient
+                $wc.Headers.Add("User-Agent", "CatalogSmith-ImageImporter/1.0")
+                $imgBytes = $wc.DownloadData($uri)
+                if ($imgBytes.Length -gt 5242880) {
+                    throw "Image exceeds 5MB limit."
+                }
+                $b64 = [Convert]::ToBase64String($imgBytes)
+                $mime = "image/jpeg"
+                if ($uri.AbsolutePath.EndsWith(".png")) { $mime = "image/png" }
+                elseif ($uri.AbsolutePath.EndsWith(".webp")) { $mime = "image/webp" }
+                $dataUrl = "data:$mime;base64,$b64"
+
+                $resObj = @{
+                    ok = $true
+                    stored_url = $dataUrl
+                    is_blob = $false
+                    size_bytes = $imgBytes.Length
+                    content_type = $mime
+                }
+                $jsonStr = $resObj | ConvertTo-Json
                 $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonStr)
                 $response.StatusCode = 200
                 $response.ContentType = "application/json; charset=utf-8"
@@ -103,10 +356,13 @@ try {
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
                 $response.Close()
                 continue
-            } catch {
+            }
+            catch {
                 $response.StatusCode = 500
-                $bytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Search failed","results":[]}')
+                $errMsg = $_.ToString().Replace('"', '\"')
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes("{""error"":""$errMsg""}")
                 $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
                 $response.ContentLength64 = $bytes.Length
                 $response.OutputStream.Write($bytes, 0, $bytes.Length)
                 $response.Close()

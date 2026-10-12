@@ -17,3 +17,5 @@ node_modules/
 *.tar.gz
 *.log
 .vercel/
+scratch/
+data/

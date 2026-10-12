@@ -33,16 +33,19 @@ This repository contains **CatalogSmith**, a phone-first tool that turns a vendo
    * Target viewports: strictly verified at `360px` and `414px`.
    * All touch targets must be at least `48px`.
    * Maintain `aspect-ratio: 4 / 3` on product images to ensure CLS = 0.
-   * No horizontal scroll.
+   * No horizontal scroll (`document.documentElement.scrollWidth <= window.innerWidth`). Dev check: `window.checkNoHorizontalScroll()`.
 7. **Handling Missing Prices**:
    * If an item lacks a stated price, set `price.amount = null`. Never invent prices.
    * The UI will automatically render "Ask for price on WhatsApp" and adjust pre-filled chat messages.
-8. **Image Compression**:
+8. **Image Compression & Anti-Hotlinking**:
    * Always save captured frames as JPEG (`image/jpeg`, quality `0.80 - 0.85`) with dimension clamping (`max-width: 960px`).
+   * Stock photo search via `/api/search-images` (Openverse commercial CC0/CC-BY, Pexels, Pixabay, Unsplash; Bing retired Aug 2025).
+   * Never hotlink external stock photos: `/api/import-image` fetches and stores copies in Blob/local storage.
+   * Track image provenance: `image_origin` (`own_video_frame`, `own_upload`, `stock_search`, `placeholder_art`). Stock search images excluded from marketplace exports by default.
 
 ### Local Testing
 ```bash
-python -m http.server 8000
+powershell -ExecutionPolicy Bypass -File .\serve.ps1 -Port 8080
 # or (when Vercel CLI is authorized)
 vercel dev
 ```

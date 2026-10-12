@@ -8,6 +8,7 @@
 
   // Default initial state
   const state = {
+    catalog_id: 'cat_lola_fabrics',
     vendor_name: 'Lola Fabrics & Chic Wear',
     vendor_phone: '+2348035550192',
     currency_default: 'NGN',
@@ -197,12 +198,37 @@
       tab.classList.toggle('active', tabStep === state.currentStep);
     });
 
+    const progressDots = document.querySelectorAll('.progress-dot');
+    progressDots.forEach(dot => {
+      const s = parseInt(dot.dataset.step, 10);
+      dot.classList.toggle('active', s === state.currentStep);
+      dot.classList.toggle('completed', s < state.currentStep);
+    });
+
+    const mobileStepText = document.getElementById('mobile-header-step-text');
+    const stepNames = {
+      1: 'Step 1 of 4: Add products',
+      2: 'Step 2 of 4: Check products',
+      3: 'Step 3 of 4: Make it yours',
+      4: 'Step 4 of 4: Publish & share'
+    };
+    if (mobileStepText) {
+      mobileStepText.textContent = stepNames[state.currentStep] || `Step ${state.currentStep} of 4`;
+    }
+
+    const mobileShopTitle = document.getElementById('mobile-shop-title');
+    if (mobileShopTitle) {
+      mobileShopTitle.textContent = state.vendor_name || 'New catalogue';
+    }
+
     els.stepPanes.forEach(pane => {
       pane.classList.remove('active');
     });
 
     const activePane = document.getElementById(`pane-step-${state.currentStep}`);
     if (activePane) activePane.classList.add('active');
+
+    syncStep1DraftState();
 
     if (state.currentStep === 2) {
       const reviewGrid = document.querySelector('.grid-studio-review');
@@ -217,21 +243,112 @@
 
     if (state.currentStep === 4) {
       updateLivePreview();
+      updateStep4ShareBanner();
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function syncStep1DraftState() {
+    const hasProducts = state.products && state.products.length > 0;
+    const draftRow = document.getElementById('other-start-draft');
+    const draftTitle = document.getElementById('saved-draft-title');
+    const draftDesc = document.getElementById('saved-draft-desc');
+    const footerBar = document.getElementById('step1-sticky-footer');
+    const footerCount = document.getElementById('step1-footer-product-count');
+
+    if (hasProducts) {
+      if (draftRow) draftRow.style.display = 'block';
+      if (draftTitle) draftTitle.textContent = `Continue with ${state.products.length} saved products`;
+      if (draftDesc) draftDesc.textContent = `Review items, edit prices, or add photos`;
+      if (footerBar) footerBar.style.display = 'block';
+      if (footerCount) footerCount.textContent = `${state.products.length} products in catalogue`;
+    } else {
+      if (draftRow) draftRow.style.display = 'none';
+      if (footerBar) footerBar.style.display = 'none';
+    }
+
+    if (els.tabReviewLabel) {
+      els.tabReviewLabel.textContent = `Check products (${state.products ? state.products.length : 0})`;
+    }
   }
 
   els.stepTabs.forEach(tab => {
     tab.addEventListener('click', () => setStep(tab.dataset.step));
   });
 
+  const progressDots = document.querySelectorAll('.progress-dot');
+  progressDots.forEach(dot => {
+    dot.addEventListener('click', () => setStep(dot.dataset.step));
+  });
+
+  const btnMobileBack = document.getElementById('btn-mobile-header-back');
+  if (btnMobileBack) {
+    btnMobileBack.addEventListener('click', () => {
+      if (state.currentStep > 1) {
+        setStep(state.currentStep - 1);
+      } else {
+        const btnBackLanding = document.getElementById('btn-back-to-landing');
+        if (btnBackLanding) btnBackLanding.click();
+      }
+    });
+  }
+
+  const btnContinueDraft = document.getElementById('btn-continue-saved-draft');
+  const btnStep1Continue = document.getElementById('btn-step1-continue');
+  if (btnContinueDraft) btnContinueDraft.addEventListener('click', () => setStep(2));
+  if (btnStep1Continue) btnStep1Continue.addEventListener('click', () => setStep(2));
+
   if (els.btnGotoStep3) els.btnGotoStep3.addEventListener('click', () => setStep(3));
   if (els.btnBackStep2) els.btnBackStep2.addEventListener('click', () => setStep(2));
   if (els.btnGotoStep4) els.btnGotoStep4.addEventListener('click', () => setStep(4));
 
-  // Load Saved State from localStorage
+  // Update Step 4 Live Sharable URL banner
+  function updateStep4ShareBanner() {
+    const input = document.getElementById('step4-share-url-input');
+    if (input && window.CatalogStore) {
+      input.value = window.CatalogStore.getSharableUrl(state);
+    }
+  }
+
+  // Load a catalog directly into Studio Workspace
+  function loadCatalog(catalog) {
+    if (!catalog) return;
+    state.catalog_id = catalog.id || state.catalog_id;
+    state.vendor_name = catalog.name || catalog.vendor_name || 'My Store';
+    state.vendor_phone = catalog.phone || catalog.vendor_phone || '+2348035550192';
+    state.currency_default = catalog.currency || catalog.currency_default || 'NGN';
+    state.tagline = catalog.tagline || '';
+    state.theme = catalog.theme || 'emerald';
+    state.layout = catalog.layout || 'standard';
+    state.order_button_text = catalog.order_button_text || 'Order on WhatsApp';
+    state.message_template = catalog.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})';
+    state.products = JSON.parse(JSON.stringify(catalog.products || []));
+    state.videoLoaded = false;
+
+    syncFormFields();
+    renderReviewList();
+    updateLivePreview();
+    updateStep4ShareBanner();
+
+    const badge = document.getElementById('workspace-editing-badge');
+    const badgeName = document.getElementById('workspace-editing-name');
+    if (badge && badgeName) {
+      badge.style.display = 'inline-flex';
+      badgeName.textContent = state.vendor_name;
+    }
+  }
+
+  // Load Saved State from localStorage & CatalogStore
   function loadPersistedState() {
     try {
+      if (window.CatalogStore) {
+        const activeCat = window.CatalogStore.getActiveCatalog();
+        if (activeCat && activeCat.products && activeCat.products.length > 0) {
+          loadCatalog(activeCat);
+          return true;
+        }
+      }
+
       const saved = localStorage.getItem('catalogsmith_studio_state');
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -239,6 +356,7 @@
           Object.assign(state, parsed);
           syncFormFields();
           renderReviewList();
+          updateStep4ShareBanner();
           return true;
         }
       }
@@ -259,7 +377,6 @@
   function saveStateToLocalStorage() {
     try {
       // Don't serialize multi-megabyte base64 strings into localStorage on every keystroke
-      // Save metadata and lightweight thumbnails (max ~20KB) so JSON.stringify is sub-millisecond fast
       const lightweightProducts = state.products.map(p => ({
         id: p.id,
         name: p.name,
@@ -272,6 +389,7 @@
       }));
 
       const snapshot = {
+        catalog_id: state.catalog_id,
         vendor_name: state.vendor_name,
         vendor_phone: state.vendor_phone,
         currency_default: state.currency_default,
@@ -283,6 +401,23 @@
         products: lightweightProducts
       };
       localStorage.setItem('catalogsmith_studio_state', JSON.stringify(snapshot));
+
+      // Also persist to CatalogStore
+      if (window.CatalogStore) {
+        window.CatalogStore.save({
+          id: state.catalog_id,
+          name: state.vendor_name,
+          phone: state.vendor_phone,
+          currency: state.currency_default,
+          tagline: state.tagline,
+          theme: state.theme,
+          layout: state.layout,
+          order_button_text: state.order_button_text,
+          message_template: state.message_template,
+          products: state.products
+        });
+        updateStep4ShareBanner();
+      }
     } catch (e) {
       console.warn('LocalStorage save failed:', e);
     }
@@ -530,87 +665,73 @@
       e.preventDefault();
     }, false);
 
-    if (els.videoDropzone && els.videoInput) {
-      // Prevent input click from bubbling back up to dropzone
-      els.videoInput.addEventListener('click', e => {
-        e.stopPropagation();
-      });
+    const videoInput = els.videoInput || document.getElementById('video-input');
+    const btnSelectVideo = document.getElementById('btn-select-video');
+    const heroBlock = document.getElementById('step1-hero-block');
+    const btnChangeVideo = document.getElementById('btn-change-video');
 
+    if (videoInput) {
       const openPicker = () => {
-        els.videoInput.click();
+        videoInput.click();
       };
 
-      // Tapping or clicking dropzone area
-      els.videoDropzone.addEventListener('click', e => {
-        // If the inner button was clicked, let its dedicated handler run
-        if (e.target === els.btnSelectVideo || (els.btnSelectVideo && els.btnSelectVideo.contains(e.target))) {
-          return;
-        }
-        openPicker();
-      });
-
-      if (els.btnSelectVideo) {
-        els.btnSelectVideo.addEventListener('click', e => {
+      if (btnSelectVideo) {
+        btnSelectVideo.addEventListener('click', e => {
           e.stopPropagation();
           openPicker();
         });
       }
 
-      // Keyboard activation for accessibility
-      els.videoDropzone.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+      if (btnChangeVideo) {
+        btnChangeVideo.addEventListener('click', e => {
+          e.stopPropagation();
           openPicker();
-        }
-      });
+        });
+      }
 
-      // Drag and drop with counter to prevent flickering on child elements
-      let dropzoneDragCounter = 0;
+      // Drag and drop support on the hero block (for desktop users)
+      if (heroBlock) {
+        let heroDragCounter = 0;
+        heroBlock.addEventListener('dragenter', e => {
+          e.preventDefault();
+          heroDragCounter++;
+          heroBlock.classList.add('dragover');
+        });
 
-      els.videoDropzone.addEventListener('dragenter', e => {
-        e.preventDefault();
-        dropzoneDragCounter++;
-        els.videoDropzone.classList.add('dragover');
-      });
+        heroBlock.addEventListener('dragover', e => {
+          e.preventDefault();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          heroBlock.classList.add('dragover');
+        });
 
-      els.videoDropzone.addEventListener('dragover', e => {
-        e.preventDefault();
-        if (e.dataTransfer) {
-          e.dataTransfer.dropEffect = 'copy';
-        }
-        els.videoDropzone.classList.add('dragover');
-      });
-
-      els.videoDropzone.addEventListener('dragleave', e => {
-        e.preventDefault();
-        dropzoneDragCounter--;
-        if (dropzoneDragCounter <= 0) {
-          dropzoneDragCounter = 0;
-          els.videoDropzone.classList.remove('dragover');
-        }
-      });
-
-      els.videoDropzone.addEventListener('drop', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzoneDragCounter = 0;
-        els.videoDropzone.classList.remove('dragover');
-
-        const dt = e.dataTransfer;
-        if (dt && dt.files && dt.files.length > 0) {
-          const file = dt.files[0];
-          if (!isVideoFile(file)) {
-            showToast('Unsupported file type. Please select an MP4, MOV, or WebM video file.', 'warning');
-            if (els.videoFileInfo) {
-              els.videoFileInfo.textContent = '❌ Please drop a video file (.mp4, .mov, .webm)';
-            }
-            return;
+        heroBlock.addEventListener('dragleave', e => {
+          e.preventDefault();
+          heroDragCounter--;
+          if (heroDragCounter <= 0) {
+            heroDragCounter = 0;
+            heroBlock.classList.remove('dragover');
           }
-          loadVideoFile(file);
-        }
-      });
+        });
 
-      els.videoInput.addEventListener('change', e => {
+        heroBlock.addEventListener('drop', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          heroDragCounter = 0;
+          heroBlock.classList.remove('dragover');
+
+          const dt = e.dataTransfer;
+          if (dt && dt.files && dt.files.length > 0) {
+            const file = dt.files[0];
+            if (!isVideoFile(file)) {
+              showToast('Unsupported file type. Please select an MP4, MOV, or WebM video file.', 'warning');
+              return;
+            }
+            loadVideoFile(file);
+          }
+        });
+      }
+
+      videoInput.addEventListener('change', e => {
         if (e.target.files && e.target.files.length > 0) {
           const file = e.target.files[0];
           if (!isVideoFile(file)) {
@@ -620,8 +741,29 @@
           }
           loadVideoFile(file);
         }
-        // Reset input value so re-selecting the exact same file triggers change
         e.target.value = '';
+      });
+    }
+
+    // Tools Sheet Sheet drawer setup
+    const toolsSheetBackdrop = document.getElementById('tools-sheet-backdrop');
+    const btnOpenTools = document.getElementById('btn-open-tools-sheet');
+    const btnDesktopTools = document.getElementById('btn-desktop-tools-gear');
+    const btnCloseTools = document.getElementById('btn-close-tools-sheet');
+
+    const openToolsSheet = () => {
+      if (toolsSheetBackdrop) toolsSheetBackdrop.style.display = 'flex';
+    };
+    const closeToolsSheet = () => {
+      if (toolsSheetBackdrop) toolsSheetBackdrop.style.display = 'none';
+    };
+
+    if (btnOpenTools) btnOpenTools.addEventListener('click', openToolsSheet);
+    if (btnDesktopTools) btnDesktopTools.addEventListener('click', openToolsSheet);
+    if (btnCloseTools) btnCloseTools.addEventListener('click', closeToolsSheet);
+    if (toolsSheetBackdrop) {
+      toolsSheetBackdrop.addEventListener('click', e => {
+        if (e.target === toolsSheetBackdrop) closeToolsSheet();
       });
     }
 
@@ -629,13 +771,17 @@
     els.studioVideo.addEventListener('loadedmetadata', () => {
       state.videoDuration = els.studioVideo.duration || 0;
       state.videoLoaded = true;
+      const durBadge = document.getElementById('chosen-video-duration');
+      if (durBadge) {
+        durBadge.textContent = formatSeconds(state.videoDuration);
+      }
       if (els.videoPlaceholderOverlay) els.videoPlaceholderOverlay.style.display = 'none';
       if (els.videoScrubber) {
         els.videoScrubber.max = state.videoDuration;
         els.videoScrubber.value = 0;
       }
       updateTimeDisplay(0, state.videoDuration);
-      showToast(`Video loaded (${state.videoDuration.toFixed(1)}s). Ready to extract!`);
+      showToast(`Video ready (${state.videoDuration.toFixed(1)}s). Ready to find products!`);
     });
 
     els.studioVideo.addEventListener('timeupdate', () => {
@@ -737,6 +883,22 @@
     if (els.videoFileInfo) {
       els.videoFileInfo.textContent = `✅ ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
     }
+
+    const heroBlock = document.getElementById('step1-hero-block');
+    const chosenBlock = document.getElementById('step1-video-chosen');
+    const thumbVideo = document.getElementById('step1-video-thumb');
+    const nameEl = document.getElementById('chosen-video-name');
+    const metaEl = document.getElementById('chosen-video-meta');
+
+    if (heroBlock) heroBlock.style.display = 'none';
+    if (chosenBlock) chosenBlock.style.display = 'flex';
+    if (nameEl) nameEl.textContent = file.name;
+    if (metaEl) metaEl.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+    if (thumbVideo) {
+      thumbVideo.src = url;
+      thumbVideo.load();
+    }
+
     showToast(`Loaded video: ${file.name}`);
   }
 
@@ -1048,8 +1210,8 @@
 
     if (els.countAll) els.countAll.textContent = total;
     if (els.countFlagged) els.countFlagged.textContent = flagged;
-    if (els.countNoPrice) els.countNoPrice.textContent = noPrice;
-    if (els.tabReviewLabel) els.tabReviewLabel.textContent = `Review & Capture (${total})`;
+    if (els.tabReviewLabel) els.tabReviewLabel.textContent = `Check products (${total})`;
+    syncStep1DraftState();
 
     // Filter
     let displayed = state.products;
@@ -1244,6 +1406,12 @@
         const reader = new FileReader();
         reader.onload = ev => {
           prod.image = ev.target.result;
+          prod.image_origin = 'own_upload';
+          prod.image_source_url = '';
+          prod.image_attribution = 'Vendor authentic photo';
+          prod.image_license = 'Vendor owned';
+          prod.image_provider = 'own_upload';
+          prod.image_author = 'Vendor';
           const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
           if (thumbImg) {
             thumbImg.src = prod.image;
@@ -1253,7 +1421,7 @@
           if (emptyDiv) emptyDiv.style.display = 'none';
           saveStateToLocalStorage();
           updateLivePreview();
-          showToast(`Uploaded new photo for "${prod.name}"`);
+          showToast(`Uploaded authentic photo for "${prod.name}"`);
         };
         reader.readAsDataURL(file);
       });
@@ -1268,9 +1436,15 @@
           window.CatalogSmithApp.openUniversalImageSearch(prod.name || prod.category, prod.category, (chosenImg, meta) => {
             prod.image = chosenImg;
             if (meta) {
-              prod.imageSource = meta.sourceUrl || '';
-              prod.imagePublisher = meta.publisher || '';
-              prod.imageAttribution = meta.attribution || '';
+              prod.image_origin = meta.origin || (meta.provider === 'own_upload' ? 'own_upload' : 'stock_search');
+              prod.image_source_url = meta.source_url || meta.sourceUrl || '';
+              prod.image_attribution = meta.attribution || '';
+              prod.image_license = meta.license || '';
+              prod.image_provider = meta.provider || '';
+              prod.image_author = meta.author || '';
+              prod.imageSource = prod.image_source_url;
+              prod.imagePublisher = prod.image_provider;
+              prod.imageAttribution = prod.image_attribution;
             }
             const thumbImg = document.getElementById(`thumb-img-${prod.id}`);
             if (thumbImg) {
@@ -1597,13 +1771,16 @@ ${cleanData.products.length === 0 ? `
 
       const shareBtn = document.getElementById('btn-live-share');
       if (shareBtn) {
-        shareBtn.onclick = async function() {
+        shareBtn.onclick = function() {
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: 'CATALOGSMITH_SHARE_CURRENT' }, '*');
+              return;
+            }
+          } catch(e) {}
           const t = '${escapeHtml(vendorName)} - Product Catalog';
           const msg = '🛍️ *' + t + '*\\n${escapeHtml(state.tagline || 'Direct orders via WhatsApp')}\\n\\nBrowse products and order directly on WhatsApp!';
           const url = window.location.href;
-          if (navigator.share) {
-            try { await navigator.share({ title: t, text: msg, url }); return; } catch(e){}
-          }
           window.open('https://wa.me/?text=' + encodeURIComponent(msg + '\\n' + url), '_blank');
         };
       }
@@ -1860,15 +2037,92 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
       }
     });
   }
+  // Share Catalog button in Step 4
   if (els.btnShareCatalog) {
     els.btnShareCatalog.addEventListener('click', () => {
-      if (window.CatalogSmithPDF && window.CatalogSmithPDF.shareCatalog) {
+      if (window.CatalogStore && window.CatalogStore.openShareModal) {
+        window.CatalogStore.openShareModal(state);
+      } else if (window.CatalogSmithPDF && window.CatalogSmithPDF.shareCatalog) {
         window.CatalogSmithPDF.shareCatalog(state);
-      } else {
-        showToast('PDF engine not loaded');
       }
     });
   }
+
+  // Header Share button
+  const btnWorkspaceShareHeader = document.getElementById('btn-workspace-share-header');
+  if (btnWorkspaceShareHeader) {
+    btnWorkspaceShareHeader.addEventListener('click', () => {
+      if (window.CatalogStore && window.CatalogStore.openShareModal) {
+        window.CatalogStore.openShareModal(state);
+      }
+    });
+  }
+
+  // Header "All Catalogs" button in workspace
+  const btnWorkspaceToAdmin = document.getElementById('btn-workspace-to-admin');
+  if (btnWorkspaceToAdmin) {
+    btnWorkspaceToAdmin.addEventListener('click', () => {
+      if (window.CatalogSmithApp && window.CatalogSmithApp.showAdmin) {
+        window.CatalogSmithApp.showAdmin();
+      }
+    });
+  }
+
+  // Step 4 Live Sharable URL Banner Bindings
+  const step4UrlInput = document.getElementById('step4-share-url-input');
+  const btnStep4Copy = document.getElementById('btn-step4-copy-url');
+  const btnStep4Wa = document.getElementById('btn-step4-share-wa');
+  const btnStep4Modal = document.getElementById('btn-step4-open-share-modal');
+  const btnStep4Preview = document.getElementById('btn-step4-preview-live');
+
+  if (btnStep4Copy) {
+    btnStep4Copy.addEventListener('click', () => {
+      const url = step4UrlInput ? step4UrlInput.value : (window.CatalogStore ? window.CatalogStore.getSharableUrl(state) : window.location.href);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast(`📋 Copied sharable link for "${state.vendor_name}"!`);
+        });
+      } else {
+        if (step4UrlInput) {
+          step4UrlInput.select();
+          document.execCommand('copy');
+        }
+        showToast(`📋 Copied sharable link for "${state.vendor_name}"!`);
+      }
+    });
+  }
+
+  if (btnStep4Wa) {
+    btnStep4Wa.addEventListener('click', () => {
+      const url = step4UrlInput ? step4UrlInput.value : (window.CatalogStore ? window.CatalogStore.getSharableUrl(state) : window.location.href);
+      const msg = `🛍️ *${state.vendor_name} - Online Store*\n${state.tagline || 'Direct orders on WhatsApp'}\n\nBrowse verified products and order with 1 tap:\n👉 ${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    });
+  }
+
+  if (btnStep4Modal) {
+    btnStep4Modal.addEventListener('click', () => {
+      if (window.CatalogStore && window.CatalogStore.openShareModal) {
+        window.CatalogStore.openShareModal(state);
+      }
+    });
+  }
+
+  if (btnStep4Preview) {
+    btnStep4Preview.addEventListener('click', () => {
+      const url = step4UrlInput ? step4UrlInput.value : (window.CatalogStore ? window.CatalogStore.getSharableUrl(state) : window.location.href);
+      window.open(url, '_blank');
+    });
+  }
+
+  // Cross-frame listener for simulator iframe share button
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'CATALOGSMITH_SHARE_CURRENT') {
+      if (window.CatalogStore && window.CatalogStore.openShareModal) {
+        window.CatalogStore.openShareModal(state);
+      }
+    }
+  });
   if (els.btnSaveProjectJson) els.btnSaveProjectJson.addEventListener('click', saveProjectJson);
   if (els.btnCopyStoreJson) {
     els.btnCopyStoreJson.addEventListener('click', () => {
@@ -2910,6 +3164,8 @@ Return pure JSON only.`;
       showToast,
       generateStorefrontHTML,
       loadFixture,
+      loadCatalog,
+      updateStep4ShareBanner,
       syncFormFields,
       generateInitialThumbnailsForFixture,
       formatPrice
