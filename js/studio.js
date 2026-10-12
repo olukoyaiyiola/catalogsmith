@@ -2762,6 +2762,14 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
 
     function updateBadge() {
       if (!badgeStep3 || !window.CloudStorage) return;
+      const serverEnv = window.CloudStorage.getServerEnvStatus ? window.CloudStorage.getServerEnvStatus() : null;
+      if (serverEnv && serverEnv.configured) {
+        badgeStep3.textContent = serverEnv.provider === 'supabase' ? '🗄️ Supabase CDN (Vercel Env)' : '🌐 Vercel Blob (Env)';
+        badgeStep3.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+        badgeStep3.style.color = '#10b981';
+        badgeStep3.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        return;
+      }
       const cfg = window.CloudStorage.getConfig();
       const isReady = window.CloudStorage.isConfigured(cfg);
       if (isReady) {
@@ -2837,8 +2845,26 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     function openModal() {
       if (!modal || !window.CloudStorage) return;
       const cfg = window.CloudStorage.getConfig();
-      activeProvider = cfg.provider || 'cloudinary';
+      const serverEnv = window.CloudStorage.getServerEnvStatus ? window.CloudStorage.getServerEnvStatus() : null;
+
+      // If server env has Supabase, default active provider to Supabase
+      if (serverEnv && serverEnv.provider === 'supabase' && !cfg.cloudinary.cloudName) {
+        activeProvider = 'supabase';
+      } else {
+        activeProvider = cfg.provider || 'cloudinary';
+      }
       setProvider(activeProvider);
+
+      const envDetectedBox = document.getElementById('supabase-env-detected-box');
+      const envBucketName = document.getElementById('supabase-env-bucket-name');
+      if (envDetectedBox) {
+        if (serverEnv && serverEnv.provider === 'supabase') {
+          envDetectedBox.style.display = 'block';
+          if (envBucketName) envBucketName.textContent = serverEnv.bucket || 'catalog-images';
+        } else {
+          envDetectedBox.style.display = 'none';
+        }
+      }
 
       if (inputCloudinaryName) inputCloudinaryName.value = cfg.cloudinary.cloudName || '';
       if (inputCloudinaryPreset) inputCloudinaryPreset.value = cfg.cloudinary.uploadPreset || '';
@@ -2846,7 +2872,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
 
       if (inputSupabaseUrl) inputSupabaseUrl.value = cfg.supabase.url || '';
       if (inputSupabaseKey) inputSupabaseKey.value = cfg.supabase.anonKey || '';
-      if (inputSupabaseBucket) inputSupabaseBucket.value = cfg.supabase.bucket || 'catalog-images';
+      if (inputSupabaseBucket) inputSupabaseBucket.value = cfg.supabase.bucket || (serverEnv ? serverEnv.bucket : 'catalog-images');
 
       if (checkAutoUpload) checkAutoUpload.checked = !!cfg.autoUpload;
 
@@ -2976,8 +3002,14 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
       });
     }
 
-    // Initialize badge
-    updateBadge();
+    // Initialize badge and auto-detect Vercel server environment
+    if (window.CloudStorage && window.CloudStorage.checkServerEnv) {
+      window.CloudStorage.checkServerEnv().then(() => {
+        updateBadge();
+      });
+    } else {
+      updateBadge();
+    }
   }
 
   // Fallback Frame Sampling Logic

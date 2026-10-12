@@ -197,8 +197,27 @@ try {
             if ($request.HttpMethod -eq "OPTIONS") {
                 $response.StatusCode = 204
                 $response.AddHeader("Access-Control-Allow-Origin", "*")
-                $response.AddHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+                $response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
                 $response.AddHeader("Access-Control-Allow-Headers", "Content-Type")
+                $response.Close()
+                continue
+            }
+
+            if ($request.HttpMethod -eq "GET") {
+                $respObj = @{
+                    configured = $true
+                    provider = "local_server"
+                    bucket = "data/uploads"
+                    source = "local_dev"
+                    details = "Local development server upload endpoint ready."
+                }
+                $jsonStr = $respObj | ConvertTo-Json
+                $respBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonStr)
+                $response.StatusCode = 200
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.ContentLength64 = $respBytes.Length
+                $response.OutputStream.Write($respBytes, 0, $respBytes.Length)
                 $response.Close()
                 continue
             }

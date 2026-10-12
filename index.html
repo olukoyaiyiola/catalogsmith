@@ -2113,18 +2113,30 @@
 
         <!-- Supabase Settings Panel -->
         <div id="panel-provider-supabase" class="cloud-panel" style="display: none;">
+          <!-- Vercel Env Detected Notification Banner -->
+          <div id="supabase-env-detected-box" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px; font-size: 0.8125rem;">
+            <div style="font-weight: 700; color: #10b981; margin-bottom: 2px;">⚡ Connected via Vercel Environment Variables</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">
+              Supabase Storage is active via server-side environment variables (Bucket: <strong id="supabase-env-bucket-name" style="color: var(--text-main);">catalog-images</strong>). Image uploads are handled securely by your Vercel serverless function with zero frontend credential exposure.
+            </div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+            <strong style="color: var(--text-main);">🔒 Recommended (Zero Frontend Input):</strong> Configure <code>SUPABASE_URL</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>, and <code>SUPABASE_BUCKET</code> in your <strong style="color: var(--text-main);">Vercel Project &rarr; Environment Variables</strong>. The fields below are optional client-side overrides.
+          </div>
+
           <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label" for="cfg-supabase-url">Supabase Project URL *</label>
+            <label class="form-label" for="cfg-supabase-url">Supabase Project URL (Optional Override)</label>
             <input type="text" class="form-input" id="cfg-supabase-url" placeholder="https://xyzcompany.supabase.co">
           </div>
           <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label" for="cfg-supabase-anon-key">Supabase Anon Public API Key *</label>
+            <label class="form-label" for="cfg-supabase-anon-key">Supabase Anon Public API Key (Optional Override)</label>
             <input type="password" class="form-input" id="cfg-supabase-anon-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
           </div>
           <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label" for="cfg-supabase-bucket">Public Bucket Name *</label>
+            <label class="form-label" for="cfg-supabase-bucket">Public Bucket Name</label>
             <input type="text" class="form-input" id="cfg-supabase-bucket" placeholder="catalog-images" value="catalog-images">
-            <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Ensure the bucket in Supabase Storage has 'Public' toggle turned on.</span>
+            <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Default is <code>catalog-images</code> (must be marked Public in Supabase Storage).</span>
           </div>
         </div>
 

@@ -50,16 +50,36 @@
     }
   }
 
+  let serverEnvStatus = null;
+
+  async function checkServerEnv() {
+    try {
+      const resp = await fetch('/api/upload-image', { method: 'GET' });
+      if (resp.ok) {
+        serverEnvStatus = await resp.json();
+        return serverEnvStatus;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function getServerEnvStatus() {
+    return serverEnvStatus;
+  }
+
   function isConfigured(cfg = null) {
+    if (serverEnvStatus && serverEnvStatus.configured) {
+      return true;
+    }
     const c = cfg || getConfig();
+    if (c.provider === 'serverless') {
+      return true;
+    }
     if (c.provider === 'cloudinary') {
       return Boolean(c.cloudinary.cloudName && c.cloudinary.uploadPreset);
     }
     if (c.provider === 'supabase') {
-      return Boolean(c.supabase.url && c.supabase.anonKey && c.supabase.bucket);
-    }
-    if (c.provider === 'serverless') {
-      return true;
+      return Boolean((c.supabase.url && c.supabase.anonKey && c.supabase.bucket) || (serverEnvStatus && serverEnvStatus.provider === 'supabase'));
     }
     return false;
   }
@@ -214,9 +234,14 @@
       blob = dataUrlToBlob(dataUrlOrBlob);
     }
 
+    // If server environment (Vercel env) has Supabase or Blob configured, route directly to server upload
+    if (serverEnvStatus && serverEnvStatus.configured && (c.provider === 'serverless' || (c.provider === 'supabase' && !c.supabase.url))) {
+      return await uploadToServerless(blob, filename);
+    }
+
     if (c.provider === 'cloudinary') {
       return await uploadToCloudinary(blob, filename, c);
-    } else if (c.provider === 'supabase') {
+    } else if (c.provider === 'supabase' && c.supabase.url) {
       return await uploadToSupabase(blob, filename, c);
     } else {
       return await uploadToServerless(blob, filename);
@@ -345,6 +370,8 @@
     getConfig,
     saveConfig,
     isConfigured,
+    checkServerEnv,
+    getServerEnvStatus,
     uploadImage,
     testConnection,
     migrateProducts,

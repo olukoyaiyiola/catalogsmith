@@ -22,8 +22,29 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
+  // Read Supabase environment variables configured in Vercel
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+  const supabaseBucket = (process.env.SUPABASE_BUCKET || process.env.SUPABASE_BUCKET_NAME || 'catalog-images').trim();
+
+  // GET: Return server environment configuration status to frontend
+  if (req.method === 'GET') {
+    const hasSupabase = Boolean(supabaseUrl && supabaseKey);
+    const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+
+    return res.status(200).json({
+      configured: hasSupabase || hasBlob,
+      provider: hasSupabase ? 'supabase' : (hasBlob ? 'vercel_blob' : 'local'),
+      bucket: hasSupabase ? supabaseBucket : null,
+      source: hasSupabase ? 'vercel_env' : (hasBlob ? 'vercel_blob_env' : 'none'),
+      details: hasSupabase
+        ? `Supabase Storage (Bucket: ${supabaseBucket}) active via Vercel environment variables.`
+        : (hasBlob ? 'Vercel Blob active via BLOB_READ_WRITE_TOKEN.' : 'No cloud storage environment variables detected.')
+    });
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' });
   }
 
   try {
@@ -45,18 +66,13 @@ export default async function handler(req, res) {
       buffer = Buffer.from(parts[1], 'base64');
       if (body.filename) filename = body.filename;
     } else if (rawContentType.includes('multipart/form-data')) {
-      // In minimal serverless without formidable/multer, read binary chunks
-      // For Vercel Blob direct uploads, clients upload with token or pass base64
       const chunks = [];
       for await (const chunk of req) {
         chunks.push(chunk);
       }
-      const rawBody = Buffer.concat(chunks);
-      // Fallback extract
-      buffer = rawBody;
+      buffer = Buffer.concat(chunks);
       contentType = 'image/jpeg';
     } else {
-      // Raw binary
       const chunks = [];
       for await (const chunk of req) {
         chunks.push(chunk);
@@ -71,18 +87,55 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Empty file buffer received.' });
     }
 
-    // Storage Strategy:
-    // If Vercel Blob is configured (BLOB_READ_WRITE_TOKEN), save to Blob
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+
+    // 1. Supabase Storage via Vercel Environment Variables
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const cleanName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+        const endpoint = `${supabaseUrl}/storage/v1/object/${encodeURIComponent(supabaseBucket)}/${encodeURIComponent(cleanName)}`;
+
+        const uploadRes = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': contentType,
+            'x-upsert': 'true'
+          },
+          body: buffer
+        });
+
+        if (uploadRes.ok) {
+          const publicUrl = `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(supabaseBucket)}/${encodeURIComponent(cleanName)}`;
+          return res.status(200).json({
+            ok: true,
+            url: publicUrl,
+            provider: 'supabase',
+            bucket: supabaseBucket,
+            id: cleanName,
+            bytes: buffer.length
+          });
+        } else {
+          const errText = await uploadRes.text();
+          console.warn('Supabase storage upload failed:', errText);
+        }
+      } catch (supErr) {
+        console.warn('Supabase upload exception:', supErr.message);
+      }
+    }
+
+    // 2. Vercel Blob via BLOB_READ_WRITE_TOKEN
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         const { put } = await import('@vercel/blob');
-        const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
         const uniqueName = `products/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
         const blobResult = await put(uniqueName, buffer, {
           access: 'public',
           contentType: contentType
         });
         return res.status(200).json({
+          ok: true,
           url: blobResult.url,
           provider: 'vercel_blob',
           id: blobResult.pathname,
@@ -93,10 +146,11 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fallback: return optimized data URL or mock URL
+    // 3. Fallback: optimized data URL
     const b64 = buffer.toString('base64');
     const dataUrl = `data:${contentType};base64,${b64}`;
     return res.status(200).json({
+      ok: true,
       url: dataUrl,
       provider: 'local_serverless',
       id: filename,
