@@ -884,3 +884,62 @@ body.layout-compact .btn-order-wa {
   border-color: #e11d48;
 }
 
+/* ==========================================================================
+   Multi-Language (i18n) & RTL (Arabic) Support
+   ========================================================================== */
+[dir="rtl"], body[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .store-name {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-category-tag {
+  left: auto;
+  right: 10px;
+}
+
+[dir="rtl"] .badge-sold-out {
+  right: auto;
+  left: 10px;
+}
+
+[dir="rtl"] .sticky-wa-fab {
+  right: auto;
+  left: 20px;
+}
+
+[dir="rtl"] .live-theme-bar > div:last-child {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .header-container {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .vendor-brand {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-price-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .catalog-stats-bar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .carousel-nav-btn.prev {
+  left: auto;
+  right: 8px;
+}
+
+[dir="rtl"] .carousel-nav-btn.next {
+  right: auto;
+  left: 8px;
+}
+
+

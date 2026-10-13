@@ -1,4 +1,4 @@
-﻿# ContentSmith: Master Architectural Approach & Iteration Guide
+# ContentSmith: Master Architectural Approach & Iteration Guide
 
 > **Target Audience**: AI Engineering Assistants (Claude / GPT), Senior Frontend Engineers, and System Architects.
 > **Purpose**: Serves as the complete mental model, architectural reference, UI specification, and roadmap for understanding, modifying, and extending ContentSmith without regressions.
@@ -344,17 +344,24 @@ updateLivePreview();
 
 ---
 
-## 7. Roadmap & High-Value Next Iterations
+## 7. Roadmap & Implemented Capabilities
 
-Here are the highest-leverage areas for Claude to expand:
+### 7.1 Completed Core Enhancements
+* ✅ **Multi-Language Storefront (i18n) & RTL Layouts ([`js/i18n.js`](file:///c:/Users/Odg/Documents/catalog%20smith/js/i18n.js))**:
+  * Full localized dictionary support for 6 key emerging-market languages: English (`en`), French (`fr`), Kiswahili (`sw`), Arabic (`ar` with bidirectional RTL layout), Yorùbá (`yo`), and Hausa (`ha`).
+  * Instant language switcher on storefront toolbars and Studio Step 3 default language selector (`#setting-language`).
+  * Dynamic localized WhatsApp order messages tailoring greetings, item descriptions, and inquiry texts to customer's chosen language.
+* ✅ **Multi-Image Product Galleries & Touch-Swipe Carousels**:
+  * Capturing 2–4 photos per product with chevron controls, indicator dots, and touch swipe gestures.
+* ✅ **Inventory & Stock Management**:
+  * "In Stock" vs "Sold Out" toggles in Studio review list with automated filter pills (`🟢 In Stock Only`), grayscale badges, and restock inquiry WhatsApp buttons.
+* ✅ **Multi-Catalog Management & Admin Dashboard ([`js/catalogs-manager.js`](file:///c:/Users/Odg/Documents/catalog%20smith/js/catalogs-manager.js))**:
+  * Create, duplicate, delete, verify, and switch between multiple vendor catalogs with custom slugs and sharable URLs.
 
+### 7.2 High-Value Next Iterations
 1. **Direct Cloudinary / Supabase Storage Integration**:
    * Add optional 1-click cloud image upload to host images on a public CDN rather than keeping them solely in base64/ZIP.
 2. **Audio Track Extraction & Speech-to-Text**:
    * Utilize the Web Audio API or Web Speech API to provide live audio transcription of vendor narration for instant title/price suggestions.
-3. **Multi-Image Product Galleries**:
-   * Allow capturing 2–3 frames per product (e.g. front, back, detail close-up) displayed as a swipeable carousel on the storefront.
-4. **Multi-Language Support**:
-   * Add internationalization (i18n) for key emerging market languages: French (West Africa), Swahili (East Africa), Arabic (North Africa/Middle East), Yoruba, and Hausa.
-5. **Inventory / Stock Toggles**:
-   * Add simple "In Stock" / "Sold Out" badges to product cards that disable WhatsApp ordering for unavailable items.
+3. **Automated Order Summary Receipt Generator**:
+   * Parse vendor WhatsApp responses to auto-generate formatted PDF/HTML digital receipts for customers.

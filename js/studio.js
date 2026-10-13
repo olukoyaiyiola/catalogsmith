@@ -17,6 +17,7 @@
     tagline: 'Luxury custom dresses & fabrics delivered nationwide',
     theme: 'emerald',
     layout: 'standard',
+    language: 'en',
     order_button_text: 'Order on WhatsApp',
     message_template: 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?',
     products: [],
@@ -101,6 +102,7 @@
     step3MockupProdImg: document.getElementById('step3-mockup-prod-img'),
     step3MockupBtnLabel: document.getElementById('step3-mockup-btn-label'),
     settingLayout: document.getElementById('setting-layout'),
+    settingLanguage: document.getElementById('setting-language'),
     settingBtnText: document.getElementById('setting-btn-text'),
     settingMessageTemplate: document.getElementById('setting-message-template'),
     previewMessageText: document.getElementById('preview-message-text'),
@@ -354,6 +356,7 @@
     state.tagline = catalog.tagline || '';
     state.theme = catalog.theme || 'emerald';
     state.layout = catalog.layout || 'standard';
+    state.language = catalog.language || 'en';
     state.order_button_text = catalog.order_button_text || 'Order on WhatsApp';
     state.message_template = catalog.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})';
     state.products = JSON.parse(JSON.stringify(catalog.products || []));
@@ -435,6 +438,7 @@
         tagline: state.tagline,
         theme: state.theme,
         layout: state.layout,
+        language: state.language || 'en',
         order_button_text: state.order_button_text,
         message_template: state.message_template,
         products: lightweightProducts
@@ -467,6 +471,7 @@
           tagline: state.tagline,
           theme: state.theme,
           layout: state.layout,
+          language: state.language || 'en',
           order_button_text: state.order_button_text,
           message_template: state.message_template,
           products: state.products
@@ -587,6 +592,7 @@
     if (els.settingTagline) els.settingTagline.value = state.tagline || '';
     if (els.settingTheme) els.settingTheme.value = state.theme || 'emerald';
     if (els.settingLayout) els.settingLayout.value = state.layout || 'standard';
+    if (els.settingLanguage) els.settingLanguage.value = state.language || 'en';
     if (els.settingBtnText) els.settingBtnText.value = state.order_button_text || 'Order on WhatsApp';
     if (els.settingMessageTemplate) els.settingMessageTemplate.value = state.message_template || '';
     updateMessagePreview();
@@ -661,6 +667,15 @@
         debouncedSaveState(0);
         updateLivePreview();
         showToast(`Layout changed to: ${state.layout}`);
+      });
+    }
+    if (els.settingLanguage) {
+      els.settingLanguage.addEventListener('change', e => {
+        state.language = e.target.value;
+        debouncedSaveState(0);
+        updateLivePreview();
+        const langObj = window.ContentSmithI18N ? window.ContentSmithI18N.getLang(state.language) : null;
+        showToast(`Default language: ${langObj ? langObj.name : state.language}`);
       });
     }
     if (els.settingBtnText) {
@@ -1963,6 +1978,7 @@
       tagline: source.tagline || '',
       theme: source.theme || 'emerald',
       layout: source.layout || 'standard',
+      language: source.language || 'en',
       order_button_text: source.order_button_text || 'Order on WhatsApp',
       products: prods.map(p => {
         const isSoldOut = p.in_stock === false || p.stock_status === 'sold_out';
@@ -1998,9 +2014,10 @@
     const cssContent = getStorefrontCSS();
     const themeClass = source.theme ? `theme-${source.theme}` : 'theme-emerald';
     const layoutClass = source.layout === 'compact' ? ' layout-compact' : '';
+    const initialDir = (cleanData.language === 'ar') ? 'rtl' : 'ltr';
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHtml(cleanData.language)}" dir="${initialDir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -2010,7 +2027,7 @@
 ${cssContent}
   </style>
 </head>
-<body class="${themeClass}${layoutClass}">
+<body class="${themeClass}${layoutClass}" dir="${initialDir}">
 
   <!-- Sticky Top Header -->
   <header class="store-header" role="banner">
@@ -2034,7 +2051,7 @@ ${cssContent}
         <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
           <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
         </svg>
-        <span>Message Store</span>
+        <span id="header-contact-text">Message Store</span>
       </a>
     </div>
   </header>
@@ -2043,7 +2060,7 @@ ${cssContent}
   <section class="live-theme-bar" aria-label="Storefront Styling">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <div class="live-theme-selector">
-        <span>🎨 Style:</span>
+        <span id="live-theme-label-span">🎨 Style:</span>
         <select id="live-theme-select" class="live-theme-select" aria-label="Select storefront theme">
           <option value="emerald" ${cleanData.theme === 'emerald' ? 'selected' : ''}>🌿 Emerald (WhatsApp)</option>
           <option value="luxury-gold" ${cleanData.theme === 'luxury-gold' ? 'selected' : ''}>👑 Royal Obsidian Gold</option>
@@ -2054,19 +2071,30 @@ ${cssContent}
         </select>
       </div>
       <div class="live-theme-selector">
-        <span>📐 Grid:</span>
+        <span id="live-layout-label-span">📐 Grid:</span>
         <select id="live-layout-select" class="live-theme-select" aria-label="Select layout grid">
-          <option value="standard" ${cleanData.layout === 'standard' ? 'selected' : ''}>Standard (1 Col)</option>
-          <option value="compact" ${cleanData.layout === 'compact' ? 'selected' : ''}>Compact (2 Col)</option>
+          <option value="standard" id="opt-layout-standard" ${cleanData.layout === 'standard' ? 'selected' : ''}>Standard (1 Col)</option>
+          <option value="compact" id="opt-layout-compact" ${cleanData.layout === 'compact' ? 'selected' : ''}>Compact (2 Col)</option>
+        </select>
+      </div>
+      <div class="live-theme-selector">
+        <span id="live-lang-label-span">🌐 Lang:</span>
+        <select id="live-lang-select" class="live-theme-select" aria-label="Select storefront language">
+          <option value="en" ${cleanData.language === 'en' ? 'selected' : ''}>🇬🇧 English</option>
+          <option value="fr" ${cleanData.language === 'fr' ? 'selected' : ''}>🇫🇷 Français</option>
+          <option value="sw" ${cleanData.language === 'sw' ? 'selected' : ''}>🇰🇪 Kiswahili</option>
+          <option value="ar" ${cleanData.language === 'ar' ? 'selected' : ''}>🇸🇦 العربية</option>
+          <option value="yo" ${cleanData.language === 'yo' ? 'selected' : ''}>🇳🇬 Yorùbá</option>
+          <option value="ha" ${cleanData.language === 'ha' ? 'selected' : ''}>🇳🇬 Hausa</option>
         </select>
       </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
       <button id="btn-live-pdf" class="live-action-btn" title="Print or Save Catalog as PDF">
-        📄 PDF Catalog
+        <span id="btn-live-pdf-text">📄 PDF Catalog</span>
       </button>
       <button id="btn-live-share" class="live-action-btn" title="Share catalog">
-        📲 Share
+        <span id="btn-live-share-text">📲 Share</span>
       </button>
     </div>
   </section>
@@ -2077,8 +2105,8 @@ ${cssContent}
   <!-- Store Stats -->
   <section class="store-intro" aria-label="Catalog Overview">
     <div class="catalog-stats-bar">
-      <span>Catalog: <strong class="stats-count">${cleanData.products.length} item${cleanData.products.length === 1 ? '' : 's'}</strong></span>
-      <span>Direct WhatsApp Checkout</span>
+      <span><span id="catalog-label-text">Catalog:</span> <strong class="stats-count" id="product-count">${cleanData.products.length} item${cleanData.products.length === 1 ? '' : 's'}</strong></span>
+      <span id="catalog-currency-label">Direct WhatsApp Checkout</span>
     </div>
   </section>
 
@@ -2088,8 +2116,8 @@ ${cssContent}
 ${cleanData.products.length === 0 ? `
       <div style="grid-column: 1 / -1; padding: 48px 20px; text-align: center; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); margin: 20px 0;">
         <div style="font-size: 2.2rem; margin-bottom: 10px;">🛍️</div>
-        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin-bottom: 6px;">Your Catalog is Ready</h3>
-        <p style="font-size: 0.875rem; color: var(--color-text-secondary); max-width: 320px; margin: 0 auto;">Add products in the workspace editor or generate starter suggestions to populate your live shop.</p>
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin-bottom: 6px;" id="empty-title-text">Your Catalog is Ready</h3>
+        <p style="font-size: 0.875rem; color: var(--color-text-secondary); max-width: 320px; margin: 0 auto;" id="empty-desc-text">Add products in the workspace editor or generate starter suggestions to populate your live shop.</p>
       </div>
 ` : cleanData.products.map(p => {
   const isSoldOut = p.in_stock === false || p.stock_status === 'sold_out';
@@ -2149,7 +2177,7 @@ ${cleanData.products.length === 0 ? `
   const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">Sold Out</span>` : '';
   const catBadge = p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : '';
 
-  return `      <article class="product-card ${isSoldOut ? 'is-sold-out' : ''}" role="listitem" data-cat="${escapeHtml(p.category || '')}" data-stock="${isSoldOut ? 'sold_out' : 'in_stock'}">
+  return `      <article class="product-card ${isSoldOut ? 'is-sold-out' : ''}" role="listitem" data-id="${escapeHtml(p.id)}" data-cat="${escapeHtml(p.category || '')}" data-stock="${isSoldOut ? 'sold_out' : 'in_stock'}" data-name="${escapeHtml(p.name)}" data-has-price="${hasPrice ? '1' : '0'}" data-formatted-price="${hasPrice ? escapeHtml(formattedPrice) : ''}">
         <div class="product-image-wrap">
           ${catBadge}
           ${soldOutBadge}
@@ -2165,7 +2193,7 @@ ${cleanData.products.length === 0 ? `
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
             </svg>
-            <span>${btnLabel}</span>
+            <span class="order-btn-text">${btnLabel}</span>
           </a>
         </div>
       </article>`;
@@ -2174,15 +2202,15 @@ ${cleanData.products.length === 0 ? `
   </main>
 
   <!-- Sticky Bottom Contact FAB -->
-  <a href="${buildWaUrl(vendorPhone, `Hello ${vendorName}! I am viewing your catalog and would like to ask a question.`)}" target="_blank" rel="noopener noreferrer" class="sticky-wa-fab">
+  <a id="sticky-wa-btn" href="${buildWaUrl(vendorPhone, `Hello ${vendorName}! I am viewing your catalog and would like to ask a question.`)}" target="_blank" rel="noopener noreferrer" class="sticky-wa-fab">
     <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
     </svg>
-    <span>Chat with Vendor</span>
+    <span id="sticky-wa-text">Chat with Vendor</span>
   </a>
 
   <footer class="store-footer">
-    <p>Powered by CatalogSmith &bull; Mobile-First Video Storefront</p>
+    <p id="store-footer-text">Powered by CatalogSmith &bull; Mobile-First Video Storefront</p>
   </footer>
 
   <script>
@@ -2191,6 +2219,231 @@ ${cleanData.products.length === 0 ? `
       const data = window.CatalogSmith_DATA || window.ContentSmith_DATA;
       const thSel = document.getElementById('live-theme-select');
       const laySel = document.getElementById('live-layout-select');
+      const langSel = document.getElementById('live-lang-select');
+
+      // Standalone i18n Dictionary for Storefront
+      const I18N = (window.ContentSmithI18N && window.ContentSmithI18N.translations) ? window.ContentSmithI18N.translations : {
+        en: {
+          code: 'en', dir: 'ltr', name: 'English', flag: '🇬🇧',
+          verified_store: 'Verified Store',
+          tagline_fallback: 'Fast orders directly on WhatsApp',
+          message_store: 'Message Store',
+          style_label: '🎨 Style:',
+          grid_label: '📐 Grid:',
+          lang_label: '🌐 Lang:',
+          grid_standard: 'Standard (1 Col)',
+          grid_compact: 'Compact (2 Col)',
+          pdf_catalog: '📄 PDF Catalog',
+          share: '📲 Share',
+          all_products: 'All Products',
+          in_stock_only: '🟢 In Stock Only',
+          item_singular: 'item',
+          item_plural: 'items',
+          catalog_label: 'Catalog:',
+          direct_checkout: 'Direct WhatsApp Checkout',
+          sold_out: 'Sold Out',
+          ask_for_price: 'Ask for price',
+          order_button: 'Order on WhatsApp',
+          ask_button: 'Ask for Price on WhatsApp',
+          sold_out_button: '💬 Inquire Restock on WhatsApp',
+          chat_general: 'Hello {vendor_name}! I am viewing your catalog and would like to make an inquiry.',
+          chat_order: 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?',
+          chat_ask: 'Hello {vendor_name}! What is the price and availability for *{product_name}*? I saw it on your catalog.',
+          chat_restock: 'Hello {vendor_name}! I saw that *{product_name}* is sold out in your catalog. Will you be restocking this item soon?',
+          sticky_chat: 'Chat with Vendor',
+          empty_title: 'No products found',
+          empty_desc: 'This storefront is currently empty or updating.',
+          no_photo: 'Photo coming soon',
+          powered_by: 'Powered by ContentSmith • Mobile-First Video Storefront'
+        },
+        fr: {
+          code: 'fr', dir: 'ltr', name: 'Français', flag: '🇫🇷',
+          verified_store: 'Boutique Vérifiée',
+          tagline_fallback: 'Commandes rapides directement sur WhatsApp',
+          message_store: 'Écrire à la boutique',
+          style_label: '🎨 Style :',
+          grid_label: '📐 Grille :',
+          lang_label: '🌐 Langue :',
+          grid_standard: 'Standard (1 Col)',
+          grid_compact: 'Compact (2 Col)',
+          pdf_catalog: '📄 Catalogue PDF',
+          share: '📲 Partager',
+          all_products: 'Tous les articles',
+          in_stock_only: '🟢 En stock uniquement',
+          item_singular: 'article',
+          item_plural: 'articles',
+          catalog_label: 'Catalogue :',
+          direct_checkout: 'Paiement direct par WhatsApp',
+          sold_out: 'Épuisé',
+          ask_for_price: 'Demander le prix',
+          order_button: 'Commander sur WhatsApp',
+          ask_button: 'Demander le prix sur WhatsApp',
+          sold_out_button: '💬 Demander un réapprovisionnement',
+          chat_general: 'Bonjour {vendor_name} ! Je consulte votre catalogue et souhaite faire une demande.',
+          chat_order: 'Bonjour {vendor_name} ! Je souhaite commander *{product_name}* ({product_price}) depuis votre catalogue. Est-il disponible pour livraison ?',
+          chat_ask: 'Bonjour {vendor_name} ! Quel est le prix et la disponibilité pour *{product_name}* ? Je l\\\'ai vu sur votre catalogue.',
+          chat_restock: 'Bonjour {vendor_name} ! J\\\'ai vu que *{product_name}* est épuisé. Sera-t-il bientôt de retour en stock ?',
+          sticky_chat: 'Contacter le vendeur',
+          empty_title: 'Aucun produit trouvé',
+          empty_desc: 'Cette boutique est actuellement vide ou en cours de mise à jour.',
+          no_photo: 'Photo à venir',
+          powered_by: 'Propulsé par ContentSmith • Boutique vidéo mobile d\\\'abord'
+        },
+        sw: {
+          code: 'sw', dir: 'ltr', name: 'Kiswahili', flag: '🇰🇪',
+          verified_store: 'Duka Lililothibitishwa',
+          tagline_fallback: 'Agiza haraka moja kwa moja kwenye WhatsApp',
+          message_store: 'Tuma Ujumbe Dukani',
+          style_label: '🎨 Mtindo:',
+          grid_label: '📐 Mpangilio:',
+          lang_label: '🌐 Lugha:',
+          grid_standard: 'Kawaida (Safu 1)',
+          grid_compact: 'Bana (Safu 2)',
+          pdf_catalog: '📄 Katalogi ya PDF',
+          share: '📲 Shiriki',
+          all_products: 'Bidhaa Zote',
+          in_stock_only: '🟢 Zilizopo Dukani Pekee',
+          item_singular: 'bidhaa',
+          item_plural: 'bidhaa',
+          catalog_label: 'Katalogi:',
+          direct_checkout: 'Agiza Moja kwa Moja WhatsApp',
+          sold_out: 'Zimekwisha',
+          ask_for_price: 'Ulizia bei',
+          order_button: 'Agiza kwenye WhatsApp',
+          ask_button: 'Ulizia Bei kwenye WhatsApp',
+          sold_out_button: '💬 Ulizia Upatikanaji WhatsApp',
+          chat_general: 'Hujambo {vendor_name}! Ninaangalia katalogi yako na ningependa kuuliza swali.',
+          chat_order: 'Hujambo {vendor_name}! Ningependa kuagiza *{product_name}* ({product_price}) kutoka katalogi yako. Je, inapatikana kwa utoaji?',
+          chat_ask: 'Hujambo {vendor_name}! Ni bei gani na upatikanaji wa *{product_name}*? Nimeiona kwenye katalogi yako.',
+          chat_restock: 'Hujambo {vendor_name}! Nimeona *{product_name}* imekwisha. Je, itapatikana tena hivi karibuni?',
+          sticky_chat: 'Ongea na Muuzaji',
+          empty_title: 'Hakuna bidhaa zilizopatikana',
+          empty_desc: 'Katalogi hii haina bidhaa kwa sasa au inasasishwa.',
+          no_photo: 'Picha inakuja hivi karibuni',
+          powered_by: 'Imeendeshwa na ContentSmith • Duka la Video la Simu Kwanza'
+        },
+        ar: {
+          code: 'ar', dir: 'rtl', name: 'العربية', flag: '🇸🇦',
+          verified_store: 'متجر موثق',
+          tagline_fallback: 'طلب سريع ومباشر عبر واتساب',
+          message_store: 'مراسلة المتجر',
+          style_label: '🎨 المظهر:',
+          grid_label: '📐 الشبكة:',
+          lang_label: '🌐 اللغة:',
+          grid_standard: 'قياسي (عمود 1)',
+          grid_compact: 'مدمج (عمودان)',
+          pdf_catalog: '📄 كتالوج PDF',
+          share: '📲 مشاركة',
+          all_products: 'جميع المنتجات',
+          in_stock_only: '🟢 المتوفر فقط',
+          item_singular: 'منتج',
+          item_plural: 'منتجات',
+          catalog_label: 'الكتالوج:',
+          direct_checkout: 'شراء فوري عبر واتساب',
+          sold_out: 'نفد المخزون',
+          ask_for_price: 'اسأل عن السعر',
+          order_button: 'اطلب عبر واتساب',
+          ask_button: 'اسأل عن السعر عبر واتساب',
+          sold_out_button: '💬 استفسر عن توفر المنتج',
+          chat_general: 'مرحبًا {vendor_name}! أتصفح كتالوج منتجاتك وأود الاستفسار.',
+          chat_order: 'مرحبًا {vendor_name}! أود طلب *{product_name}* ({product_price}) من كتالوجك. هل هو متوفر للتوصيل؟',
+          chat_ask: 'مرحبًا {vendor_name}! ما هو سعر وتوفر *{product_name}*؟ لقد رأيته في كتالوجك.',
+          chat_restock: 'مرحبًا {vendor_name}! رأيت أن *{product_name}* غير متوفر حاليًا. هل سيتوفر قريبًا؟',
+          sticky_chat: 'محادثة البائع',
+          empty_title: 'لا توجد منتجات',
+          empty_desc: 'هذا الكتالوج فارغ حاليًا أو قيد التحديث.',
+          no_photo: 'الصورة قريبًا',
+          powered_by: 'مدعوم بواسطة ContentSmith • متجر الفيديو المحمول أولاً'
+        },
+        yo: {
+          code: 'yo', dir: 'ltr', name: 'Yorùbá', flag: '🇳🇬',
+          verified_store: 'Ile-itaja ti a fọwọsi',
+          tagline_fallback: 'Ibere kiakia lori WhatsApp',
+          message_store: 'Fi ifiranṣẹ ranṣẹ',
+          style_label: '🎨 Àwọ̀:',
+          grid_label: '📐 Ètò:',
+          lang_label: '🌐 Èdè:',
+          grid_standard: 'Àtọwọdọ́wọ́ (Ìlà 1)',
+          grid_compact: 'Kíkékèké (Ìlà 2)',
+          pdf_catalog: '📄 Ìwé PDF',
+          share: '📲 Pín',
+          all_products: 'Gbogbo Ọjà',
+          in_stock_only: '🟢 Ọjà Tí Ó Wà Nílẹ̀',
+          item_singular: 'ọjà',
+          item_plural: 'ọjà',
+          catalog_label: 'Àkójọ Ọjà:',
+          direct_checkout: 'Rira taara lori WhatsApp',
+          sold_out: 'Ti tán',
+          ask_for_price: 'Béèrè iye owó',
+          order_button: 'Ra lori WhatsApp',
+          ask_button: 'Béèrè iye owó lori WhatsApp',
+          sold_out_button: '💬 Béèrè ìgbà tí yóò tún wà',
+          chat_general: 'Ẹ n lẹ́ o {vendor_name}! Mo ń wo àwọn ọjà yín mo sì fẹ́ béèrè ọ̀rọ̀ díẹ̀.',
+          chat_order: 'Ẹ n lẹ́ o {vendor_name}! Mo fẹ́ ra *{product_name}* ({product_price}) nínú àwọn ọjà yín. Ṣé ó wà fún títà?',
+          chat_ask: 'Ẹ n lẹ́ o {vendor_name}! Èlò ni *{product_name}*? Mo rí i nínú àwọn ọjà yín.',
+          chat_restock: 'Ẹ n lẹ́ o {vendor_name}! Mo rí i pé *{product_name}* ti tán. Ṣé yóò tún wà láìpẹ́?',
+          sticky_chat: 'Bá Oníṣòwò Sọ̀rọ̀',
+          empty_title: 'Kò sí ọjà kankan',
+          empty_desc: 'Kò sí ọjà nínú àkójọ yìí báyìí.',
+          no_photo: 'Àwòrán ń bọ̀ láìpẹ́',
+          powered_by: 'Látọwọ́ ContentSmith • Ile-itaja Fídíò Foonu Ni Akọkọ'
+        },
+        ha: {
+          code: 'ha', dir: 'ltr', name: 'Hausa', flag: '🇳🇬',
+          verified_store: 'Shagon da aka Tabbatar',
+          tagline_fallback: 'Oda mai sauri kai tsaye a WhatsApp',
+          message_store: 'Aika Saƙo zuwa Shago',
+          style_label: '🎨 Tsari:',
+          grid_label: '📐 Jeri:',
+          lang_label: '🌐 Harshe:',
+          grid_standard: 'Na yau da kullun (Layi 1)',
+          grid_compact: 'Karami (Layi 2)',
+          pdf_catalog: '📄 Kasidar PDF',
+          share: '📲 Raba',
+          all_products: 'Duk Kayan',
+          in_stock_only: '🟢 Masu nan kawai',
+          item_singular: 'kaya',
+          item_plural: 'kaya',
+          catalog_label: 'Kasida:',
+          direct_checkout: 'Siyayya kai tsaye a WhatsApp',
+          sold_out: 'Ya ƙare',
+          ask_for_price: 'Tambayi Farashi',
+          order_button: 'Yi Oda a WhatsApp',
+          ask_button: 'Tambayi Farashi a WhatsApp',
+          sold_out_button: '💬 Tambayi Lokacin Isowa',
+          chat_general: 'Sannu {vendor_name}! Ina duba kayanku kuma ina so in yi tambaya.',
+          chat_order: 'Sannu {vendor_name}! Ina so in yi odar *{product_name}* ({product_price}) daga kasidarku. Shin akwai shi don aiko mini?',
+          chat_ask: 'Sannu {vendor_name}! Nawa ne farashin da samuwar *{product_name}*? Na gani a kasidarku.',
+          chat_restock: 'Sannu {vendor_name}! Na ga cewa *{product_name}* ya ƙare. Shin zai sake samuwa nan ba da jimawa ba?',
+          sticky_chat: 'Yi Magana da Mai Shago',
+          empty_title: 'Ba a sami kaya ba',
+          empty_desc: 'Wannan shagon babu kaya a ciki a yanzu.',
+          no_photo: 'Hoto yana zuwa',
+          powered_by: 'Ƙarƙashin ContentSmith • Shagon Bidiyo na Wayar Hannu da Farko'
+        }
+      };
+
+      function t(lang, key, params) {
+        const langObj = I18N[lang] || I18N.en;
+        let str = langObj[key] !== undefined ? langObj[key] : (I18N.en[key] || key);
+        if (params && typeof params === 'object') {
+          Object.keys(params).forEach(k => {
+            str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]);
+          });
+        }
+        return str;
+      }
+
+      function cleanPhone(phone) {
+        return String(phone || '').replace(/[^0-9]/g, '');
+      }
+
+      function buildWaUrl(phone, text) {
+        const clean = cleanPhone(phone);
+        const encoded = encodeURIComponent(text);
+        return clean ? 'https://wa.me/' + clean + '?text=' + encoded : 'https://wa.me/?text=' + encoded;
+      }
+
       function updateClasses() {
         const th = thSel ? thSel.value : (data.theme || 'emerald');
         const lay = laySel ? laySel.value : (data.layout || 'standard');
@@ -2212,10 +2465,141 @@ ${cleanData.products.length === 0 ? `
               return;
             }
           } catch(e) {}
-          const t = '${escapeHtml(vendorName)} - Product Catalog';
-          const msg = '🛍️ *' + t + '*\\n${escapeHtml(state.tagline || 'Direct orders via WhatsApp')}\\n\\nBrowse products and order directly on WhatsApp!';
+          const tName = '${escapeHtml(vendorName)} - Product Catalog';
+          const msg = '🛍️ *' + tName + '*\\n${escapeHtml(source.tagline || 'Direct orders via WhatsApp')}\\n\\nBrowse products and order directly on WhatsApp!';
           const url = window.location.href;
           window.open('https://wa.me/?text=' + encodeURIComponent(msg + '\\n' + url), '_blank');
+        };
+      }
+
+      let currentLang = data.language || 'en';
+
+      function applyLanguage() {
+        const dict = I18N[currentLang] || I18N.en;
+        document.documentElement.setAttribute('dir', dict.dir);
+        document.documentElement.setAttribute('lang', dict.code);
+        document.body.setAttribute('dir', dict.dir);
+
+        const vName = data.vendor_name || 'Vendor Catalog';
+        const vPhone = data.vendor_phone || '';
+
+        const headerContactText = document.getElementById('header-contact-text');
+        if (headerContactText) headerContactText.textContent = t(currentLang, 'message_store');
+
+        const generalHello = t(currentLang, 'chat_general', { vendor_name: vName });
+        const generalWaUrl = buildWaUrl(vPhone, generalHello);
+
+        const headerLink = document.getElementById('header-contact-link');
+        if (headerLink) headerLink.href = generalWaUrl;
+
+        const stickyBtn = document.getElementById('sticky-wa-btn');
+        if (stickyBtn) stickyBtn.href = generalWaUrl;
+
+        const stickyWaText = document.getElementById('sticky-wa-text');
+        if (stickyWaText) stickyWaText.textContent = t(currentLang, 'sticky_chat');
+
+        const themeLabel = document.getElementById('live-theme-label-span');
+        if (themeLabel) themeLabel.textContent = t(currentLang, 'style_label');
+
+        const layoutLabel = document.getElementById('live-layout-label-span');
+        if (layoutLabel) layoutLabel.textContent = t(currentLang, 'grid_label');
+
+        const langLabel = document.getElementById('live-lang-label-span');
+        if (langLabel) langLabel.textContent = t(currentLang, 'lang_label');
+
+        const optStandard = document.getElementById('opt-layout-standard');
+        if (optStandard) optStandard.textContent = t(currentLang, 'grid_standard');
+
+        const optCompact = document.getElementById('opt-layout-compact');
+        if (optCompact) optCompact.textContent = t(currentLang, 'grid_compact');
+
+        const pdfBtnText = document.getElementById('btn-live-pdf-text');
+        if (pdfBtnText) pdfBtnText.textContent = t(currentLang, 'pdf_catalog');
+
+        const shareBtnText = document.getElementById('btn-live-share-text');
+        if (shareBtnText) shareBtnText.textContent = t(currentLang, 'share');
+
+        const catalogLabel = document.getElementById('catalog-label-text');
+        if (catalogLabel) catalogLabel.textContent = t(currentLang, 'catalog_label');
+
+        const pCount = (data.products || []).length;
+        const countUnit = pCount === 1 ? t(currentLang, 'item_singular') : t(currentLang, 'item_plural');
+        const countEl = document.getElementById('product-count');
+        if (countEl) countEl.textContent = pCount + ' ' + countUnit;
+
+        const currencyLabel = document.getElementById('catalog-currency-label');
+        if (currencyLabel) currencyLabel.textContent = t(currentLang, 'direct_checkout');
+
+        const emptyTitle = document.getElementById('empty-title-text');
+        if (emptyTitle) emptyTitle.textContent = t(currentLang, 'empty_title');
+
+        const emptyDesc = document.getElementById('empty-desc-text');
+        if (emptyDesc) emptyDesc.textContent = t(currentLang, 'empty_desc');
+
+        const footerText = document.getElementById('store-footer-text');
+        if (footerText) footerText.textContent = t(currentLang, 'powered_by');
+
+        // Update category filter pill labels
+        const pillAll = document.querySelector('.cat-pill-cat[data-cat="all"]');
+        if (pillAll) pillAll.textContent = t(currentLang, 'all_products');
+
+        const pillStock = document.getElementById('pill-filter-instock');
+        if (pillStock) pillStock.textContent = t(currentLang, 'in_stock_only');
+
+        // Update product cards
+        const cards = document.querySelectorAll('.product-card');
+        cards.forEach(card => {
+          const isSoldOut = card.getAttribute('data-stock') === 'sold_out';
+          const pName = card.getAttribute('data-name') || '';
+          const hasPrice = card.getAttribute('data-has-price') === '1';
+          const formattedPrice = card.getAttribute('data-formatted-price') || '';
+
+          const soldOutBadge = card.querySelector('.badge-sold-out');
+          if (soldOutBadge) soldOutBadge.textContent = t(currentLang, 'sold_out');
+
+          const priceAsk = card.querySelector('.price-ask');
+          if (priceAsk) priceAsk.textContent = t(currentLang, 'ask_for_price');
+
+          let orderMsg = '';
+          let btnLabel = '';
+          if (isSoldOut) {
+            orderMsg = t(currentLang, 'chat_restock', { vendor_name: vName, product_name: pName });
+            btnLabel = t(currentLang, 'sold_out_button');
+          } else if (hasPrice) {
+            if (currentLang === 'en' && data.message_template) {
+              orderMsg = data.message_template
+                .replace(/{vendor_name}/g, vName)
+                .replace(/{product_name}/g, pName)
+                .replace(/{product_price}/g, formattedPrice);
+            } else {
+              orderMsg = t(currentLang, 'chat_order', { vendor_name: vName, product_name: pName, product_price: formattedPrice });
+            }
+            btnLabel = (currentLang === 'en' && data.order_button_text) ? data.order_button_text : t(currentLang, 'order_button');
+          } else {
+            orderMsg = t(currentLang, 'chat_ask', { vendor_name: vName, product_name: pName });
+            btnLabel = t(currentLang, 'ask_button');
+          }
+
+          const btnLink = card.querySelector('.btn-order-wa');
+          if (btnLink) {
+            btnLink.href = buildWaUrl(vPhone, orderMsg);
+            const btnSpan = btnLink.querySelector('.order-btn-text') || btnLink.querySelector('span');
+            if (btnSpan) btnSpan.textContent = btnLabel;
+          }
+        });
+      }
+
+      if (langSel) {
+        langSel.value = currentLang;
+        langSel.onchange = function() {
+          currentLang = langSel.value;
+          data.language = currentLang;
+          applyLanguage();
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: 'ContentSmith_LANG_CHANGED', language: currentLang }, '*');
+            }
+          } catch(e) {}
         };
       }
 
@@ -2247,7 +2631,8 @@ ${cleanData.products.length === 0 ? `
           cats.forEach(c => {
             const btn = document.createElement('button');
             btn.className = 'cat-pill cat-pill-cat' + (c === activeCat ? ' active' : '');
-            btn.textContent = c === 'all' ? 'All Products' : c;
+            btn.setAttribute('data-cat', c);
+            btn.textContent = c === 'all' ? t(currentLang, 'all_products') : c;
             btn.onclick = () => {
               activeCat = c;
               catBar.querySelectorAll('.cat-pill-cat').forEach(b => b.classList.remove('active'));
@@ -2260,7 +2645,8 @@ ${cleanData.products.length === 0 ? `
           if (hasSoldOut) {
             const stockBtn = document.createElement('button');
             stockBtn.className = 'cat-pill';
-            stockBtn.textContent = '🟢 In Stock Only';
+            stockBtn.id = 'pill-filter-instock';
+            stockBtn.textContent = t(currentLang, 'in_stock_only');
             stockBtn.onclick = () => {
               inStockOnly = !inStockOnly;
               stockBtn.classList.toggle('active', inStockOnly);
@@ -2306,6 +2692,9 @@ ${cleanData.products.length === 0 ? `
           }
         }, { passive: true });
       });
+
+      // Synchronize all labels to initial language
+      applyLanguage();
     })();
   </script>
 </body>
@@ -2356,7 +2745,19 @@ body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#181
 .product-card.is-sold-out{opacity:0.88}
 .product-card.is-sold-out .product-image{filter:grayscale(25%)}
 .btn-order-wa.btn-sold-out{background-color:rgba(225,29,72,0.1);color:#e11d48;border:1.5px solid rgba(225,29,72,0.35)}
-.btn-order-wa.btn-sold-out:hover{background-color:#e11d48;color:#ffffff;border-color:#e11d48}`;
+.btn-order-wa.btn-sold-out:hover{background-color:#e11d48;color:#ffffff;border-color:#e11d48}
+[dir="rtl"], body[dir="rtl"]{direction:rtl;text-align:right}
+[dir="rtl"] .store-name{flex-direction:row-reverse}
+[dir="rtl"] .product-category-tag{left:auto;right:10px}
+[dir="rtl"] .badge-sold-out{right:auto;left:10px}
+[dir="rtl"] .sticky-wa-fab{right:auto;left:20px}
+[dir="rtl"] .live-theme-bar > div:last-child{margin-left:0;margin-right:auto}
+[dir="rtl"] .header-container{flex-direction:row-reverse}
+[dir="rtl"] .vendor-brand{flex-direction:row-reverse}
+[dir="rtl"] .product-price-row{flex-direction:row-reverse}
+[dir="rtl"] .catalog-stats-bar{flex-direction:row-reverse}
+[dir="rtl"] .carousel-nav-btn.prev{left:auto;right:8px}
+[dir="rtl"] .carousel-nav-btn.next{right:auto;left:8px}`;
   }
 
   // Update Live Phone Simulator
@@ -2417,6 +2818,7 @@ body.theme-minimal .vendor-avatar, .theme-minimal .vendor-avatar{background:#181
         tagline: state.tagline,
         theme: state.theme,
         layout: state.layout,
+        language: state.language || 'en',
         order_button_text: state.order_button_text,
         products: state.products.map(p => ({
           id: p.id,
@@ -2525,6 +2927,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
       tagline: state.tagline,
       theme: state.theme,
       layout: state.layout,
+      language: state.language || 'en',
       order_button_text: state.order_button_text,
       message_template: state.message_template,
       products: state.products
@@ -2640,12 +3043,16 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     });
   }
 
-  // Cross-frame listener for simulator iframe share button
+  // Cross-frame listener for simulator iframe share & language buttons
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'ContentSmith_SHARE_CURRENT') {
       if (window.CatalogStore && window.CatalogStore.openShareModal) {
         window.CatalogStore.openShareModal(state);
       }
+    } else if (e.data && e.data.type === 'ContentSmith_LANG_CHANGED' && e.data.language) {
+      state.language = e.data.language;
+      if (els.settingLanguage) els.settingLanguage.value = state.language;
+      debouncedSaveState();
     }
   });
   if (els.btnSaveProjectJson) els.btnSaveProjectJson.addEventListener('click', saveProjectJson);
@@ -2657,6 +3064,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
         currency_default: state.currency_default,
         theme: state.theme,
         layout: state.layout,
+        language: state.language || 'en',
         order_button_text: state.order_button_text,
         products: state.products.map(p => ({
           id: p.id,

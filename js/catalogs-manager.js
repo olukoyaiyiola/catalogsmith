@@ -353,6 +353,7 @@
         category: catalogData.category || 'General',
         theme: catalogData.theme || 'emerald',
         layout: catalogData.layout || 'standard',
+        language: catalogData.language || (existingIdx >= 0 && all[existingIdx].language ? all[existingIdx].language : 'en'),
         order_button_text: catalogData.order_button_text || 'Order on WhatsApp',
         message_template: catalogData.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})',
         verified: catalogData.verified !== undefined ? Boolean(catalogData.verified) : (existingIdx >= 0 && all[existingIdx].verified !== undefined ? all[existingIdx].verified : true),
@@ -425,6 +426,7 @@
         category: options.category || 'General',
         theme: options.theme || 'emerald',
         layout: options.layout || 'standard',
+        language: options.language || 'en',
         order_button_text: options.order_button_text || 'Order on WhatsApp',
         message_template: options.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})',
         verified: options.verified !== undefined ? Boolean(options.verified) : true,
@@ -527,6 +529,7 @@
           tagline: fix.tagline,
           theme: fix.theme || 'emerald',
           layout: 'standard',
+          language: fix.language || 'en',
           verified: true,
           products: fix.products || []
         };

@@ -725,9 +725,77 @@
       if (contactLink) contactLink.href = generalWaUrl;
       if (stickyBtn) stickyBtn.href = generalWaUrl;
 
-      // Theme & Layout controls
+      // Theme, Layout & Language controls
       const themeSel = document.getElementById('sf-theme-select');
       const laySel = document.getElementById('sf-layout-select');
+      const langSel = document.getElementById('sf-lang-select');
+      let currentLang = data.language || 'en';
+
+      function applyStorefrontLanguage() {
+        const i18n = window.ContentSmithI18N || null;
+        const dict = i18n ? i18n.getLang(currentLang) : null;
+        const isRtl = dict && dict.dir === 'rtl';
+
+        if (storefrontView) {
+          storefrontView.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+        }
+
+        const t = (k, p) => i18n ? i18n.t(currentLang, k, p) : k;
+
+        // Header contact text & WA link
+        const generalHello = t('chat_general', { vendor_name: vendorName });
+        const generalWaUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(generalHello)}` : `https://wa.me/?text=${encodeURIComponent(generalHello)}`;
+        if (contactLink) contactLink.href = generalWaUrl;
+        if (stickyBtn) stickyBtn.href = generalWaUrl;
+
+        const headerContactText = document.getElementById('sf-header-contact-text');
+        if (headerContactText) headerContactText.textContent = t('message_store');
+
+        const stickyWaText = document.getElementById('sf-sticky-wa-text');
+        if (stickyWaText) stickyWaText.textContent = t('sticky_chat');
+
+        // Toolbar labels
+        const themeLabel = document.getElementById('sf-theme-label-span');
+        if (themeLabel) themeLabel.textContent = t('style_label');
+
+        const layLabel = document.getElementById('sf-layout-label-span');
+        if (layLabel) layLabel.textContent = t('grid_label');
+
+        const langLabel = document.getElementById('sf-lang-label-span');
+        if (langLabel) langLabel.textContent = t('lang_label');
+
+        const optStd = document.getElementById('sf-opt-layout-standard');
+        if (optStd) optStd.textContent = t('grid_standard');
+
+        const optCpt = document.getElementById('sf-opt-layout-compact');
+        if (optCpt) optCpt.textContent = t('grid_compact');
+
+        const pdfText = document.getElementById('sf-btn-download-pdf-text');
+        if (pdfText) pdfText.textContent = t('pdf_catalog');
+
+        const shareText = document.getElementById('sf-btn-share-catalog-text');
+        if (shareText) shareText.textContent = t('share');
+
+        // Stats & Badges
+        const catalogLabel = document.getElementById('sf-catalog-label-text');
+        if (catalogLabel) catalogLabel.textContent = t('catalog_label');
+
+        const countUnit = products.length === 1 ? t('item_singular') : t('item_plural');
+        if (countEl) countEl.textContent = `${products.length} ${countUnit}`;
+
+        const currencyLabel = document.getElementById('sf-catalog-currency-label');
+        if (currencyLabel) currencyLabel.textContent = t('direct_checkout');
+
+        const emptyTitle = document.getElementById('sf-empty-title-text');
+        if (emptyTitle) emptyTitle.textContent = t('empty_title');
+
+        const emptyDesc = document.getElementById('sf-empty-desc-text');
+        if (emptyDesc) emptyDesc.textContent = t('empty_desc');
+
+        renderStorefrontCategoryPills();
+        renderStorefrontProductsGrid();
+      }
+
       if (themeSel) {
         themeSel.value = theme;
         themeSel.onchange = () => {
@@ -744,6 +812,14 @@
           if (storefrontView) {
             storefrontView.className = `theme-${themeSel ? themeSel.value : theme}${laySel.value === 'compact' ? ' layout-compact' : ''}`;
           }
+        };
+      }
+      if (langSel) {
+        langSel.value = currentLang;
+        langSel.onchange = () => {
+          currentLang = langSel.value;
+          data.language = currentLang;
+          applyStorefrontLanguage();
         };
       }
 
@@ -794,34 +870,27 @@
       const catBar = document.getElementById('sf-category-filter-bar');
       const grid = document.getElementById('sf-product-grid');
       const emptyState = document.getElementById('sf-empty-state');
-
-      if (!grid) return;
-
-      if (products.length === 0) {
-        grid.innerHTML = '';
-        if (emptyState) emptyState.style.display = 'block';
-        if (catBar) catBar.style.display = 'none';
-        return;
-      }
-
-      if (emptyState) emptyState.style.display = 'none';
-
       let selectedCat = 'all';
-      const categories = ['all'];
-      products.forEach(p => {
-        if (p.category && !categories.includes(p.category)) {
-          categories.push(p.category);
-        }
-      });
 
-      if (catBar) {
+      function renderStorefrontCategoryPills() {
+        if (!catBar) return;
+        const i18n = window.ContentSmithI18N;
+        const allProductsLabel = i18n ? i18n.t(currentLang, 'all_products') : 'All Products';
+
+        const categories = ['all'];
+        products.forEach(p => {
+          if (p.category && !categories.includes(p.category)) {
+            categories.push(p.category);
+          }
+        });
+
         if (categories.length > 2) {
           catBar.style.display = 'flex';
           catBar.innerHTML = '';
           categories.forEach(c => {
             const btn = document.createElement('button');
-            btn.className = 'cat-pill' + (c === 'all' ? ' active' : '');
-            btn.textContent = c === 'all' ? 'All Products' : c;
+            btn.className = 'cat-pill' + (c === selectedCat ? ' active' : '');
+            btn.textContent = c === 'all' ? allProductsLabel : c;
             btn.onclick = () => {
               catBar.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
               btn.classList.add('active');
@@ -839,46 +908,99 @@
         }
       }
 
-      grid.innerHTML = '';
-      products.forEach(p => {
-        const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
-        const formattedPrice = hasPrice ? (window.ContentSmithStudio ? window.ContentSmithStudio.formatPrice(p.price.amount, p.price.currency || defaultCurrency) : `₦${Number(p.price.amount).toLocaleString()}`) : null;
+      function renderStorefrontProductsGrid() {
+        if (!grid) return;
+        if (products.length === 0) {
+          grid.innerHTML = '';
+          if (emptyState) emptyState.style.display = 'block';
+          if (catBar) catBar.style.display = 'none';
+          return;
+        }
 
-        const orderMsg = hasPrice
-          ? (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price})')
-              .replace(/{vendor_name}/g, vendorName)
-              .replace(/{product_name}/g, p.name)
-              .replace(/{product_price}/g, formattedPrice)
-          : `Hello ${vendorName}! What is the price and availability for *${p.name}*? I saw it on your catalog.`;
+        if (emptyState) emptyState.style.display = 'none';
+        grid.innerHTML = '';
 
-        const orderUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(orderMsg)}` : `https://wa.me/?text=${encodeURIComponent(orderMsg)}`;
-        const btnClass = hasPrice ? 'btn-order-wa' : 'btn-order-wa btn-ask-wa';
-        const btnLabel = hasPrice ? (data.order_button_text || 'Order on WhatsApp') : 'Ask for Price on WhatsApp';
+        const i18n = window.ContentSmithI18N;
+        const t = (k, p) => i18n ? i18n.t(currentLang, k, p) : k;
 
-        const card = document.createElement('article');
-        card.className = 'product-card';
-        card.setAttribute('data-cat', p.category || '');
-        card.innerHTML = `
-          <div class="product-image-wrap">
-            ${p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : ''}
-            ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy">` : `<div class="image-fallback"><span>No Photo</span></div>`}
-          </div>
-          <div class="product-body">
-            <h2 class="product-title">${escapeHtml(p.name)}</h2>
-            <p class="product-desc">${escapeHtml(p.description || '')}</p>
-            <div class="product-price-row">
-              ${hasPrice ? `<span class="product-price">${formattedPrice}</span>` : `<span class="price-ask">Ask for price</span>`}
+        products.forEach(p => {
+          const isSoldOut = p.in_stock === false || p.stock_status === 'sold_out';
+          const hasPrice = p.price && p.price.amount !== null && !isNaN(p.price.amount);
+          const formattedPrice = hasPrice ? (window.ContentSmithStudio ? window.ContentSmithStudio.formatPrice(p.price.amount, p.price.currency || defaultCurrency) : `₦${Number(p.price.amount).toLocaleString()}`) : null;
+
+          let orderMsg = '';
+          if (isSoldOut) {
+            orderMsg = t('chat_restock', { vendor_name: vendorName, product_name: p.name });
+          } else if (hasPrice) {
+            if (currentLang === 'en' && data.message_template) {
+              orderMsg = data.message_template
+                .replace(/{vendor_name}/g, vendorName)
+                .replace(/{product_name}/g, p.name)
+                .replace(/{product_price}/g, formattedPrice);
+            } else {
+              orderMsg = t('chat_order', { vendor_name: vendorName, product_name: p.name, product_price: formattedPrice });
+            }
+          } else {
+            orderMsg = t('chat_ask', { vendor_name: vendorName, product_name: p.name });
+          }
+
+          const orderUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(orderMsg)}` : `https://wa.me/?text=${encodeURIComponent(orderMsg)}`;
+
+          let btnClass = 'btn-order-wa';
+          let btnLabel = t('order_button');
+
+          if (isSoldOut) {
+            btnClass = 'btn-order-wa btn-sold-out';
+            btnLabel = t('sold_out_button');
+          } else if (!hasPrice) {
+            btnClass = 'btn-order-wa btn-ask-wa';
+            btnLabel = t('ask_button');
+          } else if (currentLang === 'en' && data.order_button_text) {
+            btnLabel = data.order_button_text;
+          }
+
+          const card = document.createElement('article');
+          card.className = `product-card ${isSoldOut ? 'is-sold-out' : ''}`;
+          card.setAttribute('data-cat', p.category || '');
+
+          const prodImages = Array.isArray(p.images) && p.images.length > 0
+            ? p.images
+            : (p.image ? [p.image] : []);
+
+          let imageHtml = '';
+          if (prodImages.length > 0) {
+            imageHtml = `<img src="${prodImages[0]}" alt="${escapeHtml(p.name)}" class="product-image" loading="lazy">`;
+          } else {
+            imageHtml = `<div class="image-fallback"><span>${t('no_photo')}</span></div>`;
+          }
+
+          const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">${t('sold_out')}</span>` : '';
+
+          card.innerHTML = `
+            <div class="product-image-wrap">
+              ${p.category ? `<span class="product-category-tag">${escapeHtml(p.category)}</span>` : ''}
+              ${soldOutBadge}
+              ${imageHtml}
             </div>
-            <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${btnClass}">
-              <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
-              </svg>
-              <span>${btnLabel}</span>
-            </a>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
+            <div class="product-body">
+              <h2 class="product-title">${escapeHtml(p.name)}</h2>
+              <p class="product-desc">${escapeHtml(p.description || '')}</p>
+              <div class="product-price-row">
+                ${hasPrice ? `<span class="product-price">${formattedPrice}</span>` : `<span class="price-ask">${t('ask_for_price')}</span>`}
+              </div>
+              <a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="${btnClass}">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
+                </svg>
+                <span>${btnLabel}</span>
+              </a>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      applyStorefrontLanguage();
     }
 
     // -------------------------------------------------------------

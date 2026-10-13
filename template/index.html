@@ -31,7 +31,7 @@
         <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
           <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
         </svg>
-        <span>Message Store</span>
+        <span id="header-contact-text">Message Store</span>
       </a>
     </div>
   </header>
@@ -40,7 +40,7 @@
   <section class="live-theme-bar" aria-label="Storefront Styling">
     <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
       <div class="live-theme-selector">
-        <span>🎨 Style:</span>
+        <span id="live-theme-label-span">🎨 Style:</span>
         <select id="live-theme-select" class="live-theme-select" aria-label="Select storefront theme">
           <option value="emerald">🌿 Emerald (WhatsApp)</option>
           <option value="luxury-gold">👑 Royal Obsidian Gold</option>
@@ -51,19 +51,30 @@
         </select>
       </div>
       <div class="live-theme-selector">
-        <span>📐 Grid:</span>
+        <span id="live-layout-label-span">📐 Grid:</span>
         <select id="live-layout-select" class="live-theme-select" aria-label="Select layout grid">
-          <option value="standard">Standard (1 Col)</option>
-          <option value="compact">Compact (2 Col)</option>
+          <option value="standard" id="opt-layout-standard">Standard (1 Col)</option>
+          <option value="compact" id="opt-layout-compact">Compact (2 Col)</option>
+        </select>
+      </div>
+      <div class="live-theme-selector">
+        <span id="live-lang-label-span">🌐 Lang:</span>
+        <select id="live-lang-select" class="live-theme-select" aria-label="Select storefront language">
+          <option value="en">🇬🇧 English</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="sw">🇰🇪 Kiswahili</option>
+          <option value="ar">🇸🇦 العربية</option>
+          <option value="yo">🇳🇬 Yorùbá</option>
+          <option value="ha">🇳🇬 Hausa</option>
         </select>
       </div>
     </div>
     <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
       <button id="btn-live-pdf" class="live-action-btn" title="Print or Save Catalog as PDF">
-        📄 PDF Catalog
+        <span id="btn-live-pdf-text">📄 PDF Catalog</span>
       </button>
       <button id="btn-live-share" class="live-action-btn" title="Share catalog with customers">
-        📲 Share
+        <span id="btn-live-share-text">📲 Share</span>
       </button>
     </div>
   </section>
@@ -76,7 +87,7 @@
   <!-- Store Stats & Info -->
   <section class="store-intro" aria-label="Catalog Overview">
     <div class="catalog-stats-bar">
-      <span id="catalog-count-label">Catalog: <strong class="stats-count" id="product-count">0 items</strong></span>
+      <span id="catalog-count-label"><span id="catalog-label-text">Catalog:</span> <strong class="stats-count" id="product-count">0 items</strong></span>
       <span id="catalog-currency-label">Direct WhatsApp Checkout</span>
     </div>
   </section>
@@ -94,8 +105,8 @@
         <line x1="8" y1="21" x2="16" y2="21"></line>
         <line x1="12" y1="17" x2="12" y2="21"></line>
       </svg>
-      <h3>No products found</h3>
-      <p>This storefront is currently empty or updating.</p>
+      <h3 id="empty-title-text">No products found</h3>
+      <p id="empty-desc-text">This storefront is currently empty or updating.</p>
     </div>
   </main>
 
@@ -104,12 +115,12 @@
     <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
       <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
     </svg>
-    <span>Chat with Vendor</span>
+    <span id="sticky-wa-text">Chat with Vendor</span>
   </a>
 
   <!-- Minimal Footer -->
   <footer class="store-footer">
-    <p>Powered by CatalogSmith &bull; Mobile-First Video Storefront</p>
+    <p id="store-footer-text">Powered by CatalogSmith &bull; Mobile-First Video Storefront</p>
   </footer>
 
   <!-- Store Data Slot -->
@@ -119,18 +130,224 @@
 
   <script>
     (function() {
+      // Standalone i18n Dictionary for Storefront
+      const I18N = (window.ContentSmithI18N && window.ContentSmithI18N.translations) ? window.ContentSmithI18N.translations : {
+        en: {
+          code: 'en', dir: 'ltr', name: 'English', flag: '🇬🇧',
+          verified_store: 'Verified Store',
+          tagline_fallback: 'Fast orders directly on WhatsApp',
+          message_store: 'Message Store',
+          style_label: '🎨 Style:',
+          grid_label: '📐 Grid:',
+          lang_label: '🌐 Lang:',
+          grid_standard: 'Standard (1 Col)',
+          grid_compact: 'Compact (2 Col)',
+          pdf_catalog: '📄 PDF Catalog',
+          share: '📲 Share',
+          all_products: 'All Products',
+          in_stock_only: '🟢 In Stock Only',
+          item_singular: 'item',
+          item_plural: 'items',
+          catalog_label: 'Catalog:',
+          direct_checkout: 'Direct WhatsApp Checkout',
+          sold_out: 'Sold Out',
+          ask_for_price: 'Ask for price',
+          order_button: 'Order on WhatsApp',
+          ask_button: 'Ask for Price on WhatsApp',
+          sold_out_button: '💬 Inquire Restock on WhatsApp',
+          chat_general: 'Hello {vendor_name}! I am viewing your catalog and would like to make an inquiry.',
+          chat_order: 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?',
+          chat_ask: 'Hello {vendor_name}! What is the price and availability for *{product_name}*? I saw it on your catalog.',
+          chat_restock: 'Hello {vendor_name}! I saw that *{product_name}* is sold out in your catalog. Will you be restocking this item soon?',
+          sticky_chat: 'Chat with Vendor',
+          empty_title: 'No products found',
+          empty_desc: 'This storefront is currently empty or updating.',
+          no_photo: 'Photo coming soon',
+          powered_by: 'Powered by ContentSmith • Mobile-First Video Storefront'
+        },
+        fr: {
+          code: 'fr', dir: 'ltr', name: 'Français', flag: '🇫🇷',
+          verified_store: 'Boutique Vérifiée',
+          tagline_fallback: 'Commandes rapides directement sur WhatsApp',
+          message_store: 'Écrire à la boutique',
+          style_label: '🎨 Style :',
+          grid_label: '📐 Grille :',
+          lang_label: '🌐 Langue :',
+          grid_standard: 'Standard (1 Col)',
+          grid_compact: 'Compact (2 Col)',
+          pdf_catalog: '📄 Catalogue PDF',
+          share: '📲 Partager',
+          all_products: 'Tous les articles',
+          in_stock_only: '🟢 En stock uniquement',
+          item_singular: 'article',
+          item_plural: 'articles',
+          catalog_label: 'Catalogue :',
+          direct_checkout: 'Paiement direct par WhatsApp',
+          sold_out: 'Épuisé',
+          ask_for_price: 'Demander le prix',
+          order_button: 'Commander sur WhatsApp',
+          ask_button: 'Demander le prix sur WhatsApp',
+          sold_out_button: '💬 Demander un réapprovisionnement',
+          chat_general: 'Bonjour {vendor_name} ! Je consulte votre catalogue et souhaite faire une demande.',
+          chat_order: 'Bonjour {vendor_name} ! Je souhaite commander *{product_name}* ({product_price}) depuis votre catalogue. Est-il disponible pour livraison ?',
+          chat_ask: "Bonjour {vendor_name} ! Quel est le prix et la disponibilité pour *{product_name}* ? Je l'ai vu sur votre catalogue.",
+          chat_restock: 'Bonjour {vendor_name} ! J\'ai vu que *{product_name}* est épuisé. Sera-t-il bientôt de retour en stock ?',
+          sticky_chat: 'Contacter le vendeur',
+          empty_title: 'Aucun produit trouvé',
+          empty_desc: 'Cette boutique est actuellement vide ou en cours de mise à jour.',
+          no_photo: 'Photo à venir',
+          powered_by: "Propulsé par ContentSmith • Boutique vidéo mobile d'abord"
+        },
+        sw: {
+          code: 'sw', dir: 'ltr', name: 'Kiswahili', flag: '🇰🇪',
+          verified_store: 'Duka Lililothibitishwa',
+          tagline_fallback: 'Agiza haraka moja kwa moja kwenye WhatsApp',
+          message_store: 'Tuma Ujumbe Dukani',
+          style_label: '🎨 Mtindo:',
+          grid_label: '📐 Mpangilio:',
+          lang_label: '🌐 Lugha:',
+          grid_standard: 'Kawaida (Safu 1)',
+          grid_compact: 'Bana (Safu 2)',
+          pdf_catalog: '📄 Katalogi ya PDF',
+          share: '📲 Shiriki',
+          all_products: 'Bidhaa Zote',
+          in_stock_only: '🟢 Zilizopo Dukani Pekee',
+          item_singular: 'bidhaa',
+          item_plural: 'bidhaa',
+          catalog_label: 'Katalogi:',
+          direct_checkout: 'Agiza Moja kwa Moja WhatsApp',
+          sold_out: 'Zimekwisha',
+          ask_for_price: 'Ulizia bei',
+          order_button: 'Agiza kwenye WhatsApp',
+          ask_button: 'Ulizia Bei kwenye WhatsApp',
+          sold_out_button: '💬 Ulizia Upatikanaji WhatsApp',
+          chat_general: 'Hujambo {vendor_name}! Ninaangalia katalogi yako na ningependa kuuliza swali.',
+          chat_order: 'Hujambo {vendor_name}! Ningependa kuagiza *{product_name}* ({product_price}) kutoka katalogi yako. Je, inapatikana kwa utoaji?',
+          chat_ask: 'Hujambo {vendor_name}! Ni bei gani na upatikanaji wa *{product_name}*? Nimeiona kwenye katalogi yako.',
+          chat_restock: 'Hujambo {vendor_name}! Nimeona *{product_name}* imekwisha. Je, itapatikana tena hivi karibuni?',
+          sticky_chat: 'Ongea na Muuzaji',
+          empty_title: 'Hakuna bidhaa zilizopatikana',
+          empty_desc: 'Katalogi hii haina bidhaa kwa sasa au inasasishwa.',
+          no_photo: 'Picha inakuja hivi karibuni',
+          powered_by: 'Imeendeshwa na ContentSmith • Duka la Video la Simu Kwanza'
+        },
+        ar: {
+          code: 'ar', dir: 'rtl', name: 'العربية', flag: '🇸🇦',
+          verified_store: 'متجر موثق',
+          tagline_fallback: 'طلب سريع ومباشر عبر واتساب',
+          message_store: 'مراسلة المتجر',
+          style_label: '🎨 المظهر:',
+          grid_label: '📐 الشبكة:',
+          lang_label: '🌐 اللغة:',
+          grid_standard: 'قياسي (عمود 1)',
+          grid_compact: 'مدمج (عمودان)',
+          pdf_catalog: '📄 كتالوج PDF',
+          share: '📲 مشاركة',
+          all_products: 'جميع المنتجات',
+          in_stock_only: '🟢 المتوفر فقط',
+          item_singular: 'منتج',
+          item_plural: 'منتجات',
+          catalog_label: 'الكتالوج:',
+          direct_checkout: 'شراء فوري عبر واتساب',
+          sold_out: 'نفد المخزون',
+          ask_for_price: 'اسأل عن السعر',
+          order_button: 'اطلب عبر واتساب',
+          ask_button: 'اسأل عن السعر عبر واتساب',
+          sold_out_button: '💬 استفسر عن توفر المنتج',
+          chat_general: 'مرحبًا {vendor_name}! أتصفح كتالوج منتجاتك وأود الاستفسار.',
+          chat_order: 'مرحبًا {vendor_name}! أود طلب *{product_name}* ({product_price}) من كتالوجك. هل هو متوفر للتوصيل؟',
+          chat_ask: 'مرحبًا {vendor_name}! ما هو سعر وتوفر *{product_name}*؟ لقد رأيته في كتالوجك.',
+          chat_restock: 'مرحبًا {vendor_name}! رأيت أن *{product_name}* غير متوفر حاليًا. هل سيتوفر قريبًا؟',
+          sticky_chat: 'محادثة البائع',
+          empty_title: 'لا توجد منتجات',
+          empty_desc: 'هذا الكتالوج فارغ حاليًا أو قيد التحديث.',
+          no_photo: 'الصورة قريبًا',
+          powered_by: 'مدعوم بواسطة ContentSmith • متجر الفيديو المحمول أولاً'
+        },
+        yo: {
+          code: 'yo', dir: 'ltr', name: 'Yorùbá', flag: '🇳🇬',
+          verified_store: 'Ile-itaja ti a fọwọsi',
+          tagline_fallback: 'Ibere kiakia lori WhatsApp',
+          message_store: 'Fi ifiranṣẹ ranṣẹ',
+          style_label: '🎨 Àwọ̀:',
+          grid_label: '📐 Ètò:',
+          lang_label: '🌐 Èdè:',
+          grid_standard: 'Àtọwọdọ́wọ́ (Ìlà 1)',
+          grid_compact: 'Kíkékèké (Ìlà 2)',
+          pdf_catalog: '📄 Ìwé PDF',
+          share: '📲 Pín',
+          all_products: 'Gbogbo Ọjà',
+          in_stock_only: '🟢 Ọjà Tí Ó Wà Nílẹ̀',
+          item_singular: 'ọjà',
+          item_plural: 'ọjà',
+          catalog_label: 'Àkójọ Ọjà:',
+          direct_checkout: 'Rira taara lori WhatsApp',
+          sold_out: 'Ti tán',
+          ask_for_price: 'Béèrè iye owó',
+          order_button: 'Ra lori WhatsApp',
+          ask_button: 'Béèrè iye owó lori WhatsApp',
+          sold_out_button: '💬 Béèrè ìgbà tí yóò tún wà',
+          chat_general: 'Ẹ n lẹ́ o {vendor_name}! Mo ń wo àwọn ọjà yín mo sì fẹ́ béèrè ọ̀rọ̀ díẹ̀.',
+          chat_order: 'Ẹ n lẹ́ o {vendor_name}! Mo fẹ́ ra *{product_name}* ({product_price}) nínú àwọn ọjà yín. Ṣé ó wà fún títà?',
+          chat_ask: 'Ẹ n lẹ́ o {vendor_name}! Èlò ni *{product_name}*? Mo rí i nínú àwọn ọjà yín.',
+          chat_restock: 'Ẹ n lẹ́ o {vendor_name}! Mo rí i pé *{product_name}* ti tán. Ṣé yóò tún wà láìpẹ́?',
+          sticky_chat: 'Bá Oníṣòwò Sọ̀rọ̀',
+          empty_title: 'Kò sí ọjà kankan',
+          empty_desc: 'Kò sí ọjà nínú àkójọ yìí báyìí.',
+          no_photo: 'Àwòrán ń bọ̀ láìpẹ́',
+          powered_by: 'Látọwọ́ ContentSmith • Ile-itaja Fídíò Foonu Ni Akọkọ'
+        },
+        ha: {
+          code: 'ha', dir: 'ltr', name: 'Hausa', flag: '🇳🇬',
+          verified_store: 'Shagon da aka Tabbatar',
+          tagline_fallback: 'Oda mai sauri kai tsaye a WhatsApp',
+          message_store: 'Aika Saƙo zuwa Shago',
+          style_label: '🎨 Tsari:',
+          grid_label: '📐 Jeri:',
+          lang_label: '🌐 Harshe:',
+          grid_standard: 'Na yau da kullun (Layi 1)',
+          grid_compact: 'Karami (Layi 2)',
+          pdf_catalog: '📄 Kasidar PDF',
+          share: '📲 Raba',
+          all_products: 'Duk Kayan',
+          in_stock_only: '🟢 Masu nan kawai',
+          item_singular: 'kaya',
+          item_plural: 'kaya',
+          catalog_label: 'Kasida:',
+          direct_checkout: 'Siyayya kai tsaye a WhatsApp',
+          sold_out: 'Ya ƙare',
+          ask_for_price: 'Tambayi Farashi',
+          order_button: 'Yi Oda a WhatsApp',
+          ask_button: 'Tambayi Farashi a WhatsApp',
+          sold_out_button: '💬 Tambayi Lokacin Isowa',
+          chat_general: 'Sannu {vendor_name}! Ina duba kayanku kuma ina so in yi tambaya.',
+          chat_order: 'Sannu {vendor_name}! Ina so in yi odar *{product_name}* ({product_price}) daga kasidarku. Shin akwai shi don aiko mini?',
+          chat_ask: 'Sannu {vendor_name}! Nawa ne farashin da samuwar *{product_name}*? Na gani a kasidarku.',
+          chat_restock: 'Sannu {vendor_name}! Na ga cewa *{product_name}* ya ƙare. Shin zai sake samuwa nan ba da jimawa ba?',
+          sticky_chat: 'Yi Magana da Mai Shago',
+          empty_title: 'Ba a sami kaya ba',
+          empty_desc: 'Wannan shagon babu kaya a ciki a yanzu.',
+          no_photo: 'Hoto yana zuwa',
+          powered_by: 'Ƙarƙashin ContentSmith • Shagon Bidiyo na Wayar Hannu da Farko'
+        }
+      };
+
+      function t(lang, key, params = {}) {
+        const langObj = I18N[lang] || I18N.en;
+        let str = langObj[key] !== undefined ? langObj[key] : (I18N.en[key] || key);
+        if (params && typeof params === 'object') {
+          Object.keys(params).forEach(k => {
+            str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+          });
+        }
+        return str;
+      }
+
       function getCurrencySymbol(code) {
         if (!code) return '₦';
         const map = {
-          'NGN': '₦',
-          'USD': '$',
-          'EUR': '€',
-          'GBP': '£',
-          'KES': 'KSh ',
-          'GHS': 'GH₵ ',
-          'ZAR': 'R ',
-          'CAD': '$',
-          'AUD': '$'
+          'NGN': '₦', 'USD': '$', 'EUR': '€', 'GBP': '£',
+          'KES': 'KSh ', 'GHS': 'GH₵ ', 'ZAR': 'R ', 'CAD': '$', 'AUD': '$'
         };
         return map[code.toUpperCase()] || (code + ' ');
       }
@@ -160,6 +377,8 @@
       function renderStore(data) {
         if (!data) return;
 
+        let currentLang = data.language || 'en';
+
         // Apply theme and layout class
         const themeClass = data.theme ? 'theme-' + data.theme : 'theme-emerald';
         const layoutClass = data.layout === 'compact' ? ' layout-compact' : '';
@@ -168,7 +387,7 @@
         const vendorName = data.vendor_name || 'Vendor Catalog';
         const vendorPhone = data.vendor_phone || '';
         const defaultCurrency = data.currency_default || 'NGN';
-        const tagline = data.tagline || 'Fast orders directly on WhatsApp';
+        const tagline = data.tagline || t(currentLang, 'tagline_fallback');
         const products = Array.isArray(data.products) ? data.products : [];
 
         // Update Page Titles and Header
@@ -185,22 +404,11 @@
         const avatarEl = document.getElementById('vendor-avatar');
         if (avatarEl) avatarEl.textContent = vendorName.trim().charAt(0).toUpperCase() || 'S';
 
-        const countEl = document.getElementById('product-count');
-        if (countEl) countEl.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
-
-        // Top contact links
-        const generalHello = `Hello ${vendorName}! I am viewing your catalog and would like to make an inquiry.`;
-        const generalWaUrl = buildWhatsAppUrl(vendorPhone, generalHello);
-
-        const headerLink = document.getElementById('header-contact-link');
-        if (headerLink) headerLink.href = generalWaUrl;
-
-        const stickyBtn = document.getElementById('sticky-wa-btn');
-        if (stickyBtn) stickyBtn.href = generalWaUrl;
-
-        // Wire up Live Theme & Layout Customizers
+        // Wire up Live Theme, Layout & Language Customizers
         const themeSelect = document.getElementById('live-theme-select');
         const layoutSelect = document.getElementById('live-layout-select');
+        const langSelect = document.getElementById('live-lang-select');
+
         if (themeSelect) {
           themeSelect.value = data.theme || 'emerald';
           themeSelect.onchange = function() {
@@ -209,12 +417,22 @@
             document.body.className = `theme-${data.theme}${lay === 'compact' ? ' layout-compact' : ''}`;
           };
         }
+
         if (layoutSelect) {
           layoutSelect.value = data.layout || 'standard';
           layoutSelect.onchange = function() {
             data.layout = layoutSelect.value;
             const th = themeSelect ? themeSelect.value : (data.theme || 'emerald');
             document.body.className = `theme-${th}${data.layout === 'compact' ? ' layout-compact' : ''}`;
+          };
+        }
+
+        if (langSelect) {
+          langSelect.value = currentLang;
+          langSelect.onchange = function() {
+            currentLang = langSelect.value;
+            data.language = currentLang;
+            applyLanguage();
           };
         }
 
@@ -253,11 +471,86 @@
           };
         }
 
-        // Category Filter Pills
+        // Category Filter Pills State
         const catBar = document.getElementById('category-filter-bar');
         let selectedCategory = 'all';
+        let filterInStockOnly = false;
+        const grid = document.getElementById('product-grid');
+        const emptyState = document.getElementById('empty-state');
 
-        if (catBar) {
+        function applyLanguage() {
+          const dict = I18N[currentLang] || I18N.en;
+          const isRTL = dict.dir === 'rtl';
+
+          document.documentElement.setAttribute('dir', dict.dir);
+          document.documentElement.setAttribute('lang', dict.code);
+          document.body.setAttribute('dir', dict.dir);
+
+          // Update header & toolbar labels
+          const headerContactText = document.getElementById('header-contact-text');
+          if (headerContactText) headerContactText.textContent = t(currentLang, 'message_store');
+
+          const generalHello = t(currentLang, 'chat_general', { vendor_name: vendorName });
+          const generalWaUrl = buildWhatsAppUrl(vendorPhone, generalHello);
+
+          const headerLink = document.getElementById('header-contact-link');
+          if (headerLink) headerLink.href = generalWaUrl;
+
+          const stickyBtn = document.getElementById('sticky-wa-btn');
+          if (stickyBtn) stickyBtn.href = generalWaUrl;
+
+          const stickyWaText = document.getElementById('sticky-wa-text');
+          if (stickyWaText) stickyWaText.textContent = t(currentLang, 'sticky_chat');
+
+          const themeLabel = document.getElementById('live-theme-label-span');
+          if (themeLabel) themeLabel.textContent = t(currentLang, 'style_label');
+
+          const layoutLabel = document.getElementById('live-layout-label-span');
+          if (layoutLabel) layoutLabel.textContent = t(currentLang, 'grid_label');
+
+          const langLabel = document.getElementById('live-lang-label-span');
+          if (langLabel) langLabel.textContent = t(currentLang, 'lang_label');
+
+          const optStandard = document.getElementById('opt-layout-standard');
+          if (optStandard) optStandard.textContent = t(currentLang, 'grid_standard');
+
+          const optCompact = document.getElementById('opt-layout-compact');
+          if (optCompact) optCompact.textContent = t(currentLang, 'grid_compact');
+
+          const pdfBtnText = document.getElementById('btn-live-pdf-text');
+          if (pdfBtnText) pdfBtnText.textContent = t(currentLang, 'pdf_catalog');
+
+          const shareBtnText = document.getElementById('btn-live-share-text');
+          if (shareBtnText) shareBtnText.textContent = t(currentLang, 'share');
+
+          const catalogLabelText = document.getElementById('catalog-label-text');
+          if (catalogLabelText) catalogLabelText.textContent = t(currentLang, 'catalog_label');
+
+          const countUnit = products.length === 1 ? t(currentLang, 'item_singular') : t(currentLang, 'item_plural');
+          const countEl = document.getElementById('product-count');
+          if (countEl) countEl.textContent = `${products.length} ${countUnit}`;
+
+          const currencyLabel = document.getElementById('catalog-currency-label');
+          if (currencyLabel) currencyLabel.textContent = t(currentLang, 'direct_checkout');
+
+          const emptyTitle = document.getElementById('empty-title-text');
+          if (emptyTitle) emptyTitle.textContent = t(currentLang, 'empty_title');
+
+          const emptyDesc = document.getElementById('empty-desc-text');
+          if (emptyDesc) emptyDesc.textContent = t(currentLang, 'empty_desc');
+
+          const footerText = document.getElementById('store-footer-text');
+          if (footerText) footerText.textContent = t(currentLang, 'powered_by');
+
+          // Re-render Category Pills
+          renderCategoryPills();
+
+          // Re-render Product Grid with translated labels & WhatsApp prefilled messages
+          renderProductsGrid();
+        }
+
+        function renderCategoryPills() {
+          if (!catBar) return;
           const categories = ['all'];
           products.forEach(p => {
             if (p.category && !categories.includes(p.category)) {
@@ -271,7 +564,7 @@
             categories.forEach(cat => {
               const pill = document.createElement('button');
               pill.className = `cat-pill ${cat === selectedCategory ? 'active' : ''}`;
-              pill.textContent = cat === 'all' ? 'All Products' : cat;
+              pill.textContent = cat === 'all' ? t(currentLang, 'all_products') : cat;
               pill.onclick = function() {
                 selectedCategory = cat;
                 catBar.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
@@ -287,7 +580,7 @@
               const stockPill = document.createElement('button');
               stockPill.className = `cat-pill ${filterInStockOnly ? 'active' : ''}`;
               stockPill.id = 'pill-filter-instock';
-              stockPill.textContent = '🟢 In Stock Only';
+              stockPill.textContent = t(currentLang, 'in_stock_only');
               stockPill.onclick = function() {
                 filterInStockOnly = !filterInStockOnly;
                 stockPill.classList.toggle('active', filterInStockOnly);
@@ -299,11 +592,6 @@
             catBar.style.display = 'none';
           }
         }
-
-        // Render Products
-        const grid = document.getElementById('product-grid');
-        const emptyState = document.getElementById('empty-state');
-        let filterInStockOnly = false;
 
         function renderProductsGrid() {
           let displayed = selectedCategory === 'all' 
@@ -335,17 +623,25 @@
             const currency = (product.price && product.price.currency) || defaultCurrency;
             const formattedPrice = hasPrice ? formatPrice(product.price.amount, currency) : null;
 
-            // Build tailored WhatsApp message
+            // Build tailored WhatsApp message using active language
             let orderMessage = '';
             if (isSoldOut) {
-              orderMessage = `Hello ${vendorName}! I saw that *${product.name}* is sold out in your catalog. Will you be restocking this item soon?`;
+              orderMessage = t(currentLang, 'chat_restock', { vendor_name: vendorName, product_name: product.name });
             } else if (hasPrice) {
-              orderMessage = (data.message_template || 'Hello {vendor_name}! I would like to order *{product_name}* ({product_price}) from your catalog. Is it available for delivery?')
-                .replace(/{vendor_name}/g, vendorName)
-                .replace(/{product_name}/g, product.name)
-                .replace(/{product_price}/g, formattedPrice);
+              if (currentLang === 'en' && data.message_template) {
+                orderMessage = data.message_template
+                  .replace(/{vendor_name}/g, vendorName)
+                  .replace(/{product_name}/g, product.name)
+                  .replace(/{product_price}/g, formattedPrice);
+              } else {
+                orderMessage = t(currentLang, 'chat_order', {
+                  vendor_name: vendorName,
+                  product_name: product.name,
+                  product_price: formattedPrice
+                });
+              }
             } else {
-              orderMessage = `Hello ${vendorName}! What is the price and availability for *${product.name}*? I saw it on your catalog.`;
+              orderMessage = t(currentLang, 'chat_ask', { vendor_name: vendorName, product_name: product.name });
             }
 
             const orderUrl = buildWhatsAppUrl(vendorPhone, orderMessage);
@@ -376,13 +672,14 @@
                 </div>
               `;
             } else if (prodImages.length === 1) {
+              const noPhotoText = t(currentLang, 'no_photo');
               imageHtml = `
                 <img src="${prodImages[0]}" 
                      alt="${escapeHtml(product.name)}" 
                      class="product-image" 
                      loading="lazy" 
                      decoding="async"
-                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-fallback\\'><span>Photo coming soon</span></div>';" />
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-fallback\\'><span>${noPhotoText}</span></div>';" />
               `;
             } else {
               imageHtml = `
@@ -391,32 +688,31 @@
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
                   </svg>
-                  <span>Product Image</span>
+                  <span>${t(currentLang, 'no_photo')}</span>
                 </div>
               `;
             }
 
             const categoryBadge = product.category ? `<span class="product-category-tag">${escapeHtml(product.category)}</span>` : '';
-            const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">Sold Out</span>` : '';
+            const soldOutBadge = isSoldOut ? `<span class="badge-sold-out">${t(currentLang, 'sold_out')}</span>` : '';
 
             const priceHtml = hasPrice ? `
               <span class="product-price">${formattedPrice}</span>
             ` : `
-              <span class="price-ask">Ask for price</span>
+              <span class="price-ask">${t(currentLang, 'ask_for_price')}</span>
             `;
 
             let buttonClass = 'btn-order-wa';
-            let buttonLabel = 'Order on WhatsApp';
+            let buttonLabel = t(currentLang, 'order_button');
 
             if (isSoldOut) {
               buttonClass = 'btn-order-wa btn-sold-out';
-              buttonLabel = '💬 Inquire Restock on WhatsApp';
+              buttonLabel = t(currentLang, 'sold_out_button');
             } else if (!hasPrice) {
               buttonClass = 'btn-order-wa btn-ask-wa';
-              buttonLabel = 'Ask for Price on WhatsApp';
-            } else {
-              buttonClass = 'btn-order-wa';
-              buttonLabel = data.order_button_text || 'Order on WhatsApp';
+              buttonLabel = t(currentLang, 'ask_button');
+            } else if (currentLang === 'en' && data.order_button_text) {
+              buttonLabel = data.order_button_text;
             }
 
             card.innerHTML = `
@@ -481,9 +777,9 @@
           }, { passive: true });
         }
 
-      // Initial grid render
-      renderProductsGrid();
-    }
+        // Apply initial language & render
+        applyLanguage();
+      }
 
       function escapeHtml(text) {
         if (!text) return '';

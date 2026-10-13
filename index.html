@@ -705,9 +705,21 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label" for="setting-btn-text">WhatsApp Button Text</label>
-              <input type="text" id="setting-btn-text" class="form-input" value="Order on WhatsApp" placeholder="e.g. Order on WhatsApp">
+              <label class="form-label" for="setting-language">Default Store Language</label>
+              <select id="setting-language" class="form-select">
+                <option value="en" selected>🇬🇧 English (International)</option>
+                <option value="fr">🇫🇷 Français (West & Central Africa)</option>
+                <option value="sw">🇰🇪 Kiswahili (East Africa)</option>
+                <option value="ar">🇸🇦 العربية (North Africa & Middle East)</option>
+                <option value="yo">🇳🇬 Yorùbá (Nigeria & Benin)</option>
+                <option value="ha">🇳🇬 Hausa (Nigeria, Niger, Ghana)</option>
+              </select>
             </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="setting-btn-text">WhatsApp Button Text</label>
+            <input type="text" id="setting-btn-text" class="form-input" value="Order on WhatsApp" placeholder="e.g. Order on WhatsApp">
           </div>
 
           <!-- Real-Time Theme Preview Mockup Card -->
@@ -1106,7 +1118,7 @@
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
           </svg>
-          <span>Message Store</span>
+          <span id="sf-header-contact-text">Message Store</span>
         </a>
       </div>
     </header>
@@ -1115,7 +1127,7 @@
     <section class="live-theme-bar" aria-label="Storefront Styling">
       <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
         <div class="live-theme-selector">
-          <span>🎨 Style:</span>
+          <span id="sf-theme-label-span">🎨 Style:</span>
           <select id="sf-theme-select" class="live-theme-select" aria-label="Select theme">
             <option value="emerald">🌿 Emerald</option>
             <option value="luxury-gold">👑 Royal Gold</option>
@@ -1126,19 +1138,30 @@
           </select>
         </div>
         <div class="live-theme-selector">
-          <span>📐 Grid:</span>
+          <span id="sf-layout-label-span">📐 Grid:</span>
           <select id="sf-layout-select" class="live-theme-select" aria-label="Select layout">
-            <option value="standard">Standard (1 Col)</option>
-            <option value="compact">Compact (2 Col)</option>
+            <option value="standard" id="sf-opt-layout-standard">Standard (1 Col)</option>
+            <option value="compact" id="sf-opt-layout-compact">Compact (2 Col)</option>
+          </select>
+        </div>
+        <div class="live-theme-selector">
+          <span id="sf-lang-label-span">🌐 Lang:</span>
+          <select id="sf-lang-select" class="live-theme-select" aria-label="Select language">
+            <option value="en">🇬🇧 English</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="sw">🇰🇪 Kiswahili</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="yo">🇳🇬 Yorùbá</option>
+            <option value="ha">🇳🇬 Hausa</option>
           </select>
         </div>
       </div>
       <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
         <button id="sf-btn-download-pdf" class="live-action-btn" title="Save lookbook as PDF">
-          📄 PDF Catalog
+          <span id="sf-btn-download-pdf-text">📄 PDF Catalog</span>
         </button>
         <button id="sf-btn-share-catalog" class="live-action-btn" title="Share store with customers">
-          📲 Share
+          <span id="sf-btn-share-catalog-text">📲 Share</span>
         </button>
       </div>
     </section>
@@ -1149,8 +1172,8 @@
     <!-- Store Stats -->
     <section class="store-intro" aria-label="Catalog Overview">
       <div class="catalog-stats-bar">
-        <span>Catalog: <strong class="stats-count" id="sf-product-count">0 items</strong></span>
-        <span>Direct WhatsApp Checkout</span>
+        <span id="sf-catalog-count-label"><span id="sf-catalog-label-text">Catalog:</span> <strong class="stats-count" id="sf-product-count">0 items</strong></span>
+        <span id="sf-catalog-currency-label">Direct WhatsApp Checkout</span>
       </div>
     </section>
 
@@ -1158,8 +1181,8 @@
     <main class="main-content">
       <div class="product-grid" id="sf-product-grid" role="list"></div>
       <div class="empty-catalog" id="sf-empty-state" style="display: none;">
-        <h3>No products found</h3>
-        <p>This storefront currently has no listed products.</p>
+        <h3 id="sf-empty-title-text">No products found</h3>
+        <p id="sf-empty-desc-text">This storefront currently has no listed products.</p>
       </div>
     </main>
 
@@ -1168,11 +1191,11 @@
       <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.947 2.796.947 3.179 0 5.766-2.587 5.767-5.766.001-3.181-2.585-5.767-5.767-5.767zm3.385 8.169c-.145.407-.732.748-1.02.793-.277.043-.637.075-1.834-.419-1.529-.632-2.508-2.186-2.584-2.288-.077-.102-.619-.824-.619-1.572 0-.748.391-1.116.53-1.268.14-.153.306-.192.408-.192.102 0 .204.001.293.006.094.004.22-.036.344.262.127.306.435 1.061.473 1.139.038.077.064.167.013.269-.051.102-.077.165-.153.255-.077.089-.161.199-.23.267-.077.076-.157.16-.067.314.089.153.397.655.852 1.06 0.585.521 1.077.683 1.231.76.154.077.243.064.333-.039.09-.102.384-.447.486-.6.103-.154.205-.128.346-.077.141.051.895.422 1.049.499.154.077.256.115.295.179.038.064.038.371-.107.778z"/>
       </svg>
-      <span>Chat with Vendor</span>
+      <span id="sf-sticky-wa-text">Chat with Vendor</span>
     </a>
 
     <footer class="store-footer">
-      <p>Powered by ContentSmith &bull; Mobile-First Video Storefront &bull; <a href="#" id="sf-footer-admin-link" style="color: inherit; text-decoration: underline; cursor: pointer;">Admin</a></p>
+      <p id="sf-store-footer-text">Powered by ContentSmith &bull; Mobile-First Video Storefront &bull; <a href="#" id="sf-footer-admin-link" style="color: inherit; text-decoration: underline; cursor: pointer;">Admin</a></p>
     </footer>
   </div> <!-- /#storefront-view -->
 
@@ -2204,6 +2227,7 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Third-party & utility libraries -->
+  <script src="js/i18n.js"></script>
   <script src="js/jszip.min.js"></script>
   <script src="js/pdf-catalog.js"></script>
   <script src="js/fixtures.js"></script>
