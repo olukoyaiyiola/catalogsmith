@@ -1,4 +1,4 @@
-﻿# ContentSmith 🛍️🎥
+# ContentSmith 🛍️🎥
 ### Video-to-Storefront Tool (Git-Free, Phone-First)
 
 **ContentSmith** turns a vendor product video into a live mobile-first storefront with **zero infrastructure, zero GitHub account, and 100% free tiers**. 
@@ -84,7 +84,7 @@ ContentSmith/
 
 ### Step 1: Automated Video Extraction (Zero Copy-Paste Needed)
 In **Step 1: Input & Automation**:
-- **Option A (1-Click Grounded Gemini AI Extraction)**: Enter your free Gemini API key, select your model (`gemini-1.5-flash` or `gemini-2.0-flash`), and click **"Auto-Extract Catalog with Gemini"**. ContentSmith samples visual keyframes from the video, sends them to Gemini with strict zero-hallucination grounding, extracts authentic product names, visible prices, and exact timestamps, and captures sharp photo frames for every item!
+- **Option A (1-Click Grounded Gemini AI Extraction)**: Powered by serverless Gemini environment (`GEMINI_API_KEY` in Vercel or `.env`). Zero client-side API key configuration required on the frontend. ContentSmith samples visual keyframes from the video, sends them to Gemini via secure `/api/gemini-extract` with strict zero-hallucination grounding, extracts authentic product names, visible prices, and exact timestamps, and captures sharp photo frames for every item!
 - **Option B (Smart Local Auto-Scan - No Key Needed)**: Click **"Smart Local Auto-Scan"**. The in-browser engine scans the video timeline directly via HTML5 Canvas, captures real candidate product frames across scenes, and creates clean items ready for you to title and price.
 - **Option C (Manual / Google AI Studio)**: You can also use [aistudio.google.com](https://aistudio.google.com) to paste whole-video prompts and load JSON manually.
 

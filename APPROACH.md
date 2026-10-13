@@ -117,12 +117,12 @@ The application has two distinct UI surfaces:
   * Video drag-and-drop zone (`#video-dropzone`) + hidden file input (`#video-input`).
   * One-click demo video generator (`#btn-generate-demo-video`).
   * **Automation Card**:
-    * Gemini API key input (`#gemini-api-key`) with show/hide toggle.
-    * Model selector: `gemini-1.5-flash` or `gemini-2.0-flash`.
+    * Serverless Gemini AI Status Badge (`#gemini-status-card`) with zero frontend key entry required.
+    * Model selector: `gemini-3.1-flash-lite`, `gemini-3.8-flash`, etc. with resilient multi-model fallback.
     * **Action Buttons**:
-      * `✨ Auto-Extract Catalog with Gemini` (`#btn-auto-extract-gemini`)
-      * `⚡ Smart Local Auto-Scan (No Key)` (`#btn-smart-local-scan`)
-    * Progress bar indicator (`#auto-progress-container`) with live percent and status labels.
+      * `✨ Auto-Extract Catalog with Gemini` (`#btn-auto-extract-gemini`) - connects to `/api/gemini-extract`
+      * `⚡ Smart Local Auto-Scan (No Key)` (`#btn-smart-local-scan`) - 100% offline Canvas scan
+    * Progress bar indicator (`#auto-progress-container`) with live percent, animated gradient shimmer, and status labels.
   * JSON Direct Input: Manual paste area (`#json-input`) with 5 preset fixture chips.
 * **Step 2: Review & Photo Studio (`#step-pane-2`)**:
   * Left/Top: HTML5 `<video>` player (`#studioVideo`) + hidden capture `<canvas>` (`#captureCanvas`).

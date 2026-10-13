@@ -48,9 +48,11 @@
     jsonFileInput: document.getElementById('json-file-input'),
     btnParseJson: document.getElementById('btn-parse-json'),
     sampleChips: document.querySelectorAll('.sample-chip'),
-    geminiApiKey: document.getElementById('gemini-api-key'),
-    checkRememberKey: document.getElementById('check-remember-key'),
-    btnToggleKeyVis: document.getElementById('btn-toggle-key-vis'),
+    geminiStatusCard: document.getElementById('gemini-status-card'),
+    geminiStatusDot: document.getElementById('gemini-status-dot'),
+    geminiStatusTitle: document.getElementById('gemini-status-title'),
+    geminiStatusSub: document.getElementById('gemini-status-sub'),
+    geminiStatusBadge: document.getElementById('gemini-status-badge'),
     geminiModelSelect: document.getElementById('gemini-model-select'),
     btnAutoExtractGemini: document.getElementById('btn-auto-extract-gemini'),
     btnSmartLocalScan: document.getElementById('btn-smart-local-scan'),
@@ -4103,32 +4105,41 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     }, 400);
   }
 
-  // Interim Gemini Key resolution (in-memory by default, optional local device remember)
+  // Serverless Gemini AI Status Resolution (Managed via Vercel env, Zero frontend key needed)
   let inMemoryGeminiKey = '';
 
-  function loadSavedApiKey() {
+  async function checkServerGeminiStatus() {
     try {
-      const saved = localStorage.getItem('ContentSmith_gemini_api_key');
-      if (saved) {
-        inMemoryGeminiKey = saved;
-        if (els.geminiApiKey) els.geminiApiKey.value = saved;
-        if (els.checkRememberKey) els.checkRememberKey.checked = true;
+      const resp = await fetch('/api/gemini-extract', { method: 'GET' });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.configured) {
+          if (els.geminiStatusTitle) els.geminiStatusTitle.textContent = 'Gemini Multimodal AI Active';
+          if (els.geminiStatusSub) els.geminiStatusSub.textContent = `Serverless environment connected (Default: ${data.defaultModel || 'gemini-3.1-flash-lite'}). Zero client key required.`;
+          if (els.geminiStatusBadge) {
+            els.geminiStatusBadge.textContent = 'Cloud Engine';
+            els.geminiStatusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+            els.geminiStatusBadge.style.color = '#10b981';
+          }
+        } else {
+          if (els.geminiStatusTitle) els.geminiStatusTitle.textContent = 'Gemini Serverless Setup Pending';
+          if (els.geminiStatusSub) els.geminiStatusSub.textContent = 'Configure GEMINI_API_KEY in your Vercel Environment Variables.';
+          if (els.geminiStatusBadge) {
+            els.geminiStatusBadge.textContent = 'Env Needed';
+            els.geminiStatusBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+            els.geminiStatusBadge.style.color = '#f59e0b';
+          }
+        }
       }
     } catch (_) {}
   }
 
   function getEffectiveGeminiApiKey() {
-    return inMemoryGeminiKey || (els.geminiApiKey ? els.geminiApiKey.value.trim() : '');
+    return inMemoryGeminiKey;
   }
 
   // 1-Click Gemini Automated Extraction using Chronological Keyframes
   async function runAutoExtractGemini() {
-    const apiKey = getEffectiveGeminiApiKey();
-    if (!apiKey) {
-      showToast('Please enter your Gemini API key, or click Smart Local Auto-Scan');
-      return;
-    }
-
     if (!state.videoLoaded) {
       showToast('Please select or upload a video file first');
       return;
@@ -4137,7 +4148,7 @@ Your store will immediately be live at \`https://your-project.pages.dev\`!
     updateAutoProgress(10, 'Sampling video keyframes for visual AI analysis...');
 
     try {
-      const model = (els.geminiModelSelect && els.geminiModelSelect.value) || 'gemini-1.5-flash';
+      const model = (els.geminiModelSelect && els.geminiModelSelect.value) || 'gemini-3.1-flash-lite';
       const duration = Math.max(1, state.videoDuration || 30);
       const video = els.studioVideo;
       const canvas = els.captureCanvas;
@@ -4224,62 +4235,77 @@ Return pure JSON only.`;
 
       parts.unshift({ text: promptText });
 
-      async function callGemini(selectedModel) {
-        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent`, {
+      updateAutoProgress(70, 'Connecting to Gemini Serverless AI Engine...');
+
+      let parsed = null;
+      let usedModel = model;
+
+      // Primary: Secure Serverless /api/gemini-extract endpoint (reads Vercel env GEMINI_API_KEY)
+      try {
+        const apiRes = await fetch('/api/gemini-extract', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: parts }],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.1
-            }
+            parts: parts,
+            model: model
           })
         });
-      }
 
-      // Try chosen model, with resilient fallback across verified active models
-      const fallbackList = [model, 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-1.5-flash'];
-      const uniqueModels = [...new Set(fallbackList)];
-
-      let res = null;
-      let lastErrorMsg = 'Failed to connect to Gemini API';
-
-      for (const candidateModel of uniqueModels) {
-        try {
-          updateAutoProgress(50, `Contacting Gemini AI (${candidateModel})...`);
-          const attempt = await callGemini(candidateModel);
-          if (attempt.ok) {
-            res = attempt;
-            break;
+        if (apiRes.ok) {
+          const apiData = await apiRes.json();
+          if (apiData.catalog && Array.isArray(apiData.catalog.products)) {
+            parsed = apiData.catalog;
+            usedModel = apiData.model || model;
           }
-          const errData = await attempt.json().catch(() => ({}));
-          lastErrorMsg = errData.error ? errData.error.message : `HTTP ${attempt.status}`;
-          console.warn(`Model ${candidateModel} failed (${lastErrorMsg}), attempting fallback...`);
-        } catch (netErr) {
-          lastErrorMsg = netErr.message || 'Network error';
-          console.warn(`Model ${candidateModel} network failure:`, netErr);
+        } else {
+          const errData = await apiRes.json().catch(() => ({}));
+          console.warn('Serverless extraction API response:', errData);
+          if (apiRes.status === 500 && errData.error && errData.error.includes('GEMINI_API_KEY')) {
+            throw new Error(errData.error);
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Serverless endpoint fetch error:', apiErr);
+        if (apiErr.message && apiErr.message.includes('GEMINI_API_KEY')) {
+          throw apiErr;
         }
       }
 
-      if (!res || !res.ok) {
-        throw new Error(`Gemini API: ${lastErrorMsg}`);
+      // Resilient Fallback: direct browser call if legacy inMemoryGeminiKey exists
+      if (!parsed && inMemoryGeminiKey) {
+        updateAutoProgress(75, 'Falling back to direct client connection...');
+        const candidateModels = [model, 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash'];
+        let directRes = null;
+        for (const cand of candidateModels) {
+          try {
+            const attempt = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cand}:generateContent?key=${inMemoryGeminiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: parts }],
+                generationConfig: { responseMimeType: 'application/json', temperature: 0.1 }
+              })
+            });
+            if (attempt.ok) {
+              directRes = await attempt.json();
+              usedModel = cand;
+              break;
+            }
+          } catch (_) {}
+        }
+
+        if (directRes && directRes.candidates?.[0]?.content?.parts?.[0]?.text) {
+          const rawText = directRes.candidates[0].content.parts[0].text;
+          const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+          parsed = JSON.parse(cleaned);
+        }
       }
 
-      updateAutoProgress(80, 'Gemini analyzed frames! Parsing product catalog...');
-      const data = await res.json();
-      const rawText = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text;
-      if (!rawText) throw new Error('Empty response from Gemini');
-
-      const cleaned = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
-      const parsed = JSON.parse(cleaned);
-
-      if (!parsed.products || !Array.isArray(parsed.products) || parsed.products.length === 0) {
-        throw new Error('No products detected in the video frames');
+      if (!parsed || !parsed.products || !Array.isArray(parsed.products) || parsed.products.length === 0) {
+        throw new Error('Unable to extract products. Ensure the server or Vercel environment is active, or use Quick scan (no AI).');
       }
+
+      updateAutoProgress(85, `Gemini (${usedModel}) analyzed frames! Parsing product catalog...`);
 
       state.vendor_name = parsed.vendor_name || state.vendor_name;
       if (parsed.vendor_phone) state.vendor_phone = parsed.vendor_phone;
@@ -4300,10 +4326,10 @@ Return pure JSON only.`;
         image: null
       }));
 
-      updateAutoProgress(90, 'Auto-capturing high-resolution photo frames for each product...');
+      updateAutoProgress(92, 'Auto-capturing high-resolution photo frames for each product...');
       await autoCaptureAllFrames();
 
-      updateAutoProgress(100, `Done! Gemini extracted ${state.products.length} products with real photos.`);
+      updateAutoProgress(100, `Done! Extracted ${state.products.length} products with photos.`);
 
       syncFormFields();
       renderReviewList();
@@ -4312,14 +4338,14 @@ Return pure JSON only.`;
 
       setTimeout(() => {
         setStep(2);
-        showToast(`Gemini extracted ${state.products.length} grounded products from your video!`);
-      }, 400);
+        showToast(`✨ Extracted ${state.products.length} grounded products from video!`);
+      }, 350);
 
     } catch (err) {
       console.warn('Gemini extraction error:', err);
       updateAutoProgress(0, '');
       if (els.autoProgressContainer) els.autoProgressContainer.style.display = 'none';
-      showToast(`Gemini notice: ${err.message}. You can also use Smart Local Auto-Scan.`);
+      showToast(`Notice: ${err.message}. You can also use Quick scan (no AI).`);
     }
   }
 
@@ -4330,42 +4356,11 @@ Return pure JSON only.`;
     if (els.btnSmartLocalScan) {
       els.btnSmartLocalScan.addEventListener('click', runSmartLocalScan);
     }
-    if (els.geminiApiKey) {
-      els.geminiApiKey.addEventListener('input', () => {
-        inMemoryGeminiKey = els.geminiApiKey.value.trim();
-        if (els.checkRememberKey && els.checkRememberKey.checked) {
-          try {
-            if (inMemoryGeminiKey) {
-              localStorage.setItem('ContentSmith_gemini_api_key', inMemoryGeminiKey);
-            } else {
-              localStorage.removeItem('ContentSmith_gemini_api_key');
-            }
-          } catch (_) {}
-        }
-      });
-    }
-    if (els.checkRememberKey) {
-      els.checkRememberKey.addEventListener('change', () => {
-        try {
-          if (els.checkRememberKey.checked) {
-            const key = inMemoryGeminiKey || (els.geminiApiKey ? els.geminiApiKey.value.trim() : '');
-            if (key) localStorage.setItem('ContentSmith_gemini_api_key', key);
-          } else {
-            localStorage.removeItem('ContentSmith_gemini_api_key');
-          }
-        } catch (_) {}
-      });
-    }
-    if (els.btnToggleKeyVis && els.geminiApiKey) {
-      els.btnToggleKeyVis.addEventListener('click', () => {
-        els.geminiApiKey.type = els.geminiApiKey.type === 'password' ? 'text' : 'password';
-      });
-    }
   }
 
   // Initialize
   function init() {
-    loadSavedApiKey();
+    checkServerGeminiStatus();
     setupVideoHandlers();
     bindSettingsInputs();
     setupModals();

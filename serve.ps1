@@ -544,6 +544,133 @@ try {
             }
         }
 
+        # Handle Gemini AI Video Extraction Endpoint
+        if ($rawPath -eq "api/gemini-extract") {
+            if ($request.HttpMethod -eq "OPTIONS") {
+                $response.StatusCode = 204
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                $response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-goog-api-key")
+                $response.Close()
+                continue
+            }
+
+            # Read GEMINI_API_KEY from environment or .env file
+            $geminiKey = $env:GEMINI_API_KEY
+            if ([string]::IsNullOrWhiteSpace($geminiKey)) {
+                $envFile = Join-Path $PSScriptRoot ".env"
+                if (Test-Path $envFile) {
+                    $lines = Get-Content -Path $envFile
+                    foreach ($line in $lines) {
+                        if ($line -match '^\s*GEMINI_API_KEY\s*=\s*(.*)$') {
+                            $geminiKey = $matches[1].Trim().Trim('"').Trim("'")
+                            break
+                        }
+                    }
+                }
+            }
+
+            if ($request.HttpMethod -eq "GET") {
+                $statusObj = @{
+                    configured = (-not [string]::IsNullOrWhiteSpace($geminiKey))
+                    provider = "google-gemini"
+                    defaultModel = "gemini-3.1-flash-lite"
+                    message = if (-not [string]::IsNullOrWhiteSpace($geminiKey)) { "Gemini AI serverless environment variable is active and ready." } else { "GEMINI_API_KEY is not configured." }
+                }
+                $jsonStr = $statusObj | ConvertTo-Json
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonStr)
+                $response.StatusCode = 200
+                $response.ContentType = "application/json; charset=utf-8"
+                $response.AddHeader("Access-Control-Allow-Origin", "*")
+                $response.ContentLength64 = $bytes.Length
+                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $response.Close()
+                continue
+            }
+
+            if ($request.HttpMethod -eq "POST") {
+                if ([string]::IsNullOrWhiteSpace($geminiKey)) {
+                    $errBytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"GEMINI_API_KEY is not configured in local .env or server environment."}')
+                    $response.StatusCode = 500
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $errBytes.Length
+                    $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                    $response.Close()
+                    continue
+                }
+
+                $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
+                $reqBody = $reader.ReadToEnd()
+                $reader.Close()
+
+                try {
+                    $bodyJson = $reqBody | ConvertFrom-Json
+                    $reqModel = if ($bodyJson.model) { $bodyJson.model } else { "gemini-3.1-flash-lite" }
+                    $candidateModels = @($reqModel, "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.8-flash")
+                    
+                    $geminiPayload = @{
+                        contents = @(@{ parts = $bodyJson.parts })
+                        generationConfig = @{
+                            responseMimeType = "application/json"
+                            temperature = 0.1
+                        }
+                    } | ConvertTo-Json -Depth 10
+
+                    $successResp = $null
+                    $lastErr = "Failed to call Gemini"
+                    $winningModel = $null
+
+                    foreach ($cand in $candidateModels) {
+                        try {
+                            $geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/$cand`:generateContent?key=$geminiKey"
+                            $resp = Invoke-RestMethod -Uri $geminiUrl -Method Post -Body $geminiPayload -ContentType "application/json" -TimeoutSec 40
+                            if ($resp -and $resp.candidates -and $resp.candidates.Count -gt 0) {
+                                $successResp = $resp
+                                $winningModel = $cand
+                                break
+                            }
+                        } catch {
+                            $lastErr = $_.Exception.Message
+                        }
+                    }
+
+                    if (-not $successResp) {
+                        throw "All Gemini candidate models failed: $lastErr"
+                    }
+
+                    $rawText = $successResp.candidates[0].content.parts[0].text
+                    $cleaned = $rawText -replace '(?s)^```(?:json)?\s*', '' -replace '(?s)\s*```$', ''
+                    $catalogObj = $cleaned | ConvertFrom-Json
+
+                    $resultObj = @{
+                        success = $true
+                        model = $winningModel
+                        catalog = $catalogObj
+                    } | ConvertTo-Json -Depth 10
+
+                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($resultObj)
+                    $response.StatusCode = 200
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $bytes.Length
+                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                    $response.Close()
+                    continue
+                } catch {
+                    $errMsg = $_.ToString().Replace('"', '\"')
+                    $errBytes = [System.Text.Encoding]::UTF8.GetBytes("{""error"":""$errMsg""}")
+                    $response.StatusCode = 502
+                    $response.ContentType = "application/json; charset=utf-8"
+                    $response.AddHeader("Access-Control-Allow-Origin", "*")
+                    $response.ContentLength64 = $errBytes.Length
+                    $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                    $response.Close()
+                    continue
+                }
+            }
+        }
+
         $filePath = Join-Path $PSScriptRoot $rawPath
 
         if (Test-Path $filePath -PathType Leaf) {
